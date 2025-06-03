@@ -9,11 +9,24 @@ export const useIncrementVideoViews = () => {
     mutationFn: async (videoId: string) => {
       console.log('Увеличиваем просмотры для видео:', videoId);
 
+      // Сначала получаем текущее количество просмотров
+      const { data: currentVideo, error: fetchError } = await supabase
+        .from('videos')
+        .select('views')
+        .eq('id', videoId)
+        .single();
+
+      if (fetchError) {
+        console.error('Ошибка получения видео:', fetchError);
+        throw fetchError;
+      }
+
+      // Увеличиваем счетчик на 1
+      const newViews = (currentVideo.views || 0) + 1;
+
       const { error } = await supabase
         .from('videos')
-        .update({ 
-          views: supabase.sql`views + 1` 
-        })
+        .update({ views: newViews })
         .eq('id', videoId);
 
       if (error) {
@@ -21,7 +34,7 @@ export const useIncrementVideoViews = () => {
         throw error;
       }
 
-      console.log('Просмотры успешно увеличены');
+      console.log('Просмотры успешно увеличены до:', newViews);
     },
     onSuccess: () => {
       // Обновляем кэш после увеличения просмотров
