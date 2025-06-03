@@ -53,7 +53,7 @@ const Profile: React.FC = () => {
             <div className="flex items-center mt-1 text-blue-100">
               <Calendar className="w-4 h-4 mr-1" />
               <span className="text-sm">
-                В WZ Battle с {new Date(displayUser.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                В WZ Battle с {new Date(userProfile?.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
               </span>
             </div>
           </div>
