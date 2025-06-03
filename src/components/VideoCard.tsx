@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Heart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -56,7 +55,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             src={video.videoUrl}
             thumbnail={video.thumbnail}
             title={video.title}
-            className="w-full h-40"
+            className="w-full h-60"
             videoId={video.id}
           />
         ) : (
@@ -64,7 +63,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             <img 
               src={video.thumbnail} 
               alt={video.title}
-              className="w-full h-40 object-cover"
+              className="w-full h-60 object-contain bg-black"
             />
             <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
               <div className="text-white text-center">
