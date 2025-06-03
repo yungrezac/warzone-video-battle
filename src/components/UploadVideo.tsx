@@ -55,8 +55,8 @@ const UploadVideo: React.FC = () => {
   return (
     <div className="p-4 pb-20">
       <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-6 rounded-lg mb-6">
-        <h2 className="text-2xl font-bold mb-2">Загрузить видео</h2>
-        <p className="opacity-90">Поделитесь своим лучшим геймплеем и участвуйте в ежедневном соревновании!</p>
+        <h2 className="text-2xl font-bold mb-2">Загрузить трюк</h2>
+        <p className="opacity-90">Поделитесь своим лучшим трюком на роликах и участвуйте в ежедневном соревновании!</p>
       </div>
 
       <div className="space-y-6">
@@ -103,12 +103,12 @@ const UploadVideo: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Название видео *
+              Название трюка *
             </label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Введите название вашего видео"
+              placeholder="Например: 360 Spin, Backflip, Grind..."
               className="w-full"
             />
           </div>
@@ -120,7 +120,7 @@ const UploadVideo: React.FC = () => {
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Расскажите о своем видео..."
+              placeholder="Расскажите о своем трюке..."
               className="w-full"
               rows={3}
             />
@@ -133,7 +133,7 @@ const UploadVideo: React.FC = () => {
             <li>• Видео проходит модерацию перед публикацией</li>
             <li>• Победитель определяется каждый день в 00:00</li>
             <li>• Баллы начисляются равно количеству полученных оценок</li>
-            <li>• Запрещены оскорбления и неуместный контент</li>
+            <li>• Запрещены опасные трюки без защитной экипировки</li>
           </ul>
         </div>
 
@@ -142,7 +142,7 @@ const UploadVideo: React.FC = () => {
           disabled={!selectedFile || !title || uploadMutation.isPending}
           className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
         >
-          {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить видео'}
+          {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить трюк'}
         </Button>
       </div>
     </div>

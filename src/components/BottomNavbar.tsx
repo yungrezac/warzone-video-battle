@@ -10,7 +10,7 @@ interface BottomNavbarProps {
 const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'feed', label: 'Лента', icon: Home },
-    { id: 'upload', label: 'Загрузить', icon: Upload },
+    { id: 'upload', label: 'Трюк', icon: Upload },
     { id: 'market', label: 'Маркет', icon: ShoppingBag },
     { id: 'profile', label: 'Профиль', icon: User },
   ];

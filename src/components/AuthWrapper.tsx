@@ -47,7 +47,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     const initializeUser = async () => {
       try {
         // Проверяем есть ли пользователь в localStorage
-        const savedUser = localStorage.getItem('wzb_user');
+        const savedUser = localStorage.getItem('roller_tricks_user');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
           setUser(userData);
@@ -76,13 +76,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             .from('profiles')
             .insert({
               id: newUserId,
-              username: 'ProGamer123',
-              first_name: 'ProGamer',
-              last_name: '123',
-              avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
+              username: 'TrickMaster',
+              first_name: 'Trick',
+              last_name: 'Master',
+              avatar_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
               telegram_id: testTelegramId,
-              telegram_username: 'ProGamer123',
-              telegram_photo_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
+              telegram_username: 'TrickMaster',
+              telegram_photo_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
             });
 
           if (insertProfileError) throw insertProfileError;
@@ -107,16 +107,16 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         const userData = {
           id: profileId,
           telegram_id: testTelegramId,
-          username: 'ProGamer123',
-          first_name: 'ProGamer',
-          last_name: '123',
-          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
-          telegram_username: 'ProGamer123',
+          username: 'TrickMaster',
+          first_name: 'Trick',
+          last_name: 'Master',
+          avatar_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
+          telegram_username: 'TrickMaster',
         };
 
         setCurrentUser({ id: profileId, telegram_id: testTelegramId });
         setUser(userData);
-        localStorage.setItem('wzb_user', JSON.stringify(userData));
+        localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
 
       } catch (err: any) {
         console.error('Error initializing user:', err);
@@ -130,13 +130,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
   const signIn = (userData: any) => {
     setUser(userData);
-    localStorage.setItem('wzb_user', JSON.stringify(userData));
+    localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
     setCurrentUser({ id: userData.id, telegram_id: userData.telegram_id });
   };
 
   const signOut = () => {
     setUser(null);
-    localStorage.removeItem('wzb_user');
+    localStorage.removeItem('roller_tricks_user');
     setCurrentUser(null);
   };
 

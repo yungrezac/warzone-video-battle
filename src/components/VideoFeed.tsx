@@ -48,7 +48,7 @@ const VideoFeed: React.FC = () => {
             Пока нет видео
           </h3>
           <p className="text-gray-500">
-            Будьте первым, кто загрузит видео!
+            Будьте первым, кто загрузит свой трюк!
           </p>
         </div>
       </div>
@@ -58,7 +58,7 @@ const VideoFeed: React.FC = () => {
   return (
     <div className="pb-20">
       <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-4 m-4 rounded-lg">
-        <h2 className="text-lg font-bold mb-2">🔥 Горячее сегодня</h2>
+        <h2 className="text-lg font-bold mb-2">🔥 Трюк дня</h2>
         <p className="text-sm opacity-90">
           Голосование закончится в 23:59. Победитель получит баллы равные количеству оценок!
         </p>
@@ -71,9 +71,9 @@ const VideoFeed: React.FC = () => {
             video={{
               id: video.id,
               title: video.title,
-              author: video.user?.username || video.user?.telegram_username || 'Пользователь',
+              author: video.user?.username || video.user?.telegram_username || 'Роллер',
               authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-              thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
+              thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
               likes: video.likes_count || 0,
               comments: video.comments_count || 0,
               rating: video.average_rating || 0,
