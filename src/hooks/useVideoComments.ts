@@ -25,7 +25,7 @@ export const useVideoComments = (videoId: string) => {
         .from('video_comments')
         .select(`
           *,
-          user:profiles(username, telegram_username, avatar_url)
+          user:profiles!user_id(username, telegram_username, avatar_url)
         `)
         .eq('video_id', videoId)
         .order('created_at', { ascending: true });
@@ -51,14 +51,19 @@ export const useAddComment = () => {
           user_id: user.id,
           content,
         })
-        .select()
+        .select(`
+          *,
+          user:profiles!user_id(username, telegram_username, avatar_url)
+        `)
         .single();
 
       if (error) throw error;
       return data;
     },
     onSuccess: (_, { videoId }) => {
+      // Инвалидируем и обновляем кэш комментариев для данного видео
       queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
+      // Также обновляем счетчик комментариев в списке видео
       queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
