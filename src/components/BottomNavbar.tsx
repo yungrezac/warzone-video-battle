@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Upload, ShoppingBag, User } from 'lucide-react';
+import { Home, Upload, User, Trophy, ShoppingBag } from 'lucide-react';
 
 interface BottomNavbarProps {
   activeTab: string;
@@ -9,34 +9,30 @@ interface BottomNavbarProps {
 
 const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
-    { id: 'feed', label: 'Лента', icon: Home },
-    { id: 'upload', label: 'Трюк', icon: Upload },
-    { id: 'market', label: 'Маркет', icon: ShoppingBag },
-    { id: 'profile', label: 'Профиль', icon: User },
+    { id: 'home', icon: Home, label: 'Главная' },
+    { id: 'upload', icon: Upload, label: 'Загрузить' },
+    { id: 'achievements', icon: Trophy, label: 'Достижения' },
+    { id: 'market', icon: ShoppingBag, label: 'Магазин' },
+    { id: 'profile', icon: User, label: 'Профиль' },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 z-50">
-      <div className="flex justify-around">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`flex flex-col items-center py-1 px-2 rounded-lg transition-all duration-200 ${
-                isActive 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : ''}`} />
-              <span className="text-xs mt-0.5">{tab.label}</span>
-            </button>
-          );
-        })}
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 z-30">
+      <div className="flex justify-around items-center">
+        {tabs.map(({ id, icon: Icon, label }) => (
+          <button
+            key={id}
+            onClick={() => onTabChange(id)}
+            className={`flex flex-col items-center py-1 px-2 rounded-lg transition-colors ${
+              activeTab === id
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            <Icon className="w-5 h-5 mb-0.5" />
+            <span className="text-xs font-medium">{label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

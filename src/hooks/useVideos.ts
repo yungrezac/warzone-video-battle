@@ -1,22 +1,26 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
+import { useAchievementTriggers } from './useAchievementTriggers';
 
-export interface Video {
+interface Video {
   id: string;
   title: string;
   description?: string;
   video_url: string;
   thumbnail_url?: string;
-  views: number;
-  is_winner: boolean;
-  winner_date?: string;
-  created_at: string;
   user_id: string;
+  views: number;
+  created_at: string;
+  updated_at: string;
+  is_winner?: boolean;
+  winner_date?: string;
   user?: {
+    id: string;
     username?: string;
-    avatar_url?: string;
     telegram_username?: string;
+    avatar_url?: string;
   };
   likes_count?: number;
   comments_count?: number;
@@ -121,31 +125,27 @@ export const useVideos = () => {
 export const useLikeVideo = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { triggerSocialLike } = useAchievementTriggers();
 
   return useMutation({
     mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
       if (!user?.id) {
-        console.error('Пользователь не авторизован');
         throw new Error('User not authenticated');
       }
 
-      console.log('Обрабатываем лайк:', { videoId, isLiked, userId: user.id });
+      console.log('Mutation - Like video:', videoId, 'isLiked:', isLiked);
 
       if (isLiked) {
-        // Убираем лайк
+        // Remove like
         const { error } = await supabase
           .from('video_likes')
           .delete()
           .eq('video_id', videoId)
           .eq('user_id', user.id);
 
-        if (error) {
-          console.error('Ошибка удаления лайка:', error);
-          throw error;
-        }
-        console.log('Лайк удален');
+        if (error) throw error;
       } else {
-        // Ставим лайк
+        // Add like
         const { error } = await supabase
           .from('video_likes')
           .insert({
@@ -153,19 +153,15 @@ export const useLikeVideo = () => {
             user_id: user.id,
           });
 
-        if (error) {
-          console.error('Ошибка добавления лайка:', error);
-          throw error;
-        }
-        console.log('Лайк добавлен');
+        if (error) throw error;
+        
+        // Trigger achievement for liking other videos
+        triggerSocialLike();
       }
     },
     onSuccess: () => {
-      console.log('Лайк успешно обработан, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
-    },
-    onError: (error) => {
-      console.error('Ошибка обработки лайка:', error);
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
     },
   });
 };
@@ -173,37 +169,32 @@ export const useLikeVideo = () => {
 export const useRateVideo = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { triggerSocialRating } = useAchievementTriggers();
 
   return useMutation({
     mutationFn: async ({ videoId, rating }: { videoId: string; rating: number }) => {
       if (!user?.id) {
-        console.error('Пользователь не авторизован');
         throw new Error('User not authenticated');
       }
 
-      console.log('Обрабатываем рейтинг:', { videoId, rating, userId: user.id });
+      console.log('Mutation - Rate video:', videoId, 'rating:', rating);
 
       const { error } = await supabase
         .from('video_ratings')
         .upsert({
           video_id: videoId,
           user_id: user.id,
-          rating,
+          rating: rating,
         });
 
-      if (error) {
-        console.error('Ошибка установки рейтинга:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Рейтинг установлен');
+      // Trigger achievement for rating other videos
+      triggerSocialRating();
     },
     onSuccess: () => {
-      console.log('Рейтинг успешно установлен, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
-    },
-    onError: (error) => {
-      console.error('Ошибка установки рейтинга:', error);
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
     },
   });
 };
@@ -211,63 +202,76 @@ export const useRateVideo = () => {
 export const useUploadVideo = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { triggerVideoUpload } = useAchievementTriggers();
 
   return useMutation({
-    mutationFn: async ({ title, description, videoFile }: { 
+    mutationFn: async ({ 
+      title, 
+      description, 
+      videoFile 
+    }: { 
       title: string; 
       description?: string; 
-      videoFile: File;
+      videoFile: File; 
     }) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
 
-      // Создаем уникальное имя файла
+      console.log('Starting video upload...');
+
+      // Generate a unique filename
       const fileExt = videoFile.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      console.log('Загружаем видео:', fileName);
-      
-      // Загружаем видео в Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      console.log('Uploading file to storage...', filePath);
+
+      // Upload video file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
         .from('videos')
-        .upload(fileName, videoFile);
+        .upload(filePath, videoFile);
 
       if (uploadError) {
-        console.error('Ошибка загрузки видео:', uploadError);
+        console.error('Storage upload error:', uploadError);
         throw uploadError;
       }
 
-      console.log('Видео загружено:', uploadData);
-
-      // Получаем публичный URL загруженного видео
-      const { data: urlData } = supabase.storage
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
         .from('videos')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
 
-      console.log('Публичный URL видео:', urlData.publicUrl);
+      console.log('File uploaded, creating database record...', publicUrl);
 
-      // Создаем запись в базе данных
+      // Create video record in database
       const { data: videoData, error: dbError } = await supabase
         .from('videos')
         .insert({
           title,
           description,
-          video_url: urlData.publicUrl,
-          thumbnail_url: `https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop`,
+          video_url: publicUrl,
           user_id: user.id,
         })
         .select()
         .single();
 
       if (dbError) {
-        console.error('Ошибка создания записи в БД:', dbError);
+        console.error('Database insert error:', dbError);
         throw dbError;
       }
 
-      console.log('Запись в БД создана:', videoData);
+      console.log('Video record created successfully:', videoData);
+      
+      // Trigger achievement for uploading video
+      triggerVideoUpload();
+
       return videoData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };

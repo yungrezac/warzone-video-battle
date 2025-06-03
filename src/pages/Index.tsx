@@ -1,34 +1,25 @@
 
-import React, { useState } from 'react';
-import AuthWrapper, { useAuth } from '@/components/AuthWrapper';
-import Header from '@/components/Header';
-import BottomNavbar from '@/components/BottomNavbar';
-import VideoFeed from '@/components/VideoFeed';
-import UploadVideo from '@/components/UploadVideo';
-import Market from '@/components/Market';
-import Profile from '@/components/Profile';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { Loader2 } from 'lucide-react';
+import { useState } from "react";
+import { AuthWrapper } from "@/components/AuthWrapper";
+import Header from "@/components/Header";
+import BottomNavbar from "@/components/BottomNavbar";
+import VideoFeed from "@/components/VideoFeed";
+import UploadVideo from "@/components/UploadVideo";
+import Profile from "@/components/Profile";
+import Market from "@/components/Market";
+import Achievements from "@/components/Achievements";
 
-const AppContent = () => {
-  const [activeTab, setActiveTab] = useState('feed');
-  const { user, loading } = useAuth();
-  const { data: userProfile } = useUserProfile();
+const Index = () => {
+  const [activeTab, setActiveTab] = useState('home');
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-white" />
-      </div>
-    );
-  }
-
-  const renderActiveComponent = () => {
+  const renderContent = () => {
     switch (activeTab) {
-      case 'feed':
+      case 'home':
         return <VideoFeed />;
       case 'upload':
         return <UploadVideo />;
+      case 'achievements':
+        return <Achievements />;
       case 'market':
         return <Market />;
       case 'profile':
@@ -39,28 +30,14 @@ const AppContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        userBalance={userProfile?.total_points || 0} 
-        userName={userProfile?.username || userProfile?.telegram_username || user?.username || 'Пользователь'} 
-      />
-      
-      <main className="pt-0">
-        {renderActiveComponent()}
-      </main>
-      
-      <BottomNavbar 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-      />
-    </div>
-  );
-};
-
-const Index = () => {
-  return (
     <AuthWrapper>
-      <AppContent />
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="pt-14">
+          {renderContent()}
+        </main>
+        <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
     </AuthWrapper>
   );
 };
