@@ -205,7 +205,15 @@ export type Database = {
           user_id?: string
           wins_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_saved_routes: {
         Row: {
@@ -306,6 +314,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "video_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "video_comments_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
@@ -334,6 +349,13 @@ export type Database = {
           video_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "video_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "video_likes_video_id_fkey"
             columns: ["video_id"]
@@ -369,6 +391,13 @@ export type Database = {
           video_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "video_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "video_ratings_video_id_fkey"
             columns: ["video_id"]
@@ -418,7 +447,15 @@ export type Database = {
           views?: number | null
           winner_date?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

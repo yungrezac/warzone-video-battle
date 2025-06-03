@@ -33,15 +33,17 @@ const TelegramAuth: React.FC = () => {
         .from('profiles')
         .select('*')
         .eq('telegram_id', telegramUser.id.toString())
-        .single();
+        .maybeSingle();
 
       let profileId = existingProfile?.id;
 
-      if (profileError && profileError.code === 'PGRST116') {
+      if (!existingProfile && (!profileError || profileError.code === 'PGRST116')) {
         // Пользователь не найден, создаем новый профиль
         const newUserId = crypto.randomUUID();
         
-        const { error: insertProfileError } = await supabase
+        console.log('Создаем новый профиль с ID:', newUserId);
+        
+        const { data: newProfile, error: insertProfileError } = await supabase
           .from('profiles')
           .insert({
             id: newUserId,
@@ -52,9 +54,16 @@ const TelegramAuth: React.FC = () => {
             telegram_id: telegramUser.id.toString(),
             telegram_username: telegramUser.username,
             telegram_photo_url: telegramUser.photo_url,
-          });
+          })
+          .select()
+          .single();
 
-        if (insertProfileError) throw insertProfileError;
+        if (insertProfileError) {
+          console.error('Ошибка создания профиля:', insertProfileError);
+          throw insertProfileError;
+        }
+
+        console.log('Профиль создан:', newProfile);
 
         // Создаем запись в user_points
         const { error: pointsError } = await supabase
@@ -65,12 +74,16 @@ const TelegramAuth: React.FC = () => {
             wins_count: 0,
           });
 
-        if (pointsError) throw pointsError;
+        if (pointsError) {
+          console.error('Ошибка создания points:', pointsError);
+          // Не бросаем ошибку, так как это не критично
+        }
 
         profileId = newUserId;
       } else if (profileError) {
+        console.error('Ошибка при поиске профиля:', profileError);
         throw profileError;
-      } else {
+      } else if (existingProfile) {
         // Обновляем существующий профиль актуальными данными
         const { error: updateError } = await supabase
           .from('profiles')
@@ -84,7 +97,12 @@ const TelegramAuth: React.FC = () => {
           })
           .eq('id', existingProfile.id);
 
-        if (updateError) console.error('Ошибка обновления профиля:', updateError);
+        if (updateError) {
+          console.error('Ошибка обновления профиля:', updateError);
+          // Не бросаем ошибку, так как это не критично
+        }
+        
+        profileId = existingProfile.id;
       }
 
       // Устанавливаем пользователя в контекст
@@ -98,12 +116,14 @@ const TelegramAuth: React.FC = () => {
         telegram_username: telegramUser.username,
       };
 
+      console.log('Устанавливаем пользователя:', userData);
+      
       setCurrentUser({ id: profileId, telegram_id: telegramUser.id.toString() });
       signIn(userData);
 
     } catch (err: any) {
-      setError(err.message);
       console.error('Telegram auth error:', err);
+      setError(err.message || 'Произошла ошибка при авторизации');
     } finally {
       setLoading(false);
     }
