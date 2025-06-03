@@ -1,54 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import VideoCard from './VideoCard';
+import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
+import { Loader2 } from 'lucide-react';
 
 const VideoFeed: React.FC = () => {
-  const [videos, setVideos] = useState([
-    {
-      id: '1',
-      title: 'Эпический геймплей в Warzone',
-      author: 'ProGamer123',
-      authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-      thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
-      likes: 234,
-      comments: 45,
-      rating: 4.7,
-      views: 1250,
-      isWinner: true,
-      timestamp: '2 часа назад'
-    },
-    {
-      id: '2',
-      title: 'Невероятная победа в соло',
-      author: 'WarriorKing',
-      authorAvatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop&crop=face',
-      thumbnail: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop',
-      likes: 189,
-      comments: 32,
-      rating: 4.3,
-      views: 890,
-      timestamp: '4 часа назад'
-    },
-    {
-      id: '3',
-      title: 'Команда мечты в действии',
-      author: 'TeamPlayer',
-      authorAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b8fb?w=100&h=100&fit=crop&crop=face',
-      thumbnail: 'https://images.unsplash.com/photo-1560419015-7c427e8ae5ba?w=400&h=300&fit=crop',
-      likes: 156,
-      comments: 28,
-      rating: 4.1,
-      views: 672,
-      timestamp: '6 часов назад'
-    }
-  ]);
+  const { data: videos, isLoading, error } = useVideos();
+  const likeVideoMutation = useLikeVideo();
+  const rateVideoMutation = useRateVideo();
 
-  const handleLike = (videoId: string) => {
-    setVideos(prev => prev.map(video => 
-      video.id === videoId 
-        ? { ...video, likes: video.likes + 1 }
-        : video
-    ));
+  const handleLike = (videoId: string, isCurrentlyLiked: boolean) => {
+    likeVideoMutation.mutate({ videoId, isLiked: isCurrentlyLiked });
   };
 
   const handleComment = (videoId: string) => {
@@ -57,9 +19,41 @@ const VideoFeed: React.FC = () => {
   };
 
   const handleRate = (videoId: string, rating: number) => {
-    console.log(`Rating video ${videoId} with ${rating} stars`);
-    // TODO: Implement rating system
+    rateVideoMutation.mutate({ videoId, rating });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px] pb-20">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 pb-20">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          Ошибка загрузки видео: {error.message}
+        </div>
+      </div>
+    );
+  }
+
+  if (!videos || videos.length === 0) {
+    return (
+      <div className="p-4 pb-20 text-center">
+        <div className="bg-gray-100 rounded-lg p-8">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            Пока нет видео
+          </h3>
+          <p className="text-gray-500">
+            Будьте первым, кто загрузит видео!
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-20">
@@ -74,8 +68,27 @@ const VideoFeed: React.FC = () => {
         {videos.map(video => (
           <VideoCard
             key={video.id}
-            video={video}
-            onLike={handleLike}
+            video={{
+              id: video.id,
+              title: video.title,
+              author: video.user?.username || video.user?.telegram_username || 'Пользователь',
+              authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+              thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
+              likes: video.likes_count || 0,
+              comments: video.comments_count || 0,
+              rating: video.average_rating || 0,
+              views: video.views,
+              isWinner: video.is_winner,
+              timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              userLiked: video.user_liked || false,
+              userRating: video.user_rating || 0,
+            }}
+            onLike={(id) => handleLike(id, video.user_liked || false)}
             onComment={handleComment}
             onRate={handleRate}
           />

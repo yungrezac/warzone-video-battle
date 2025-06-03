@@ -4,12 +4,15 @@ import { Upload, Video, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useUploadVideo } from '@/hooks/useVideos';
+import { useToast } from '@/hooks/use-toast';
 
 const UploadVideo: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
+  const uploadMutation = useUploadVideo();
+  const { toast } = useToast();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -21,16 +24,28 @@ const UploadVideo: React.FC = () => {
   const handleUpload = async () => {
     if (!selectedFile || !title) return;
     
-    setIsUploading(true);
-    
-    // Simulate upload process
-    setTimeout(() => {
-      setIsUploading(false);
+    try {
+      await uploadMutation.mutateAsync({
+        title,
+        description,
+        videoFile: selectedFile,
+      });
+
       setSelectedFile(null);
       setTitle('');
       setDescription('');
-      alert('Видео успешно загружено! Оно появится в ленте после модерации.');
-    }, 2000);
+      
+      toast({
+        title: "Успешно!",
+        description: "Видео успешно загружено и появится в ленте после модерации.",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить видео. Попробуйте еще раз.",
+        variant: "destructive",
+      });
+    }
   };
 
   const removeFile = () => {
@@ -124,10 +139,10 @@ const UploadVideo: React.FC = () => {
 
         <Button
           onClick={handleUpload}
-          disabled={!selectedFile || !title || isUploading}
+          disabled={!selectedFile || !title || uploadMutation.isPending}
           className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
         >
-          {isUploading ? 'Загрузка...' : 'Загрузить видео'}
+          {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить видео'}
         </Button>
       </div>
     </div>

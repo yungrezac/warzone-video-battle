@@ -15,6 +15,8 @@ interface Video {
   views: number;
   isWinner?: boolean;
   timestamp: string;
+  userLiked?: boolean;
+  userRating?: number;
 }
 
 interface VideoCardProps {
@@ -25,17 +27,9 @@ interface VideoCardProps {
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onComment, onRate }) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [userRating, setUserRating] = useState(0);
   const [showRating, setShowRating] = useState(false);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    onLike(video.id);
-  };
-
   const handleRate = (rating: number) => {
-    setUserRating(rating);
     onRate(video.id, rating);
     setShowRating(false);
   };
@@ -83,10 +77,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onComment, onRate 
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleLike}
-              className={`${isLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500`}
+              onClick={() => onLike(video.id)}
+              className={`${video.userLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500`}
             >
-              <Heart className={`w-5 h-5 mr-1 ${isLiked ? 'fill-current' : ''}`} />
+              <Heart className={`w-5 h-5 mr-1 ${video.userLiked ? 'fill-current' : ''}`} />
               {video.likes}
             </Button>
 
@@ -125,7 +119,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onComment, onRate 
                   className="p-1"
                 >
                   <Star 
-                    className={`w-6 h-6 ${star <= userRating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+                    className={`w-6 h-6 ${star <= (video.userRating || 0) ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
                   />
                 </Button>
               ))}

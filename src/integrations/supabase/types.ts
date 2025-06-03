@@ -50,8 +50,11 @@ export type Database = {
           created_at: string
           first_name: string | null
           id: string
+          is_premium: boolean | null
           last_name: string | null
           telegram_id: string | null
+          telegram_photo_url: string | null
+          telegram_username: string | null
           updated_at: string
           username: string | null
         }
@@ -60,8 +63,11 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id?: string
+          is_premium?: boolean | null
           last_name?: string | null
           telegram_id?: string | null
+          telegram_photo_url?: string | null
+          telegram_username?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -70,8 +76,11 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id?: string
+          is_premium?: boolean | null
           last_name?: string | null
           telegram_id?: string | null
+          telegram_photo_url?: string | null
+          telegram_username?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -171,6 +180,33 @@ export type Database = {
           },
         ]
       }
+      user_points: {
+        Row: {
+          created_at: string
+          id: string
+          total_points: number | null
+          updated_at: string
+          user_id: string
+          wins_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          total_points?: number | null
+          updated_at?: string
+          user_id: string
+          wins_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          total_points?: number | null
+          updated_at?: string
+          user_id?: string
+          wins_count?: number | null
+        }
+        Relationships: []
+      }
       user_saved_routes: {
         Row: {
           created_at: string
@@ -242,6 +278,147 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      video_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_likes: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_ratings_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_winner: boolean | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string
+          views: number | null
+          winner_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_winner?: boolean | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+          views?: number | null
+          winner_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_winner?: boolean | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+          views?: number | null
+          winner_date?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
