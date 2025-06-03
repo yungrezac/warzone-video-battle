@@ -3,13 +3,53 @@ import React from 'react';
 import { Calendar, Trophy, Video } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
+import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
 import { Loader2 } from 'lucide-react';
+import VideoCard from './VideoCard';
+import { toast } from 'sonner';
 
 const Profile: React.FC = () => {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: userVideos, isLoading: videosLoading } = useUserVideos();
   const { user } = useAuth();
+  const likeVideoMutation = useLikeVideo();
+  const rateVideoMutation = useRateVideo();
+
+  const handleLike = async (videoId: string) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить лайки');
+      return;
+    }
+
+    const video = userVideos?.find(v => v.id === videoId);
+    if (video) {
+      console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
+      try {
+        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
+        toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
+      } catch (error) {
+        console.error('Ошибка при обработке лайка:', error);
+        toast.error('Ошибка при обработке лайка');
+      }
+    }
+  };
+
+  const handleRate = async (videoId: string, rating: number) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить оценки');
+      return;
+    }
+
+    console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
+    try {
+      await rateVideoMutation.mutateAsync({ videoId, rating });
+      toast.success(`Оценка ${rating} поставлена`);
+    } catch (error) {
+      console.error('Ошибка при выставлении оценки:', error);
+      toast.error('Ошибка при выставлении оценки');
+    }
+  };
 
   if (profileLoading) {
     return (
@@ -116,6 +156,7 @@ const Profile: React.FC = () => {
           </div>
         )}
 
+        {/* Video Feed Section */}
         <div className="bg-white rounded-lg shadow-md p-4">
           <h3 className="text-lg font-semibold mb-4 flex items-center">
             <Video className="w-5 h-5 mr-2 text-purple-500" />
@@ -132,30 +173,35 @@ const Profile: React.FC = () => {
               <p className="text-sm mt-2">Загрузите свой первый трюк во вкладке "Загрузить"</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {userVideos?.slice(0, 3).map(video => (
-                <div key={video.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <img
-                    src={video.thumbnail_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=60&fit=crop'}
-                    alt={video.title}
-                    className="w-16 h-12 rounded object-cover"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">{video.title}</h4>
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                      <span>👁 {video.views}</span>
-                      <span>❤️ {video.likes_count}</span>
-                      <span>💬 {video.comments_count}</span>
-                      <span>⭐ {video.average_rating.toFixed(1)}</span>
-                    </div>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              {userVideos?.map(video => (
+                <VideoCard
+                  key={video.id}
+                  video={{
+                    id: video.id,
+                    title: video.title,
+                    author: displayUser.username || displayUser.telegram_username || 'Роллер',
+                    authorAvatar: displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                    thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                    videoUrl: video.video_url,
+                    likes: video.likes_count || 0,
+                    comments: video.comments_count || 0,
+                    rating: video.average_rating || 0,
+                    views: video.views,
+                    isWinner: video.is_winner,
+                    timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }),
+                    userLiked: video.user_liked || false,
+                    userRating: video.user_rating || 0,
+                  }}
+                  onLike={handleLike}
+                  onRate={handleRate}
+                />
               ))}
-              {(userVideos?.length || 0) > 3 && (
-                <p className="text-center text-sm text-gray-500 mt-3">
-                  И ещё {(userVideos?.length || 0) - 3} видео...
-                </p>
-              )}
             </div>
           )}
         </div>

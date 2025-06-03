@@ -46,10 +46,27 @@ export const useUserVideos = () => {
             ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
             : 0;
 
+          // Лайкнул ли текущий пользователь и его рейтинг
+          const { data: userLike } = await supabase
+            .from('video_likes')
+            .select('*')
+            .eq('video_id', video.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          const { data: userRatingData } = await supabase
+            .from('video_ratings')
+            .select('rating')
+            .eq('video_id', video.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
           console.log(`Статистика видео ${video.id}:`, {
             likes: likesCount,
             comments: commentsCount,
-            avgRating: averageRating
+            avgRating: averageRating,
+            userLiked: !!userLike,
+            userRating: userRatingData?.rating || 0
           });
 
           return {
@@ -57,6 +74,8 @@ export const useUserVideos = () => {
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
             average_rating: Number(averageRating.toFixed(1)),
+            user_liked: !!userLike,
+            user_rating: userRatingData?.rating || 0,
           };
         })
       );
