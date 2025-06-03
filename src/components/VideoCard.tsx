@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { Heart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Link, useLocation } from 'react-router-dom';
 import VideoPlayer from './VideoPlayer';
 import VideoComments from './VideoComments';
@@ -51,26 +53,30 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
       
       <div className="relative">
         {video.videoUrl ? (
-          <VideoPlayer
-            src={video.videoUrl}
-            thumbnail={video.thumbnail}
-            title={video.title}
-            className="w-full h-60"
-            videoId={video.id}
-          />
-        ) : (
-          <div className="relative">
-            <img 
-              src={video.thumbnail} 
-              alt={video.title}
-              className="w-full h-60 object-contain bg-black"
+          <AspectRatio ratio={16 / 9} className="bg-black">
+            <VideoPlayer
+              src={video.videoUrl}
+              thumbnail={video.thumbnail}
+              title={video.title}
+              className="w-full h-full"
+              videoId={video.id}
             />
-            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-              <div className="text-white text-center">
-                <p className="text-sm opacity-75">Видео недоступно</p>
+          </AspectRatio>
+        ) : (
+          <AspectRatio ratio={16 / 9} className="bg-black">
+            <div className="relative w-full h-full">
+              <img 
+                src={video.thumbnail} 
+                alt={video.title}
+                className="w-full h-full object-contain"
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <p className="text-sm opacity-75">Видео недоступно</p>
+                </div>
               </div>
             </div>
-          </div>
+          </AspectRatio>
         )}
         
         <div className="absolute top-1 right-1 bg-black bg-opacity-60 text-white px-1.5 py-0.5 rounded text-xs">
