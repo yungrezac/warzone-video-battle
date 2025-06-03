@@ -64,7 +64,10 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none p-0 flex flex-col">
+      <DialogContent 
+        className="w-screen h-screen max-w-none max-h-none m-0 rounded-none p-0 flex flex-col"
+        hideCloseButton={true}
+      >
         <DialogHeader className="p-4 border-b bg-white">
           <div className="flex items-center justify-between">
             <DialogTitle>Комментарии ({comments?.length || commentsCount})</DialogTitle>
