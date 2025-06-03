@@ -9,7 +9,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ userBalance, userName }) => {
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 sticky top-0 z-40">
+    <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 pt-8 sticky top-0 z-40">
       <div className="flex items-center justify-center">
         <div className="flex items-center">
           <div className="bg-white bg-opacity-20 rounded-full p-1.5 mr-2">
