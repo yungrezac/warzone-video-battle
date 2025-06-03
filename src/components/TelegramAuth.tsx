@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from './AuthWrapper';
+import { setCurrentUser } from '@/hooks/useVideos';
 
 interface TelegramUser {
   id: number;
@@ -17,41 +19,71 @@ interface TelegramUser {
 const TelegramAuth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { signIn } = useAuth();
 
   const handleTelegramAuth = async (telegramUser: TelegramUser) => {
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: `telegram_${telegramUser.id}@wzb.com`,
-        password: `telegram_${telegramUser.id}_${telegramUser.hash}`,
-      });
+      // Проверяем существует ли пользователь в profiles
+      const { data: existingProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('telegram_id', telegramUser.id.toString())
+        .single();
 
-      if (error && error.message.includes('Invalid login credentials')) {
-        // Пользователь не существует, создаем нового
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: `telegram_${telegramUser.id}@wzb.com`,
-          password: `telegram_${telegramUser.id}_${telegramUser.hash}`,
-          options: {
-            data: {
-              username: telegramUser.username || `user_${telegramUser.id}`,
-              first_name: telegramUser.first_name,
-              last_name: telegramUser.last_name,
-              avatar_url: telegramUser.photo_url,
-              telegram_id: telegramUser.id.toString(),
-              telegram_username: telegramUser.username,
-              telegram_photo_url: telegramUser.photo_url,
-            },
-          },
-        });
+      let profileId = existingProfile?.id;
 
-        if (signUpError) {
-          throw signUpError;
-        }
-      } else if (error) {
-        throw error;
+      if (profileError && profileError.code === 'PGRST116') {
+        // Пользователь не найден, создаем новый профиль
+        const newUserId = crypto.randomUUID();
+        
+        const { error: insertProfileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: newUserId,
+            username: telegramUser.username || `user_${telegramUser.id}`,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name,
+            avatar_url: telegramUser.photo_url,
+            telegram_id: telegramUser.id.toString(),
+            telegram_username: telegramUser.username,
+            telegram_photo_url: telegramUser.photo_url,
+          });
+
+        if (insertProfileError) throw insertProfileError;
+
+        // Создаем запись в user_points
+        const { error: pointsError } = await supabase
+          .from('user_points')
+          .insert({
+            user_id: newUserId,
+            total_points: 0,
+            wins_count: 0,
+          });
+
+        if (pointsError) throw pointsError;
+
+        profileId = newUserId;
+      } else if (profileError) {
+        throw profileError;
       }
+
+      // Устанавливаем пользователя в контекст
+      const userData = {
+        id: profileId,
+        telegram_id: telegramUser.id.toString(),
+        username: telegramUser.username || `user_${telegramUser.id}`,
+        first_name: telegramUser.first_name,
+        last_name: telegramUser.last_name,
+        avatar_url: telegramUser.photo_url,
+        telegram_username: telegramUser.username,
+      };
+
+      setCurrentUser({ id: profileId, telegram_id: telegramUser.id.toString() });
+      signIn(userData);
+
     } catch (err: any) {
       setError(err.message);
       console.error('Telegram auth error:', err);

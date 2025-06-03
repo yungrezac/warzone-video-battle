@@ -1,21 +1,21 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthWrapper';
+import { getCurrentUser } from './useVideos';
 
 export const useUserProfile = () => {
-  const { user } = useAuth();
+  const currentUser = getCurrentUser();
 
   return useQuery({
-    queryKey: ['user-profile', user?.id],
+    queryKey: ['user-profile', currentUser?.id],
     queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
+      if (!currentUser) throw new Error('User not authenticated');
 
       // Получаем профиль пользователя
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', currentUser.id)
         .single();
 
       if (profileError) throw profileError;
@@ -24,7 +24,7 @@ export const useUserProfile = () => {
       const { data: points, error: pointsError } = await supabase
         .from('user_points')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUser.id)
         .single();
 
       if (pointsError) throw pointsError;
@@ -33,13 +33,13 @@ export const useUserProfile = () => {
       const { count: videosCount } = await supabase
         .from('videos')
         .select('*', { count: 'exact' })
-        .eq('user_id', user.id);
+        .eq('user_id', currentUser.id);
 
       // Получаем общее количество лайков на всех видео пользователя
       const { data: userVideos } = await supabase
         .from('videos')
         .select('id')
-        .eq('user_id', user.id);
+        .eq('user_id', currentUser.id);
 
       let totalLikes = 0;
       let totalViews = 0;
@@ -57,7 +57,7 @@ export const useUserProfile = () => {
         const { data: viewsData } = await supabase
           .from('videos')
           .select('views')
-          .eq('user_id', user.id);
+          .eq('user_id', currentUser.id);
 
         totalViews = viewsData?.reduce((sum, v) => sum + v.views, 0) || 0;
       }
@@ -71,6 +71,6 @@ export const useUserProfile = () => {
         total_views: totalViews,
       };
     },
-    enabled: !!user,
+    enabled: !!currentUser,
   });
 };

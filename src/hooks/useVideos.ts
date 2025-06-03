@@ -1,7 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthWrapper';
 
 export interface Video {
   id: string;
@@ -26,9 +25,16 @@ export interface Video {
   user_rating?: number;
 }
 
-export const useVideos = () => {
-  const { user } = useAuth();
+// Для хранения текущего пользователя (из Telegram)
+let currentUser: { id: string; telegram_id: string } | null = null;
 
+export const setCurrentUser = (user: { id: string; telegram_id: string }) => {
+  currentUser = user;
+};
+
+export const getCurrentUser = () => currentUser;
+
+export const useVideos = () => {
   return useQuery({
     queryKey: ['videos'],
     queryFn: async () => {
@@ -75,12 +81,12 @@ export const useVideos = () => {
           let userLiked = false;
           let userRating = 0;
 
-          if (user) {
+          if (currentUser) {
             const { data: userLike } = await supabase
               .from('video_likes')
               .select('*')
               .eq('video_id', video.id)
-              .eq('user_id', user.id)
+              .eq('user_id', currentUser.id)
               .single();
 
             userLiked = !!userLike;
@@ -89,7 +95,7 @@ export const useVideos = () => {
               .from('video_ratings')
               .select('rating')
               .eq('video_id', video.id)
-              .eq('user_id', user.id)
+              .eq('user_id', currentUser.id)
               .single();
 
             userRating = userRatingData?.rating || 0;
@@ -109,17 +115,15 @@ export const useVideos = () => {
 
       return videosWithStats;
     },
-    enabled: !!user,
   });
 };
 
 export const useLikeVideo = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
-      if (!user) throw new Error('User not authenticated');
+      if (!currentUser) throw new Error('User not authenticated');
 
       if (isLiked) {
         // Убираем лайк
@@ -127,7 +131,7 @@ export const useLikeVideo = () => {
           .from('video_likes')
           .delete()
           .eq('video_id', videoId)
-          .eq('user_id', user.id);
+          .eq('user_id', currentUser.id);
 
         if (error) throw error;
       } else {
@@ -136,7 +140,7 @@ export const useLikeVideo = () => {
           .from('video_likes')
           .insert({
             video_id: videoId,
-            user_id: user.id,
+            user_id: currentUser.id,
           });
 
         if (error) throw error;
@@ -150,17 +154,16 @@ export const useLikeVideo = () => {
 
 export const useRateVideo = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ videoId, rating }: { videoId: string; rating: number }) => {
-      if (!user) throw new Error('User not authenticated');
+      if (!currentUser) throw new Error('User not authenticated');
 
       const { error } = await supabase
         .from('video_ratings')
         .upsert({
           video_id: videoId,
-          user_id: user.id,
+          user_id: currentUser.id,
           rating,
         });
 
@@ -174,7 +177,6 @@ export const useRateVideo = () => {
 
 export const useUploadVideo = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ title, description, videoFile }: { 
@@ -182,7 +184,7 @@ export const useUploadVideo = () => {
       description?: string; 
       videoFile: File;
     }) => {
-      if (!user) throw new Error('User not authenticated');
+      if (!currentUser) throw new Error('User not authenticated');
 
       // Здесь будет логика загрузки файла в Supabase Storage
       // Пока что просто создаем запись с mock URL
@@ -193,7 +195,7 @@ export const useUploadVideo = () => {
           description,
           video_url: `https://example.com/videos/${Date.now()}.mp4`,
           thumbnail_url: `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop`,
-          user_id: user.id,
+          user_id: currentUser.id,
         });
 
       if (error) throw error;
