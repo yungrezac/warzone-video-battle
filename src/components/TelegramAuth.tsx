@@ -114,7 +114,9 @@ const TelegramAuth: React.FC = () => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
-      tg.expand();
+      if (tg.expand) {
+        tg.expand();
+      }
 
       console.log('Telegram WebApp данные:', tg.initDataUnsafe);
 

@@ -55,7 +55,9 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           tg.ready();
           
           // Расширяем приложение на весь экран
-          tg.expand();
+          if (tg.expand) {
+            tg.expand();
+          }
           
           // Получаем данные пользователя из Telegram
           if (tg.initDataUnsafe?.user) {
