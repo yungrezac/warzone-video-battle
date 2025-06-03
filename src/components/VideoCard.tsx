@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, Star } from 'lucide-react';
+import { Heart, Star, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Link, useLocation } from 'react-router-dom';
@@ -78,10 +78,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             </div>
           </AspectRatio>
         )}
-        
-        <div className="absolute top-1 right-1 bg-black bg-opacity-60 text-white px-1.5 py-0.5 rounded text-xs">
-          {video.views} просмотров
-        </div>
       </div>
 
       <div className="p-2">
@@ -139,6 +135,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             >
               <Star className="w-3.5 h-3.5 mr-1" />
               <span className="text-xs">{video.rating.toFixed(1)}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 h-7 px-1.5"
+            >
+              <Eye className="w-3.5 h-3.5 mr-1" />
+              <span className="text-xs">{video.views}</span>
             </Button>
           </div>
         </div>
