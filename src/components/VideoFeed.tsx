@@ -1,3 +1,4 @@
+
 import React from 'react';
 import VideoCard from './VideoCard';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
@@ -97,7 +98,7 @@ const VideoFeed: React.FC = () => {
               title: video.title,
               author: video.user?.username || video.user?.telegram_username || 'Роллер',
               authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-              thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
+              thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
               videoUrl: video.video_url,
               likes: video.likes_count || 0,
               comments: video.comments_count || 0,

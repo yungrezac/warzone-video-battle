@@ -76,7 +76,7 @@ export const useUserVideos = () => {
             average_rating: Number(averageRating.toFixed(1)),
             user_liked: !!userLike,
             user_rating: userRatingData?.rating || 0,
-            // Обновляем thumbnail для роликов
+            // Обновляем thumbnail для роликов с роллерской тематикой
             thumbnail_url: video.thumbnail_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
           };
         })

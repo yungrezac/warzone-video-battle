@@ -146,7 +146,7 @@ const UserProfile: React.FC = () => {
             average_rating: Number(averageRating.toFixed(1)),
             user_liked: userLiked,
             user_rating: userRating,
-            thumbnail_url: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
+            thumbnail_url: video.thumbnail_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
           };
         })
       );
@@ -328,7 +328,7 @@ const UserProfile: React.FC = () => {
                     title: video.title,
                     author: userProfile.username || userProfile.telegram_username || 'Роллер',
                     authorAvatar: userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-                    thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
+                    thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
                     videoUrl: video.video_url,
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
