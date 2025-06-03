@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Upload, Video, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,22 @@ const UploadVideo: React.FC = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
+      // Проверяем размер файла (100MB = 100 * 1024 * 1024 bytes)
+      if (file.size > 100 * 1024 * 1024) {
+        toast({
+          title: "Ошибка",
+          description: "Размер файла не должен превышать 100MB",
+          variant: "destructive",
+        });
+        return;
+      }
       setSelectedFile(file);
+    } else {
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, выберите видео файл",
+        variant: "destructive",
+      });
     }
   };
 
@@ -27,27 +41,42 @@ const UploadVideo: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !title) return;
+    if (!selectedFile || !title.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, выберите файл и введите название",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
+      console.log('Начинаем загрузку видео...');
       await uploadMutation.mutateAsync({
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim() || undefined,
         videoFile: selectedFile,
       });
 
+      // Очищаем форму после успешной загрузки
       setSelectedFile(null);
       setTitle('');
       setDescription('');
+      
+      // Сбрасываем input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       
       toast({
         title: "Успешно!",
         description: "Видео успешно загружено и появится в ленте после модерации.",
       });
     } catch (error) {
+      console.error('Ошибка загрузки:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось загрузить видео. Попробуйте еще раз.",
+        description: `Не удалось загрузить видео: ${error.message || 'Попробуйте еще раз'}`,
         variant: "destructive",
       });
     }
@@ -146,7 +175,7 @@ const UploadVideo: React.FC = () => {
 
         <Button
           onClick={handleUpload}
-          disabled={!selectedFile || !title || uploadMutation.isPending}
+          disabled={!selectedFile || !title.trim() || uploadMutation.isPending}
           className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
         >
           {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить трюк'}

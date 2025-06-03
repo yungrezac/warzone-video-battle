@@ -187,19 +187,51 @@ export const useUploadVideo = () => {
     }) => {
       if (!currentUser) throw new Error('User not authenticated');
 
-      // Здесь будет логика загрузки файла в Supabase Storage
-      // Пока что просто создаем запись с mock URL
-      const { error } = await supabase
+      // Создаем уникальное имя файла
+      const fileExt = videoFile.name.split('.').pop();
+      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+      
+      console.log('Загружаем видео:', fileName);
+      
+      // Загружаем видео в Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(fileName, videoFile);
+
+      if (uploadError) {
+        console.error('Ошибка загрузки видео:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Видео загружено:', uploadData);
+
+      // Получаем публичный URL загруженного видео
+      const { data: urlData } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName);
+
+      console.log('Публичный URL видео:', urlData.publicUrl);
+
+      // Создаем запись в базе данных
+      const { data: videoData, error: dbError } = await supabase
         .from('videos')
         .insert({
           title,
           description,
-          video_url: `https://example.com/videos/${Date.now()}.mp4`,
+          video_url: urlData.publicUrl,
           thumbnail_url: `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop`,
           user_id: currentUser.id,
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (dbError) {
+        console.error('Ошибка создания записи в БД:', dbError);
+        throw dbError;
+      }
+
+      console.log('Запись в БД создана:', videoData);
+      return videoData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
