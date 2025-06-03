@@ -53,7 +53,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
       
       <div className="relative">
         {video.videoUrl ? (
-          <AspectRatio ratio={16 / 9} className="bg-black">
+          <AspectRatio ratio={9 / 16} className="bg-black">
             <VideoPlayer
               src={video.videoUrl}
               thumbnail={video.thumbnail}
@@ -63,7 +63,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             />
           </AspectRatio>
         ) : (
-          <AspectRatio ratio={16 / 9} className="bg-black">
+          <AspectRatio ratio={9 / 16} className="bg-black">
             <div className="relative w-full h-full">
               <img 
                 src={video.thumbnail} 
