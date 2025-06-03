@@ -2,19 +2,32 @@
 import React, { useState, useRef } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIncrementVideoViews } from '@/hooks/useVideoViews';
 
 interface VideoPlayerProps {
   src: string;
   thumbnail: string;
   title: string;
   className?: string;
+  videoId?: string;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, className = '' }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, className = '', videoId }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [hasIncrementedView, setHasIncrementedView] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const incrementViewsMutation = useIncrementVideoViews();
+
+  const handleVideoPlay = () => {
+    // Увеличиваем просмотры только один раз при первом воспроизведении
+    if (videoId && !hasIncrementedView) {
+      console.log('Первое воспроизведение видео, увеличиваем просмотры');
+      incrementViewsMutation.mutate(videoId);
+      setHasIncrementedView(true);
+    }
+  };
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -22,6 +35,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
         videoRef.current.pause();
       } else {
         videoRef.current.play();
+        handleVideoPlay();
       }
       setIsPlaying(!isPlaying);
     }
@@ -60,6 +74,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     }
   };
 
+  const handleVideoPlayEvent = () => {
+    setIsPlaying(true);
+    handleVideoPlay();
+  };
+
+  const handleVideoPauseEvent = () => {
+    setIsPlaying(false);
+  };
+
   return (
     <div 
       className={`relative bg-black rounded-lg overflow-hidden ${className}`}
@@ -73,6 +96,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
         className="w-full h-full object-cover cursor-pointer"
         onClick={handleVideoClick}
         onEnded={handleVideoEnd}
+        onPlay={handleVideoPlayEvent}
+        onPause={handleVideoPauseEvent}
         playsInline
         preload="metadata"
       />

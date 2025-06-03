@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Heart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,6 +50,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             thumbnail={video.thumbnail}
             title={video.title}
             className="w-full h-64"
+            videoId={video.id}
           />
         ) : (
           <div className="relative">
