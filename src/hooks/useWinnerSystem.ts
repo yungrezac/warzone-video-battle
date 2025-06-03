@@ -143,12 +143,20 @@ export const useCalculateWinner = () => {
         throw updateError;
       }
 
-      // Начисляем баллы пользователю
-      const { error: pointsError } = await supabase.rpc('increment_user_points', {
-        user_id_param: bestVideo.user_id,
-        points_to_add: 100,
-        increment_wins: true
-      });
+      // Начисляем баллы пользователю - используем обычный update вместо несуществующей функции
+      const { data: currentPoints } = await supabase
+        .from('user_points')
+        .select('total_points, wins_count')
+        .eq('user_id', bestVideo.user_id)
+        .single();
+
+      const { error: pointsError } = await supabase
+        .from('user_points')
+        .update({
+          total_points: (currentPoints?.total_points || 0) + 100,
+          wins_count: (currentPoints?.wins_count || 0) + 1
+        })
+        .eq('user_id', bestVideo.user_id);
 
       if (pointsError) {
         console.error('Ошибка начисления баллов:', pointsError);
