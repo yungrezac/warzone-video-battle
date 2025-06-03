@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthWrapper';
 
 export interface Video {
   id: string;
@@ -25,26 +26,24 @@ export interface Video {
   user_rating?: number;
 }
 
-// Для хранения текущего пользователя (из Telegram)
-let currentUser: { id: string; telegram_id: string } | null = null;
-
-export const setCurrentUser = (user: { id: string; telegram_id: string }) => {
-  currentUser = user;
-};
-
-export const getCurrentUser = () => currentUser;
-
 export const useVideos = () => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['videos'],
+    queryKey: ['videos', user?.id],
     queryFn: async () => {
-      // Сначала получаем видео
+      console.log('Загружаем видео для пользователя:', user?.id);
+      
+      // Получаем видео
       const { data: videos, error } = await supabase
         .from('videos')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка загрузки видео:', error);
+        throw error;
+      }
 
       // Получаем дополнительную статистику для каждого видео
       const videosWithStats = await Promise.all(
@@ -78,17 +77,17 @@ export const useVideos = () => {
             ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
             : 0;
 
-          // Лайкнул ли текущий пользователь
+          // Лайкнул ли текущий пользователь и его рейтинг
           let userLiked = false;
           let userRating = 0;
 
-          if (currentUser) {
+          if (user?.id) {
             const { data: userLike } = await supabase
               .from('video_likes')
               .select('*')
               .eq('video_id', video.id)
-              .eq('user_id', currentUser.id)
-              .single();
+              .eq('user_id', user.id)
+              .maybeSingle();
 
             userLiked = !!userLike;
 
@@ -96,8 +95,8 @@ export const useVideos = () => {
               .from('video_ratings')
               .select('rating')
               .eq('video_id', video.id)
-              .eq('user_id', currentUser.id)
-              .single();
+              .eq('user_id', user.id)
+              .maybeSingle();
 
             userRating = userRatingData?.rating || 0;
           }
@@ -114,6 +113,7 @@ export const useVideos = () => {
         })
       );
 
+      console.log('Видео с статистикой загружены:', videosWithStats);
       return videosWithStats;
     },
   });
@@ -121,10 +121,16 @@ export const useVideos = () => {
 
 export const useLikeVideo = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
-      if (!currentUser) throw new Error('User not authenticated');
+      if (!user?.id) {
+        console.error('Пользователь не авторизован');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Обрабатываем лайк:', { videoId, isLiked, userId: user.id });
 
       if (isLiked) {
         // Убираем лайк
@@ -132,52 +138,80 @@ export const useLikeVideo = () => {
           .from('video_likes')
           .delete()
           .eq('video_id', videoId)
-          .eq('user_id', currentUser.id);
+          .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Ошибка удаления лайка:', error);
+          throw error;
+        }
+        console.log('Лайк удален');
       } else {
         // Ставим лайк
         const { error } = await supabase
           .from('video_likes')
           .insert({
             video_id: videoId,
-            user_id: currentUser.id,
+            user_id: user.id,
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Ошибка добавления лайка:', error);
+          throw error;
+        }
+        console.log('Лайк добавлен');
       }
     },
     onSuccess: () => {
+      console.log('Лайк успешно обработан, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+    },
+    onError: (error) => {
+      console.error('Ошибка обработки лайка:', error);
     },
   });
 };
 
 export const useRateVideo = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ videoId, rating }: { videoId: string; rating: number }) => {
-      if (!currentUser) throw new Error('User not authenticated');
+      if (!user?.id) {
+        console.error('Пользователь не авторизован');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Обрабатываем рейтинг:', { videoId, rating, userId: user.id });
 
       const { error } = await supabase
         .from('video_ratings')
         .upsert({
           video_id: videoId,
-          user_id: currentUser.id,
+          user_id: user.id,
           rating,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка установки рейтинга:', error);
+        throw error;
+      }
+      
+      console.log('Рейтинг установлен');
     },
     onSuccess: () => {
+      console.log('Рейтинг успешно установлен, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+    },
+    onError: (error) => {
+      console.error('Ошибка установки рейтинга:', error);
     },
   });
 };
 
 export const useUploadVideo = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ title, description, videoFile }: { 
@@ -185,11 +219,11 @@ export const useUploadVideo = () => {
       description?: string; 
       videoFile: File;
     }) => {
-      if (!currentUser) throw new Error('User not authenticated');
+      if (!user?.id) throw new Error('User not authenticated');
 
       // Создаем уникальное имя файла
       const fileExt = videoFile.name.split('.').pop();
-      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
       console.log('Загружаем видео:', fileName);
       
@@ -220,7 +254,7 @@ export const useUploadVideo = () => {
           description,
           video_url: urlData.publicUrl,
           thumbnail_url: `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop`,
-          user_id: currentUser.id,
+          user_id: user.id,
         })
         .select()
         .single();

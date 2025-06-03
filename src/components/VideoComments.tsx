@@ -7,6 +7,7 @@ import { MessageCircle, Send, User } from 'lucide-react';
 import { useVideoComments, useAddComment } from '@/hooks/useVideoComments';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
+import { toast } from 'sonner';
 
 interface VideoCommentsProps {
   videoId: string;
@@ -21,15 +22,20 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
   const { data: comments, isLoading } = useVideoComments(videoId);
   const addCommentMutation = useAddComment();
 
-  console.log('VideoComments render:', { videoId, commentsCount, comments, isLoading });
+  console.log('VideoComments рендер:', { videoId, commentsCount, comments, isLoading, user: user?.id });
 
   const handleSubmitComment = async () => {
-    if (!newComment.trim() || !user) {
-      console.log('Cannot submit comment:', { hasContent: !!newComment.trim(), hasUser: !!user });
+    if (!newComment.trim()) {
+      toast.error('Введите текст комментария');
       return;
     }
     
-    console.log('Submitting comment:', { videoId, content: newComment.trim() });
+    if (!user) {
+      toast.error('Войдите в систему, чтобы оставлять комментарии');
+      return;
+    }
+    
+    console.log('Отправляем комментарий:', { videoId, content: newComment.trim() });
     
     try {
       await addCommentMutation.mutateAsync({
@@ -37,9 +43,11 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
         content: newComment.trim(),
       });
       setNewComment('');
-      console.log('Comment submitted successfully');
+      toast.success('Комментарий добавлен');
+      console.log('Комментарий успешно отправлен');
     } catch (error) {
       console.error('Ошибка добавления комментария:', error);
+      toast.error('Ошибка добавления комментария');
     }
   };
 

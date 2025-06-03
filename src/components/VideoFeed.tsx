@@ -3,21 +3,48 @@ import React from 'react';
 import VideoCard from './VideoCard';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/components/AuthWrapper';
+import { toast } from 'sonner';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error } = useVideos();
+  const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
 
-  const handleLike = (videoId: string) => {
+  const handleLike = async (videoId: string) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить лайки');
+      return;
+    }
+
     const video = videos?.find(v => v.id === videoId);
     if (video) {
-      likeVideoMutation.mutate({ videoId, isLiked: video.user_liked || false });
+      console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
+      try {
+        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
+        toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
+      } catch (error) {
+        console.error('Ошибка при обработке лайка:', error);
+        toast.error('Ошибка при обработке лайка');
+      }
     }
   };
 
-  const handleRate = (videoId: string, rating: number) => {
-    rateVideoMutation.mutate({ videoId, rating });
+  const handleRate = async (videoId: string, rating: number) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить оценки');
+      return;
+    }
+
+    console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
+    try {
+      await rateVideoMutation.mutateAsync({ videoId, rating });
+      toast.success(`Оценка ${rating} поставлена`);
+    } catch (error) {
+      console.error('Ошибка при выставлении оценки:', error);
+      toast.error('Ошибка при выставлении оценки');
+    }
   };
 
   if (isLoading) {

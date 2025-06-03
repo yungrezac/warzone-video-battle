@@ -21,7 +21,7 @@ export const useVideoComments = (videoId: string) => {
   return useQuery({
     queryKey: ['video-comments', videoId],
     queryFn: async () => {
-      console.log('Fetching comments for video:', videoId);
+      console.log('Загружаем комментарии для видео:', videoId);
       
       const { data: comments, error } = await supabase
         .from('video_comments')
@@ -33,11 +33,11 @@ export const useVideoComments = (videoId: string) => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching comments:', error);
+        console.error('Ошибка загрузки комментариев:', error);
         throw error;
       }
       
-      console.log('Comments fetched:', comments);
+      console.log('Комментарии загружены:', comments);
       return comments as VideoComment[];
     },
     enabled: !!videoId,
@@ -50,9 +50,12 @@ export const useAddComment = () => {
 
   return useMutation({
     mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
-      console.log('Adding comment:', { videoId, content, userId: user?.id });
-      
-      if (!user) throw new Error('User not authenticated');
+      if (!user?.id) {
+        console.error('Пользователь не авторизован');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Добавляем комментарий:', { videoId, content, userId: user.id });
 
       const { data, error } = await supabase
         .from('video_comments')
@@ -68,22 +71,22 @@ export const useAddComment = () => {
         .single();
 
       if (error) {
-        console.error('Error adding comment:', error);
+        console.error('Ошибка добавления комментария:', error);
         throw error;
       }
       
-      console.log('Comment added:', data);
+      console.log('Комментарий добавлен:', data);
       return data;
     },
     onSuccess: (data, { videoId }) => {
-      console.log('Comment mutation successful, invalidating queries');
-      // Инвалидируем и обновляем кэш комментариев для данного видео
+      console.log('Комментарий успешно добавлен, обновляем кэш');
+      // Обновляем кэш комментариев для данного видео
       queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       // Также обновляем счетчик комментариев в списке видео
       queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
     onError: (error) => {
-      console.error('Comment mutation failed:', error);
+      console.error('Ошибка добавления комментария:', error);
     },
   });
 };
