@@ -161,10 +161,24 @@ export const useUpdateAchievementProgress = () => {
         if (isNowCompleted && !userAchievement.is_completed) {
           console.log('Достижение завершено! Добавляем баллы:', achievement.reward_points);
           
+          // Получаем текущие баллы
+          const { data: currentPoints, error: pointsSelectError } = await supabase
+            .from('user_points')
+            .select('total_points')
+            .eq('user_id', user.id)
+            .single();
+
+          if (pointsSelectError) {
+            console.error('Ошибка получения текущих баллов:', pointsSelectError);
+            continue;
+          }
+
+          const newTotalPoints = (currentPoints?.total_points || 0) + achievement.reward_points;
+
           const { error: pointsError } = await supabase
             .from('user_points')
             .update({
-              total_points: supabase.sql`COALESCE(total_points, 0) + ${achievement.reward_points}`,
+              total_points: newTotalPoints,
               updated_at: new Date().toISOString(),
             })
             .eq('user_id', user.id);
