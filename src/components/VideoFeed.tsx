@@ -1,6 +1,7 @@
 
 import React from 'react';
 import VideoCard from './VideoCard';
+import WinnerAnnouncement from './WinnerAnnouncement';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
@@ -82,6 +83,9 @@ const VideoFeed: React.FC = () => {
 
   return (
     <div className="pb-16">
+      {/* Объявление о победителе */}
+      <WinnerAnnouncement />
+
       <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-2 m-2 rounded-lg">
         <h2 className="text-base font-bold mb-1">🔥 Трюк дня</h2>
         <p className="text-sm opacity-90">

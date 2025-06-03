@@ -493,10 +493,12 @@ export type Database = {
       }
       videos: {
         Row: {
+          average_rating: number | null
           created_at: string
           description: string | null
           id: string
           is_winner: boolean | null
+          likes_count: number | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -506,10 +508,12 @@ export type Database = {
           winner_date: string | null
         }
         Insert: {
+          average_rating?: number | null
           created_at?: string
           description?: string | null
           id?: string
           is_winner?: boolean | null
+          likes_count?: number | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -519,10 +523,12 @@ export type Database = {
           winner_date?: string | null
         }
         Update: {
+          average_rating?: number | null
           created_at?: string
           description?: string | null
           id?: string
           is_winner?: boolean | null
+          likes_count?: number | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string

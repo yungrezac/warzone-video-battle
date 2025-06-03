@@ -4,6 +4,7 @@ import { ShoppingBag, Star, Gift, Crown, Zap, Settings, Package, Circle, Square,
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import AdminWinnerControl from './AdminWinnerControl';
 
 const Market: React.FC = () => {
   const upcomingFeatures = [
@@ -58,6 +59,9 @@ const Market: React.FC = () => {
 
   return (
     <div className="p-4 pb-20 max-w-4xl mx-auto">
+      {/* Admin Winner Control */}
+      <AdminWinnerControl />
+
       {/* Header Section */}
       <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 mb-6">
         <CardHeader>
