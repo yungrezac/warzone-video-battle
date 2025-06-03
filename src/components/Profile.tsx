@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { Edit, Calendar, Trophy, Video, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar, Trophy, Video } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useAuth } from '@/components/AuthWrapper';
@@ -10,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 const Profile: React.FC = () => {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: userVideos, isLoading: videosLoading } = useUserVideos();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   if (profileLoading) {
     return (
@@ -58,21 +57,6 @@ const Profile: React.FC = () => {
                 В Roller Tricks с {new Date(userProfile?.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
               </span>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Button variant="outline" size="sm" className="text-blue-600 w-full">
-              <Edit className="w-4 h-4 mr-1" />
-              Изменить
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-red-600 border-red-300 hover:bg-red-50 w-full"
-              onClick={signOut}
-            >
-              <LogOut className="w-4 h-4 mr-1" />
-              Выйти
-            </Button>
           </div>
         </div>
 
