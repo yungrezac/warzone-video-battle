@@ -21,6 +21,8 @@ export const useVideoComments = (videoId: string) => {
   return useQuery({
     queryKey: ['video-comments', videoId],
     queryFn: async () => {
+      console.log('Fetching comments for video:', videoId);
+      
       const { data: comments, error } = await supabase
         .from('video_comments')
         .select(`
@@ -30,9 +32,15 @@ export const useVideoComments = (videoId: string) => {
         .eq('video_id', videoId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching comments:', error);
+        throw error;
+      }
+      
+      console.log('Comments fetched:', comments);
       return comments as VideoComment[];
     },
+    enabled: !!videoId,
   });
 };
 
@@ -42,6 +50,8 @@ export const useAddComment = () => {
 
   return useMutation({
     mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
+      console.log('Adding comment:', { videoId, content, userId: user?.id });
+      
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
@@ -57,14 +67,23 @@ export const useAddComment = () => {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+      }
+      
+      console.log('Comment added:', data);
       return data;
     },
-    onSuccess: (_, { videoId }) => {
+    onSuccess: (data, { videoId }) => {
+      console.log('Comment mutation successful, invalidating queries');
       // Инвалидируем и обновляем кэш комментариев для данного видео
       queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       // Также обновляем счетчик комментариев в списке видео
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+    },
+    onError: (error) => {
+      console.error('Comment mutation failed:', error);
     },
   });
 };
