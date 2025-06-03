@@ -1,8 +1,9 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIncrementVideoViews } from '@/hooks/useVideoViews';
+import { useVideoPlayback } from '@/contexts/VideoPlaybackContext';
 
 interface VideoPlayerProps {
   src: string;
@@ -19,6 +20,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   const [hasIncrementedView, setHasIncrementedView] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const incrementViewsMutation = useIncrementVideoViews();
+  const { currentPlayingVideo, setCurrentPlayingVideo } = useVideoPlayback();
+
+  // Останавливаем видео если играет другое видео
+  useEffect(() => {
+    if (currentPlayingVideo && currentPlayingVideo !== videoId && isPlaying) {
+      console.log(`Останавливаем видео ${videoId}, играет ${currentPlayingVideo}`);
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      setIsPlaying(false);
+    }
+  }, [currentPlayingVideo, videoId, isPlaying]);
 
   const handleVideoPlay = () => {
     // Увеличиваем просмотры только один раз при первом воспроизведении
@@ -33,8 +46,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        setCurrentPlayingVideo(null);
       } else {
         videoRef.current.play();
+        if (videoId) {
+          setCurrentPlayingVideo(videoId);
+        }
         handleVideoPlay();
       }
       setIsPlaying(!isPlaying);
@@ -76,11 +93,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
 
   const handleVideoPlayEvent = () => {
     setIsPlaying(true);
+    if (videoId) {
+      setCurrentPlayingVideo(videoId);
+    }
     handleVideoPlay();
   };
 
   const handleVideoPauseEvent = () => {
     setIsPlaying(false);
+    setCurrentPlayingVideo(null);
   };
 
   return (

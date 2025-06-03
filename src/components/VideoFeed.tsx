@@ -5,6 +5,7 @@ import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import { VideoPlaybackProvider } from '@/contexts/VideoPlaybackContext';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error } = useVideos();
@@ -81,46 +82,48 @@ const VideoFeed: React.FC = () => {
   }
 
   return (
-    <div className="pb-16">
-      <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-2 m-2 rounded-lg">
-        <h2 className="text-base font-bold mb-1">🔥 Трюк дня</h2>
-        <p className="text-sm opacity-90">
-          Голосование закончится в 23:59. Победитель получит баллы равные количеству оценок!
-        </p>
-      </div>
+    <VideoPlaybackProvider>
+      <div className="pb-16">
+        <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-2 m-2 rounded-lg">
+          <h2 className="text-base font-bold mb-1">🔥 Трюк дня</h2>
+          <p className="text-sm opacity-90">
+            Голосование закончится в 23:59. Победитель получит баллы равные количеству оценок!
+          </p>
+        </div>
 
-      <div className="px-2 space-y-2">
-        {videos.map(video => (
-          <VideoCard
-            key={video.id}
-            video={{
-              id: video.id,
-              title: video.title,
-              author: video.user?.username || video.user?.telegram_username || 'Роллер',
-              authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-              thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
-              videoUrl: video.video_url,
-              likes: video.likes_count || 0,
-              comments: video.comments_count || 0,
-              rating: video.average_rating || 0,
-              views: video.views,
-              isWinner: video.is_winner,
-              timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-              }),
-              userLiked: video.user_liked || false,
-              userRating: video.user_rating || 0,
-              userId: video.user_id,
-            }}
-            onLike={handleLike}
-            onRate={handleRate}
-          />
-        ))}
+        <div className="px-2 space-y-2">
+          {videos.map(video => (
+            <VideoCard
+              key={video.id}
+              video={{
+                id: video.id,
+                title: video.title,
+                author: video.user?.username || video.user?.telegram_username || 'Роллер',
+                authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
+                videoUrl: video.video_url,
+                likes: video.likes_count || 0,
+                comments: video.comments_count || 0,
+                rating: video.average_rating || 0,
+                views: video.views,
+                isWinner: video.is_winner,
+                timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }),
+                userLiked: video.user_liked || false,
+                userRating: video.user_rating || 0,
+                userId: video.user_id,
+              }}
+              onLike={handleLike}
+              onRate={handleRate}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </VideoPlaybackProvider>
   );
 };
 
