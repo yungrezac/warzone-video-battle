@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { data: userProfile, isLoading } = useUserProfile();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   if (isLoading) {
     return (
@@ -18,7 +18,10 @@ const Profile: React.FC = () => {
     );
   }
 
-  if (!userProfile) {
+  // Используем данные из userProfile или fallback на данные из user
+  const displayUser = userProfile || user;
+
+  if (!displayUser) {
     return (
       <div className="p-4 pb-20">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -34,18 +37,23 @@ const Profile: React.FC = () => {
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
         <div className="flex items-center mb-4">
           <img
-            src={userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
-            alt={userProfile.username || 'Пользователь'}
+            src={displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
+            alt={displayUser.username || 'Пользователь'}
             className="w-20 h-20 rounded-full border-4 border-white mr-4"
           />
           <div className="flex-1">
             <h2 className="text-2xl font-bold">
-              {userProfile.username || userProfile.telegram_username || 'Пользователь'}
+              {displayUser.username || displayUser.telegram_username || 'Пользователь'}
             </h2>
+            {displayUser.first_name && displayUser.last_name && (
+              <p className="text-blue-100 text-lg">
+                {displayUser.first_name} {displayUser.last_name}
+              </p>
+            )}
             <div className="flex items-center mt-1 text-blue-100">
               <Calendar className="w-4 h-4 mr-1" />
               <span className="text-sm">
-                В WZ Battle с {new Date(userProfile.created_at).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                В WZ Battle с {new Date(displayUser.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
               </span>
             </div>
           </div>
@@ -68,11 +76,11 @@ const Profile: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{userProfile.total_points}</div>
+            <div className="text-2xl font-bold">{userProfile?.total_points || 0}</div>
             <div className="text-sm opacity-90">Баллов</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{userProfile.wins_count}</div>
+            <div className="text-2xl font-bold">{userProfile?.wins_count || 0}</div>
             <div className="text-sm opacity-90">Побед</div>
           </div>
         </div>
@@ -88,15 +96,15 @@ const Profile: React.FC = () => {
           
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-xl font-bold text-blue-600">{userProfile.total_videos}</div>
+              <div className="text-xl font-bold text-blue-600">{userProfile?.total_videos || 0}</div>
               <div className="text-sm text-gray-600">Видео</div>
             </div>
             <div>
-              <div className="text-xl font-bold text-red-500">{userProfile.total_likes}</div>
+              <div className="text-xl font-bold text-red-500">{userProfile?.total_likes || 0}</div>
               <div className="text-sm text-gray-600">Лайков</div>
             </div>
             <div>
-              <div className="text-xl font-bold text-green-500">{userProfile.total_views}</div>
+              <div className="text-xl font-bold text-green-500">{userProfile?.total_views || 0}</div>
               <div className="text-sm text-gray-600">Просмотров</div>
             </div>
           </div>
@@ -105,15 +113,15 @@ const Profile: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-700">Ранг:</span>
               <span className="font-bold text-orange-600">
-                {userProfile.total_points < 100 ? 'Новичок' :
-                 userProfile.total_points < 500 ? 'Бронза' :
-                 userProfile.total_points < 1000 ? 'Серебро' : 'Золото'}
+                {(userProfile?.total_points || 0) < 100 ? 'Новичок' :
+                 (userProfile?.total_points || 0) < 500 ? 'Бронза' :
+                 (userProfile?.total_points || 0) < 1000 ? 'Серебро' : 'Золото'}
               </span>
             </div>
           </div>
         </div>
 
-        {userProfile.is_premium && (
+        {userProfile?.is_premium && (
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-4 mb-6">
             <h3 className="text-lg font-bold mb-2">⭐ Premium статус</h3>
             <p className="text-sm opacity-90">
@@ -125,10 +133,10 @@ const Profile: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-4">
           <h3 className="text-lg font-semibold mb-4 flex items-center">
             <Video className="w-5 h-5 mr-2 text-purple-500" />
-            Мои видео ({userProfile.total_videos})
+            Мои видео ({userProfile?.total_videos || 0})
           </h3>
           
-          {userProfile.total_videos === 0 ? (
+          {(userProfile?.total_videos || 0) === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>У вас пока нет загруженных видео</p>
               <p className="text-sm mt-2">Загрузите своё первое видео во вкладке "Загрузить"</p>

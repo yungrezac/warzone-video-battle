@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import AuthWrapper, { useAuth } from '@/components/AuthWrapper';
-import TelegramAuth from '@/components/TelegramAuth';
 import Header from '@/components/Header';
 import BottomNavbar from '@/components/BottomNavbar';
 import VideoFeed from '@/components/VideoFeed';
@@ -24,10 +23,6 @@ const AppContent = () => {
     );
   }
 
-  if (!user) {
-    return <TelegramAuth />;
-  }
-
   const renderActiveComponent = () => {
     switch (activeTab) {
       case 'feed':
@@ -47,7 +42,7 @@ const AppContent = () => {
     <div className="min-h-screen bg-gray-50">
       <Header 
         userBalance={userProfile?.total_points || 0} 
-        userName={userProfile?.username || userProfile?.telegram_username || 'Пользователь'} 
+        userName={userProfile?.username || userProfile?.telegram_username || user?.username || 'Пользователь'} 
       />
       
       <main className="pt-0">
