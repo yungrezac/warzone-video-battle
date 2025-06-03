@@ -38,16 +38,10 @@ export const useVideos = () => {
   return useQuery({
     queryKey: ['videos'],
     queryFn: async () => {
+      // Сначала получаем видео
       const { data: videos, error } = await supabase
         .from('videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url,
-            telegram_username
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -55,6 +49,13 @@ export const useVideos = () => {
       // Получаем дополнительную статистику для каждого видео
       const videosWithStats = await Promise.all(
         videos.map(async (video) => {
+          // Получаем информацию о пользователе
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('username, avatar_url, telegram_username')
+            .eq('id', video.user_id)
+            .single();
+
           // Количество лайков
           const { count: likesCount } = await supabase
             .from('video_likes')
@@ -103,7 +104,7 @@ export const useVideos = () => {
 
           return {
             ...video,
-            user: video.profiles,
+            user: userProfile,
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
             average_rating: Number(averageRating.toFixed(1)),
