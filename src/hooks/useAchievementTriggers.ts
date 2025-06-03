@@ -2,11 +2,13 @@
 import { useEffect } from 'react';
 import { useUpdateAchievementProgress } from './useAchievements';
 import { useAuth } from '@/components/AuthWrapper';
+import { useTelegramNotifications } from './useTelegramNotifications';
 
 // Хук для автоматического обновления достижений при различных действиях
 export const useAchievementTriggers = () => {
   const updateProgress = useUpdateAchievementProgress();
   const { user } = useAuth();
+  const { sendAchievementNotification } = useTelegramNotifications();
 
   // Функция для обновления достижений при загрузке видео
   const triggerVideoUpload = () => {
@@ -73,6 +75,17 @@ export const useAchievementTriggers = () => {
     updateProgress.mutate({ category: 'comments' });
   };
 
+  // Функция для отправки уведомления о новом достижении
+  const notifyAchievement = async (achievementTitle: string, achievementIcon: string, rewardPoints: number) => {
+    if (!user?.telegram_id) return;
+    
+    try {
+      await sendAchievementNotification(user.telegram_id, achievementTitle, achievementIcon, rewardPoints);
+    } catch (error) {
+      console.error('Ошибка отправки уведомления о достижении:', error);
+    }
+  };
+
   return {
     triggerVideoUpload,
     triggerLikeReceived,
@@ -82,5 +95,6 @@ export const useAchievementTriggers = () => {
     triggerSocialLike,
     triggerSocialRating,
     triggerComment,
+    notifyAchievement,
   };
 };

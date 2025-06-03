@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementTriggers } from './useAchievementTriggers';
+import { useTelegramNotifications } from './useTelegramNotifications';
 
 interface Video {
   id: string;
@@ -126,6 +126,7 @@ export const useLikeVideo = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { triggerSocialLike } = useAchievementTriggers();
+  const { sendLikeNotification } = useTelegramNotifications();
 
   return useMutation({
     mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
@@ -157,6 +158,26 @@ export const useLikeVideo = () => {
         
         // Trigger achievement for liking other videos
         triggerSocialLike();
+
+        // Отправляем уведомление владельцу видео
+        try {
+          const { data: video } = await supabase
+            .from('videos')
+            .select(`
+              title,
+              user_id,
+              user:profiles!user_id(telegram_id, username, first_name)
+            `)
+            .eq('id', videoId)
+            .single();
+
+          if (video && video.user?.telegram_id && video.user_id !== user.id) {
+            const likerName = user.first_name || user.username || 'Роллер';
+            await sendLikeNotification(video.user.telegram_id, likerName, video.title);
+          }
+        } catch (notificationError) {
+          console.error('Ошибка отправки уведомления о лайке:', notificationError);
+        }
       }
     },
     onSuccess: () => {

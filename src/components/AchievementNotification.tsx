@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Achievement } from '@/hooks/useAchievements';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
 
 interface AchievementNotificationProps {
   achievement: Achievement;
@@ -16,10 +17,15 @@ const AchievementNotification: React.FC<AchievementNotificationProps> = ({
   isVisible,
 }) => {
   const [shouldShow, setShouldShow] = useState(false);
+  const { notifyAchievement } = useAchievementTriggers();
 
   useEffect(() => {
     if (isVisible) {
       setShouldShow(true);
+      
+      // Отправляем Telegram уведомление о достижении
+      notifyAchievement(achievement.title, achievement.icon, achievement.reward_points);
+      
       const timer = setTimeout(() => {
         onClose();
       }, 5000);
@@ -27,7 +33,7 @@ const AchievementNotification: React.FC<AchievementNotificationProps> = ({
     } else {
       setShouldShow(false);
     }
-  }, [isVisible, onClose]);
+  }, [isVisible, onClose, achievement, notifyAchievement]);
 
   if (!shouldShow) return null;
 

@@ -1,7 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
+import { useAchievementTriggers } from './useAchievementTriggers';
+import { useTelegramNotifications } from './useTelegramNotifications';
 
 export interface VideoComment {
   id: string;
@@ -47,6 +48,8 @@ export const useVideoComments = (videoId: string) => {
 export const useAddComment = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { triggerComment } = useAchievementTriggers();
+  const { sendCommentNotification } = useTelegramNotifications();
 
   return useMutation({
     mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
@@ -76,6 +79,30 @@ export const useAddComment = () => {
       }
       
       console.log('Комментарий добавлен:', data);
+
+      // Trigger achievement for commenting
+      triggerComment();
+
+      // Отправляем уведомление владельцу видео
+      try {
+        const { data: video } = await supabase
+          .from('videos')
+          .select(`
+            title,
+            user_id,
+            user:profiles!user_id(telegram_id, username, first_name)
+          `)
+          .eq('id', videoId)
+          .single();
+
+        if (video && video.user?.telegram_id && video.user_id !== user.id) {
+          const commenterName = user.first_name || user.username || 'Роллер';
+          await sendCommentNotification(video.user.telegram_id, commenterName, video.title, content);
+        }
+      } catch (notificationError) {
+        console.error('Ошибка отправки уведомления о комментарии:', notificationError);
+      }
+      
       return data;
     },
     onSuccess: (data, { videoId }) => {
