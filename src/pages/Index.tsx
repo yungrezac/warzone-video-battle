@@ -1,12 +1,44 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import Header from '@/components/Header';
+import BottomNavbar from '@/components/BottomNavbar';
+import VideoFeed from '@/components/VideoFeed';
+import UploadVideo from '@/components/UploadVideo';
+import Market from '@/components/Market';
+import Profile from '@/components/Profile';
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState('feed');
+  const [userBalance] = useState(856);
+  const [userName] = useState('ProGamer123');
+
+  const renderActiveComponent = () => {
+    switch (activeTab) {
+      case 'feed':
+        return <VideoFeed />;
+      case 'upload':
+        return <UploadVideo />;
+      case 'market':
+        return <Market />;
+      case 'profile':
+        return <Profile />;
+      default:
+        return <VideoFeed />;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header userBalance={userBalance} userName={userName} />
+      
+      <main className="pt-0">
+        {renderActiveComponent()}
+      </main>
+      
+      <BottomNavbar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+      />
     </div>
   );
 };

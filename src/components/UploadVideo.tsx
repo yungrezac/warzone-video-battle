@@ -1,0 +1,137 @@
+
+import React, { useState } from 'react';
+import { Upload, Video, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
+const UploadVideo: React.FC = () => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !title) return;
+    
+    setIsUploading(true);
+    
+    // Simulate upload process
+    setTimeout(() => {
+      setIsUploading(false);
+      setSelectedFile(null);
+      setTitle('');
+      setDescription('');
+      alert('Видео успешно загружено! Оно появится в ленте после модерации.');
+    }, 2000);
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+  };
+
+  return (
+    <div className="p-4 pb-20">
+      <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-6 rounded-lg mb-6">
+        <h2 className="text-2xl font-bold mb-2">Загрузить видео</h2>
+        <p className="opacity-90">Поделитесь своим лучшим геймплеем и участвуйте в ежедневном соревновании!</p>
+      </div>
+
+      <div className="space-y-6">
+        {!selectedFile ? (
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              Выберите видео для загрузки
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 100MB
+            </p>
+            <label className="inline-block">
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                Выбрать файл
+              </Button>
+            </label>
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Video className="w-8 h-8 text-blue-600 mr-3" />
+                <div>
+                  <p className="font-semibold">{selectedFile.name}</p>
+                  <p className="text-sm text-gray-500">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={removeFile}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Название видео *
+            </label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Введите название вашего видео"
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Описание (необязательно)
+            </label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Расскажите о своем видео..."
+              className="w-full"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="font-semibold text-yellow-800 mb-2">Правила конкурса:</h4>
+          <ul className="text-sm text-yellow-700 space-y-1">
+            <li>• Видео проходит модерацию перед публикацией</li>
+            <li>• Победитель определяется каждый день в 00:00</li>
+            <li>• Баллы начисляются равно количеству полученных оценок</li>
+            <li>• Запрещены оскорбления и неуместный контент</li>
+          </ul>
+        </div>
+
+        <Button
+          onClick={handleUpload}
+          disabled={!selectedFile || !title || isUploading}
+          className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+        >
+          {isUploading ? 'Загрузка...' : 'Загрузить видео'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default UploadVideo;
