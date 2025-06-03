@@ -26,6 +26,8 @@ const TelegramAuth: React.FC = () => {
     setError(null);
 
     try {
+      console.log('Обрабатываем Telegram пользователя:', telegramUser);
+      
       // Проверяем существует ли пользователь в profiles
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
@@ -68,6 +70,21 @@ const TelegramAuth: React.FC = () => {
         profileId = newUserId;
       } else if (profileError) {
         throw profileError;
+      } else {
+        // Обновляем существующий профиль актуальными данными
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            username: telegramUser.username || existingProfile.username,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name,
+            avatar_url: telegramUser.photo_url || existingProfile.avatar_url,
+            telegram_username: telegramUser.username,
+            telegram_photo_url: telegramUser.photo_url,
+          })
+          .eq('id', existingProfile.id);
+
+        if (updateError) console.error('Ошибка обновления профиля:', updateError);
       }
 
       // Устанавливаем пользователя в контекст
@@ -97,19 +114,26 @@ const TelegramAuth: React.FC = () => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
+      tg.expand();
+
+      console.log('Telegram WebApp данные:', tg.initDataUnsafe);
 
       // Получаем данные пользователя из Telegram
       if (tg.initDataUnsafe?.user) {
         const telegramUser = tg.initDataUnsafe.user as TelegramUser;
         handleTelegramAuth(telegramUser);
+      } else {
+        console.log('Данные пользователя Telegram недоступны');
       }
+    } else {
+      console.log('Telegram WebApp не обнаружен');
     }
   }, []);
 
   const handleManualAuth = () => {
     // Для тестирования создаем тестового пользователя
     const testUser: TelegramUser = {
-      id: 123456789,
+      id: Math.floor(Math.random() * 1000000),
       first_name: 'ProGamer',
       last_name: '123',
       username: 'ProGamer123',

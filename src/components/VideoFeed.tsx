@@ -74,6 +74,7 @@ const VideoFeed: React.FC = () => {
               author: video.user?.username || video.user?.telegram_username || 'Роллер',
               authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
               thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+              videoUrl: video.video_url, // Передаем URL видео
               likes: video.likes_count || 0,
               comments: video.comments_count || 0,
               rating: video.average_rating || 0,

@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Star, Play } from 'lucide-react';
+import { Heart, MessageCircle, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import VideoPlayer from './VideoPlayer';
 
 interface Video {
   id: string;
@@ -9,6 +10,7 @@ interface Video {
   author: string;
   authorAvatar: string;
   thumbnail: string;
+  videoUrl?: string;
   likes: number;
   comments: number;
   rating: number;
@@ -43,16 +45,28 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onComment, onRate 
       )}
       
       <div className="relative">
-        <img 
-          src={video.thumbnail} 
-          alt={video.title}
-          className="w-full h-64 object-cover"
-        />
-        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-          <Button size="lg" className="bg-white bg-opacity-80 hover:bg-opacity-100 text-black rounded-full">
-            <Play className="w-8 h-8" />
-          </Button>
-        </div>
+        {video.videoUrl ? (
+          <VideoPlayer
+            src={video.videoUrl}
+            thumbnail={video.thumbnail}
+            title={video.title}
+            className="w-full h-64"
+          />
+        ) : (
+          <div className="relative">
+            <img 
+              src={video.thumbnail} 
+              alt={video.title}
+              className="w-full h-64 object-cover"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+              <div className="text-white text-center">
+                <p className="text-sm opacity-75">Видео недоступно</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-sm">
           {video.views} просмотров
         </div>
