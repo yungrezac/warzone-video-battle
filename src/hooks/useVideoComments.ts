@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getCurrentUser } from './useVideos';
+import { useAuth } from '@/components/AuthWrapper';
 
 export interface VideoComment {
   id: string;
@@ -38,17 +38,17 @@ export const useVideoComments = (videoId: string) => {
 
 export const useAddComment = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
-      const currentUser = getCurrentUser();
-      if (!currentUser) throw new Error('User not authenticated');
+      if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
         .from('video_comments')
         .insert({
           video_id: videoId,
-          user_id: currentUser.id,
+          user_id: user.id,
           content,
         })
         .select()

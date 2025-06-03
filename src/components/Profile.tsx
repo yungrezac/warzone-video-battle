@@ -3,14 +3,16 @@ import React from 'react';
 import { Edit, Calendar, Trophy, Video, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserVideos } from '@/hooks/useUserVideos';
 import { useAuth } from '@/components/AuthWrapper';
 import { Loader2 } from 'lucide-react';
 
 const Profile: React.FC = () => {
-  const { data: userProfile, isLoading } = useUserProfile();
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile();
+  const { data: userVideos, isLoading: videosLoading } = useUserVideos();
   const { user, signOut } = useAuth();
 
-  if (isLoading) {
+  if (profileLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px] pb-20">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -136,14 +138,40 @@ const Profile: React.FC = () => {
             Мои трюки ({userProfile?.total_videos || 0})
           </h3>
           
-          {(userProfile?.total_videos || 0) === 0 ? (
+          {videosLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : (userProfile?.total_videos || 0) === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>У вас пока нет загруженных трюков</p>
               <p className="text-sm mt-2">Загрузите свой первый трюк во вкладке "Загрузить"</p>
             </div>
           ) : (
-            <div className="text-center py-4 text-gray-500">
-              <p>Здесь будет список ваших трюков</p>
+            <div className="space-y-3">
+              {userVideos?.slice(0, 3).map(video => (
+                <div key={video.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <img
+                    src={video.thumbnail_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=60&fit=crop'}
+                    alt={video.title}
+                    className="w-16 h-12 rounded object-cover"
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{video.title}</h4>
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                      <span>👁 {video.views}</span>
+                      <span>❤️ {video.likes_count}</span>
+                      <span>💬 {video.comments_count}</span>
+                      <span>⭐ {video.average_rating.toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(userVideos?.length || 0) > 3 && (
+                <p className="text-center text-sm text-gray-500 mt-3">
+                  И ещё {(userVideos?.length || 0) - 3} видео...
+                </p>
+              )}
             </div>
           )}
         </div>

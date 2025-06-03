@@ -102,15 +102,15 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           .from('profiles')
           .select('*')
           .eq('telegram_id', telegramId)
-          .single();
+          .maybeSingle();
 
         let profileId = existingProfile?.id;
 
-        if (profileError && profileError.code === 'PGRST116') {
+        if (!existingProfile) {
           // Пользователь не найден, создаем новый профиль
           const newUserId = crypto.randomUUID();
           
-          const { error: insertProfileError } = await supabase
+          const { data: newProfile, error: insertProfileError } = await supabase
             .from('profiles')
             .insert({
               id: newUserId,
@@ -121,7 +121,9 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               telegram_id: telegramId,
               telegram_username: telegramUser.username,
               telegram_photo_url: telegramUser.photo_url,
-            });
+            })
+            .select()
+            .single();
 
           if (insertProfileError) throw insertProfileError;
 
@@ -134,7 +136,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               wins_count: 0,
             });
 
-          if (pointsError) throw pointsError;
+          if (pointsError) {
+            console.error('Ошибка создания points:', pointsError);
+            // Не бросаем ошибку, так как это не критично
+          }
 
           profileId = newUserId;
           console.log('Создан новый профиль пользователя:', newUserId);
@@ -187,11 +192,11 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           .from('profiles')
           .select('*')
           .eq('telegram_id', testTelegramId)
-          .single();
+          .maybeSingle();
 
         let profileId = existingProfile?.id;
 
-        if (profileError && profileError.code === 'PGRST116') {
+        if (!existingProfile) {
           // Создаем тестового пользователя
           const newUserId = crypto.randomUUID();
           
@@ -219,7 +224,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               wins_count: 0,
             });
 
-          if (pointsError) throw pointsError;
+          if (pointsError) {
+            console.error('Ошибка создания points:', pointsError);
+            // Не бросаем ошибку, так как это не критично
+          }
 
           profileId = newUserId;
         }
