@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Heart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,9 +37,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg overflow-hidden mb-4 ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}>
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}>
       {video.isWinner && (
-        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-2 font-bold">
+        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-1.5 font-bold text-sm">
           🏆 ПОБЕДИТЕЛЬ ДНЯ 🏆
         </div>
       )}
@@ -49,7 +50,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             src={video.videoUrl}
             thumbnail={video.thumbnail}
             title={video.title}
-            className="w-full h-64"
+            className="w-full h-48"
             videoId={video.id}
           />
         ) : (
@@ -57,7 +58,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             <img 
               src={video.thumbnail} 
               alt={video.title}
-              className="w-full h-64 object-cover"
+              className="w-full h-48 object-cover"
             />
             <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
               <div className="text-white text-center">
@@ -67,35 +68,35 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
           </div>
         )}
         
-        <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-sm">
+        <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs">
           {video.views} просмотров
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex items-center mb-3">
+      <div className="p-3">
+        <div className="flex items-center mb-2">
           <img 
             src={video.authorAvatar} 
             alt={video.author}
-            className="w-10 h-10 rounded-full mr-3"
+            className="w-8 h-8 rounded-full mr-2"
           />
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900">{video.title}</h3>
-            <p className="text-gray-600 text-sm">@{video.author}</p>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
+            <p className="text-gray-600 text-xs">@{video.author}</p>
           </div>
           <span className="text-gray-500 text-xs">{video.timestamp}</span>
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onLike(video.id)}
-              className={`${video.userLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500`}
+              className={`${video.userLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-8 px-2`}
             >
-              <Heart className={`w-5 h-5 mr-1 ${video.userLiked ? 'fill-current' : ''}`} />
-              {video.likes}
+              <Heart className={`w-4 h-4 mr-1 ${video.userLiked ? 'fill-current' : ''}`} />
+              <span className="text-sm">{video.likes}</span>
             </Button>
 
             <VideoComments 
@@ -107,17 +108,17 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
               variant="ghost"
               size="sm"
               onClick={() => setShowRating(!showRating)}
-              className="text-gray-600 hover:text-yellow-500"
+              className="text-gray-600 hover:text-yellow-500 h-8 px-2"
             >
-              <Star className="w-5 h-5 mr-1" />
-              {video.rating.toFixed(1)}
+              <Star className="w-4 h-4 mr-1" />
+              <span className="text-sm">{video.rating.toFixed(1)}</span>
             </Button>
           </div>
         </div>
 
         {showRating && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-2">Оцените видео:</p>
+          <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Оцените видео:</p>
             <div className="flex space-x-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Button
@@ -125,10 +126,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleRate(star)}
-                  className="p-1"
+                  className="p-1 h-auto"
                 >
                   <Star 
-                    className={`w-6 h-6 ${star <= (video.userRating || 0) ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+                    className={`w-5 h-5 ${star <= (video.userRating || 0) ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
                   />
                 </Button>
               ))}

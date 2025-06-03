@@ -49,16 +49,16 @@ const VideoFeed: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px] pb-20">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="flex justify-center items-center min-h-[300px] pb-16">
+        <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 pb-20">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <div className="p-3 pb-16">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
           Ошибка загрузки видео: {error.message}
         </div>
       </div>
@@ -67,12 +67,12 @@ const VideoFeed: React.FC = () => {
 
   if (!videos || videos.length === 0) {
     return (
-      <div className="p-4 pb-20 text-center">
-        <div className="bg-gray-100 rounded-lg p-8">
+      <div className="p-3 pb-16 text-center">
+        <div className="bg-gray-100 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">
             Пока нет видео
           </h3>
-          <p className="text-gray-500">
+          <p className="text-gray-500 text-sm">
             Будьте первым, кто загрузит свой трюк!
           </p>
         </div>
@@ -81,15 +81,15 @@ const VideoFeed: React.FC = () => {
   }
 
   return (
-    <div className="pb-20">
-      <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-4 m-4 rounded-lg">
-        <h2 className="text-lg font-bold mb-2">🔥 Трюк дня</h2>
+    <div className="pb-16">
+      <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-3 m-3 rounded-lg">
+        <h2 className="text-lg font-bold mb-1">🔥 Трюк дня</h2>
         <p className="text-sm opacity-90">
           Голосование закончится в 23:59. Победитель получит баллы равные количеству оценок!
         </p>
       </div>
 
-      <div className="px-4">
+      <div className="px-3 space-y-3">
         {videos.map(video => (
           <VideoCard
             key={video.id}
