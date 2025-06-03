@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, Video, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ const UploadVideo: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadVideo();
   const { toast } = useToast();
 
@@ -19,6 +20,10 @@ const UploadVideo: React.FC = () => {
     if (file && file.type.startsWith('video/')) {
       setSelectedFile(file);
     }
+  };
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleUpload = async () => {
@@ -69,17 +74,19 @@ const UploadVideo: React.FC = () => {
             <p className="text-gray-500 mb-4">
               Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 100MB
             </p>
-            <label className="inline-block">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Выбрать файл
-              </Button>
-            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <Button 
+              onClick={handleButtonClick}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Выбрать файл
+            </Button>
           </div>
         ) : (
           <div className="bg-gray-50 rounded-lg p-4">
