@@ -1,14 +1,11 @@
+
 import React from 'react';
 import { ShoppingBag, Star, Gift, Crown, Zap, Settings, Package, Circle, Square, Hexagon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import AdminWinnerControl from './AdminWinnerControl';
-import { useAuth } from '@/components/AuthWrapper';
 
 const Market: React.FC = () => {
-  const { user } = useAuth();
-  
   const upcomingFeatures = [
     {
       title: "Премиум статус",
@@ -77,14 +74,6 @@ const Market: React.FC = () => {
           </div>
         </CardHeader>
       </Card>
-
-      {/* Admin Panel - показываем только для администраторов */}
-      {user?.username === 'TrickMaster' && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Админ-панель</h3>
-          <AdminWinnerControl />
-        </div>
-      )}
 
       {/* Coming Soon Section */}
       <div className="text-center mb-8">

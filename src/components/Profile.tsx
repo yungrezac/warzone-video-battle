@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Trophy, Video, Trash2, Award, Crown } from 'lucide-react';
+import { Calendar, Trophy, Video, Trash2, Award } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
@@ -165,21 +165,6 @@ const Profile: React.FC = () => {
             <div className="text-xs opacity-90">Побед</div>
           </div>
         </div>
-
-        {/* Winner Badge */}
-        {(userProfile?.wins_count || 0) > 0 && (
-          <div className="mt-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-2 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <Crown className="w-4 h-4" />
-              <span className="font-bold text-sm">
-                {userProfile?.wins_count === 1 ? 'Победитель дня' : 
-                 userProfile?.wins_count && userProfile.wins_count < 5 ? 'Чемпион' : 
-                 'Легенда роллеров'}
-              </span>
-              <Crown className="w-4 h-4" />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Stats Section */}
