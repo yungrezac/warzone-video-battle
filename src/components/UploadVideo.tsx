@@ -18,11 +18,11 @@ const UploadVideo: React.FC = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
-      // Проверяем размер файла (100MB = 100 * 1024 * 1024 bytes)
-      if (file.size > 100 * 1024 * 1024) {
+      // Проверяем размер файла (50MB = 50 * 1024 * 1024 bytes)
+      if (file.size > 50 * 1024 * 1024) {
         toast({
           title: "Ошибка",
-          description: "Размер файла не должен превышать 100MB",
+          description: "Размер файла не должен превышать 50MB",
           variant: "destructive",
         });
         return;
@@ -102,7 +102,7 @@ const UploadVideo: React.FC = () => {
               Выберите видео для загрузки
             </h3>
             <p className="text-gray-500 mb-3 text-sm">
-              Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 100MB
+              Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 50MB
             </p>
             <input
               ref={fileInputRef}

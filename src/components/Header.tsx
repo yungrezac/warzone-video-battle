@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ userBalance, userName }) => {
             <Trophy className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="text-lg font-bold">Roller Tricks</h1>
+            <h1 className="text-lg font-bold">RollTricks</h1>
             <p className="text-xs opacity-90">Привет, {userName}!</p>
           </div>
         </div>
