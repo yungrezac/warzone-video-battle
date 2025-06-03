@@ -1,13 +1,16 @@
 
-import React from 'react';
-import { Calendar, Trophy, Video } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Trophy, Video, Trash2 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
+import { useDeleteVideo } from '@/hooks/useDeleteVideo';
 import { useAuth } from '@/components/AuthWrapper';
 import { Loader2 } from 'lucide-react';
 import VideoCard from './VideoCard';
+import DeleteVideoDialog from './DeleteVideoDialog';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 const Profile: React.FC = () => {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
@@ -15,6 +18,10 @@ const Profile: React.FC = () => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
+  const deleteVideoMutation = useDeleteVideo();
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<{id: string, title: string} | null>(null);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -49,6 +56,30 @@ const Profile: React.FC = () => {
       console.error('Ошибка при выставлении оценки:', error);
       toast.error('Ошибка при выставлении оценки');
     }
+  };
+
+  const handleDeleteClick = (videoId: string, videoTitle: string) => {
+    setVideoToDelete({ id: videoId, title: videoTitle });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!videoToDelete) return;
+
+    try {
+      await deleteVideoMutation.mutateAsync(videoToDelete.id);
+      toast.success('Видео успешно удалено');
+      setDeleteDialogOpen(false);
+      setVideoToDelete(null);
+    } catch (error) {
+      console.error('Ошибка удаления видео:', error);
+      toast.error('Ошибка при удалении видео');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setVideoToDelete(null);
   };
 
   if (profileLoading) {
@@ -175,38 +206,55 @@ const Profile: React.FC = () => {
           ) : (
             <div className="space-y-2">
               {userVideos?.map(video => (
-                <VideoCard
-                  key={video.id}
-                  video={{
-                    id: video.id,
-                    title: video.title,
-                    author: displayUser.username || displayUser.telegram_username || 'Роллер',
-                    authorAvatar: displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-                    thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
-                    videoUrl: video.video_url,
-                    likes: video.likes_count || 0,
-                    comments: video.comments_count || 0,
-                    rating: video.average_rating || 0,
-                    views: video.views,
-                    isWinner: video.is_winner,
-                    timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }),
-                    userLiked: video.user_liked || false,
-                    userRating: video.user_rating || 0,
-                    userId: video.user_id,
-                  }}
-                  onLike={handleLike}
-                  onRate={handleRate}
-                />
+                <div key={video.id} className="relative">
+                  <VideoCard
+                    video={{
+                      id: video.id,
+                      title: video.title,
+                      author: displayUser.username || displayUser.telegram_username || 'Роллер',
+                      authorAvatar: displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                      thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
+                      videoUrl: video.video_url,
+                      likes: video.likes_count || 0,
+                      comments: video.comments_count || 0,
+                      rating: video.average_rating || 0,
+                      views: video.views,
+                      isWinner: video.is_winner,
+                      timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }),
+                      userLiked: video.user_liked || false,
+                      userRating: video.user_rating || 0,
+                      userId: video.user_id,
+                    }}
+                    onLike={handleLike}
+                    onRate={handleRate}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteClick(video.id, video.title)}
+                    className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      <DeleteVideoDialog
+        isOpen={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={deleteVideoMutation.isPending}
+        videoTitle={videoToDelete?.title || ''}
+      />
     </div>
   );
 };
