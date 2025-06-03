@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import VideoCard from './VideoCard';
 import WinnerAnnouncement from './WinnerAnnouncement';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
@@ -12,6 +12,7 @@ const VideoFeed: React.FC = () => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
+  const videoRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -45,6 +46,17 @@ const VideoFeed: React.FC = () => {
     } catch (error) {
       console.error('Ошибка при выставлении оценки:', error);
       toast.error('Ошибка при выставлении оценки');
+    }
+  };
+
+  const handleViewWinner = (videoId: string) => {
+    const videoElement = videoRefs.current[videoId];
+    if (videoElement) {
+      videoElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      toast.success('Переход к победившему видео!');
     }
   };
 
@@ -84,7 +96,7 @@ const VideoFeed: React.FC = () => {
   return (
     <div className="pb-16">
       {/* Объявление о победителе */}
-      <WinnerAnnouncement />
+      <WinnerAnnouncement onViewWinner={handleViewWinner} />
 
       <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-2 m-2 rounded-lg">
         <h2 className="text-base font-bold mb-1">🔥 Трюк дня</h2>
@@ -95,33 +107,39 @@ const VideoFeed: React.FC = () => {
 
       <div className="px-2 space-y-2">
         {videos.map(video => (
-          <VideoCard
+          <div 
             key={video.id}
-            video={{
-              id: video.id,
-              title: video.title,
-              author: video.user?.username || video.user?.telegram_username || 'Роллер',
-              authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-              thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
-              videoUrl: video.video_url,
-              likes: video.likes_count || 0,
-              comments: video.comments_count || 0,
-              rating: video.average_rating || 0,
-              views: video.views,
-              isWinner: video.is_winner,
-              timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-              }),
-              userLiked: video.user_liked || false,
-              userRating: video.user_rating || 0,
-              userId: video.user_id,
+            ref={(el) => {
+              videoRefs.current[video.id] = el;
             }}
-            onLike={handleLike}
-            onRate={handleRate}
-          />
+          >
+            <VideoCard
+              video={{
+                id: video.id,
+                title: video.title,
+                author: video.user?.username || video.user?.telegram_username || 'Роллер',
+                authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
+                videoUrl: video.video_url,
+                likes: video.likes_count || 0,
+                comments: video.comments_count || 0,
+                rating: video.average_rating || 0,
+                views: video.views,
+                isWinner: video.is_winner,
+                timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }),
+                userLiked: video.user_liked || false,
+                userRating: video.user_rating || 0,
+                userId: video.user_id,
+              }}
+              onLike={handleLike}
+              onRate={handleRate}
+            />
+          </div>
         ))}
       </div>
     </div>

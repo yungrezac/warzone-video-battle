@@ -4,9 +4,14 @@ import { Crown, Trophy, Heart, Star, Eye } from 'lucide-react';
 import { useYesterdayWinner, useTopUsers } from '@/hooks/useWinnerSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const WinnerAnnouncement: React.FC = () => {
+interface WinnerAnnouncementProps {
+  onViewWinner?: (videoId: string) => void;
+}
+
+const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner }) => {
   const { data: winner, isLoading: winnerLoading } = useYesterdayWinner();
   const { data: topUsers, isLoading: topUsersLoading } = useTopUsers();
 
@@ -51,6 +56,12 @@ const WinnerAnnouncement: React.FC = () => {
   const winnerUser = winner.user;
   const displayName = winnerUser?.username || winnerUser?.telegram_username || winnerUser?.first_name || 'Роллер';
 
+  const handleViewWinner = () => {
+    if (onViewWinner && winner.id) {
+      onViewWinner(winner.id);
+    }
+  };
+
   return (
     <div className="p-2 mb-4">
       <Card className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0 shadow-lg">
@@ -73,7 +84,7 @@ const WinnerAnnouncement: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-4 text-sm mb-3">
             <div className="flex items-center gap-1">
               <Heart className="w-4 h-4" />
               <span>{winner.likes_count || 0}</span>
@@ -90,6 +101,15 @@ const WinnerAnnouncement: React.FC = () => {
               +100 баллов
             </Badge>
           </div>
+
+          <Button 
+            onClick={handleViewWinner}
+            variant="secondary"
+            size="sm"
+            className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30"
+          >
+            👀 Посмотреть
+          </Button>
         </CardContent>
       </Card>
 
