@@ -1,7 +1,5 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { setCurrentUser } from '@/hooks/useVideos';
 
 interface User {
   id: string;
@@ -76,7 +74,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           const userData = JSON.parse(savedUser);
           console.log('Загружен сохраненный пользователь:', userData);
           setUser(userData);
-          setCurrentUser({ id: userData.id, telegram_id: userData.telegram_id });
           setLoading(false);
           return;
         }
@@ -174,7 +171,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           telegram_username: telegramUser.username,
         };
 
-        setCurrentUser({ id: profileId, telegram_id: telegramId });
         setUser(userData);
         localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
         console.log('Пользователь установлен в контекст:', userData);
@@ -242,7 +238,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           telegram_username: 'TrickMaster',
         };
 
-        setCurrentUser({ id: profileId, telegram_id: testTelegramId });
         setUser(userData);
         localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
         console.log('Тестовый пользователь создан/загружен');
@@ -259,13 +254,11 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const signIn = (userData: any) => {
     setUser(userData);
     localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
-    setCurrentUser({ id: userData.id, telegram_id: userData.telegram_id });
   };
 
   const signOut = () => {
     setUser(null);
     localStorage.removeItem('roller_tricks_user');
-    setCurrentUser(null);
   };
 
   return (

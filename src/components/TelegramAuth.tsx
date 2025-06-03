@@ -1,10 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from './AuthWrapper';
-import { setCurrentUser } from '@/hooks/useVideos';
 
 interface TelegramUser {
   id: number;
@@ -118,7 +116,6 @@ const TelegramAuth: React.FC = () => {
 
       console.log('Устанавливаем пользователя:', userData);
       
-      setCurrentUser({ id: profileId, telegram_id: telegramUser.id.toString() });
       signIn(userData);
 
     } catch (err: any) {
