@@ -1,20 +1,160 @@
 
 import React from 'react';
-import { Calendar, Trophy, Video } from 'lucide-react';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useUserVideos } from '@/hooks/useUserVideos';
+import { useParams, Link } from 'react-router-dom';
+import { Calendar, Trophy, Video, ArrowLeft } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
 import { Loader2 } from 'lucide-react';
-import VideoCard from './VideoCard';
+import VideoCard from '@/components/VideoCard';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
-const Profile: React.FC = () => {
-  const { data: userProfile, isLoading: profileLoading } = useUserProfile();
-  const { data: userVideos, isLoading: videosLoading } = useUserVideos();
+const UserProfile: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
+
+  // Получаем профиль пользователя
+  const { data: userProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['user-profile', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          user_points (
+            total_points,
+            wins_count
+          )
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const { data: userVideos, error: videosError } = await supabase
+        .from('videos')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (videosError) throw videosError;
+
+      const videoIds = userVideos?.map(v => v.id) || [];
+      const totalVideos = videoIds.length;
+
+      let totalLikes = 0;
+      let totalViews = 0;
+
+      if (videoIds.length > 0) {
+        const { count: likesCount } = await supabase
+          .from('video_likes')
+          .select('*', { count: 'exact' })
+          .in('video_id', videoIds);
+
+        totalLikes = likesCount || 0;
+
+        const { data: viewsData } = await supabase
+          .from('videos')
+          .select('views')
+          .eq('user_id', userId);
+
+        totalViews = viewsData?.reduce((sum, video) => sum + (video.views || 0), 0) || 0;
+      }
+
+      const userPoints = profile.user_points?.[0];
+
+      return {
+        ...profile,
+        total_points: userPoints?.total_points || 0,
+        wins_count: userPoints?.wins_count || 0,
+        total_videos: totalVideos,
+        total_likes: totalLikes,
+        total_views: totalViews,
+        videos: userVideos || [],
+      };
+    },
+    enabled: !!userId,
+  });
+
+  // Получаем видео пользователя
+  const { data: userVideos, isLoading: videosLoading } = useQuery({
+    queryKey: ['user-videos', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+
+      const { data: videos, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const videosWithStats = await Promise.all(
+        (videos || []).map(async (video) => {
+          const { count: likesCount } = await supabase
+            .from('video_likes')
+            .select('*', { count: 'exact' })
+            .eq('video_id', video.id);
+
+          const { count: commentsCount } = await supabase
+            .from('video_comments')
+            .select('*', { count: 'exact' })
+            .eq('video_id', video.id);
+
+          const { data: ratings } = await supabase
+            .from('video_ratings')
+            .select('rating')
+            .eq('video_id', video.id);
+
+          const averageRating = ratings && ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+            : 0;
+
+          let userLiked = false;
+          let userRating = 0;
+
+          if (user?.id) {
+            const { data: userLike } = await supabase
+              .from('video_likes')
+              .select('*')
+              .eq('video_id', video.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            userLiked = !!userLike;
+
+            const { data: userRatingData } = await supabase
+              .from('video_ratings')
+              .select('rating')
+              .eq('video_id', video.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            userRating = userRatingData?.rating || 0;
+          }
+
+          return {
+            ...video,
+            likes_count: likesCount || 0,
+            comments_count: commentsCount || 0,
+            average_rating: Number(averageRating.toFixed(1)),
+            user_liked: userLiked,
+            user_rating: userRating,
+            thumbnail_url: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
+          };
+        })
+      );
+
+      return videosWithStats;
+    },
+    enabled: !!userId,
+  });
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -24,7 +164,6 @@ const Profile: React.FC = () => {
 
     const video = userVideos?.find(v => v.id === videoId);
     if (video) {
-      console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
       try {
         await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
@@ -41,7 +180,6 @@ const Profile: React.FC = () => {
       return;
     }
 
-    console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
     try {
       await rateVideoMutation.mutateAsync({ videoId, rating });
       toast.success(`Оценка ${rating} поставлена`);
@@ -53,42 +191,51 @@ const Profile: React.FC = () => {
 
   if (profileLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[300px] pb-16">
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
   }
 
-  // Используем данные из userProfile или fallback на данные из user
-  const displayUser = userProfile || user;
-
-  if (!displayUser) {
+  if (!userProfile) {
     return (
-      <div className="p-3 pb-16">
+      <div className="min-h-screen bg-gray-50 p-3">
         <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-          Не удалось загрузить профиль
+          Профиль не найден
         </div>
       </div>
     );
   }
 
   return (
-    <div className="pb-16">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with back button */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 sticky top-0 z-40">
+        <div className="flex items-center">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 mr-2 p-1">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </Link>
+          <h1 className="text-lg font-bold">Профиль</h1>
+        </div>
+      </div>
+
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3">
         <div className="flex items-center mb-2">
           <img
-            src={displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
-            alt={displayUser.username || 'Роллер'}
+            src={userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
+            alt={userProfile.username || 'Роллер'}
             className="w-12 h-12 rounded-full border-2 border-white mr-2"
           />
           <div className="flex-1">
             <h2 className="text-lg font-bold">
-              {displayUser.username || displayUser.telegram_username || 'Роллер'}
+              {userProfile.username || userProfile.telegram_username || 'Роллер'}
             </h2>
-            {displayUser.first_name && displayUser.last_name && (
+            {userProfile.first_name && userProfile.last_name && (
               <p className="text-blue-100 text-sm">
-                {displayUser.first_name} {displayUser.last_name}
+                {userProfile.first_name} {userProfile.last_name}
               </p>
             )}
             <div className="flex items-center mt-0.5 text-blue-100">
@@ -113,8 +260,8 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Stats Section */}
-      <div className="p-2">
-        <div className="bg-white rounded-lg shadow-md p-2 mb-3">
+      <div className="p-3">
+        <div className="bg-white rounded-lg shadow-md p-3 mb-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
             <Trophy className="w-4 h-4 mr-2 text-yellow-500" />
             Статистика
@@ -148,19 +295,19 @@ const Profile: React.FC = () => {
         </div>
 
         {userProfile?.is_premium && (
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-2 mb-3">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-3 mb-3">
             <h3 className="text-base font-bold mb-1">⭐ Premium статус</h3>
             <p className="text-sm opacity-90">
-              У вас есть доступ к эксклюзивным функциям!
+              У пользователя есть доступ к эксклюзивным функциям!
             </p>
           </div>
         )}
 
         {/* Video Feed Section */}
-        <div className="bg-white rounded-lg shadow-md p-2">
+        <div className="bg-white rounded-lg shadow-md p-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
             <Video className="w-4 h-4 mr-2 text-purple-500" />
-            Мои трюки ({userProfile?.total_videos || 0})
+            Трюки ({userProfile?.total_videos || 0})
           </h3>
           
           {videosLoading ? (
@@ -169,19 +316,18 @@ const Profile: React.FC = () => {
             </div>
           ) : (userProfile?.total_videos || 0) === 0 ? (
             <div className="text-center py-4 text-gray-500">
-              <p className="text-sm">У вас пока нет загруженных трюков</p>
-              <p className="text-xs mt-1">Загрузите свой первый трюк во вкладке "Загрузить"</p>
+              <p className="text-sm">У пользователя пока нет загруженных трюков</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {userVideos?.map(video => (
                 <VideoCard
                   key={video.id}
                   video={{
                     id: video.id,
                     title: video.title,
-                    author: displayUser.username || displayUser.telegram_username || 'Роллер',
-                    authorAvatar: displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                    author: userProfile.username || userProfile.telegram_username || 'Роллер',
+                    authorAvatar: userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
                     thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1564496892426-1dd2f7f8bfa4?w=400&h=300&fit=crop',
                     videoUrl: video.video_url,
                     likes: video.likes_count || 0,
@@ -197,7 +343,6 @@ const Profile: React.FC = () => {
                     }),
                     userLiked: video.user_liked || false,
                     userRating: video.user_rating || 0,
-                    userId: video.user_id,
                   }}
                   onLike={handleLike}
                   onRate={handleRate}
@@ -211,4 +356,4 @@ const Profile: React.FC = () => {
   );
 };
 
-export default Profile;
+export default UserProfile;
