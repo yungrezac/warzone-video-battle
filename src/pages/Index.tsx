@@ -2,7 +2,6 @@
 import { useState } from "react";
 import AuthWrapper from "@/components/AuthWrapper";
 import { useAuth } from "@/components/AuthWrapper";
-import Header from "@/components/Header";
 import BottomNavbar from "@/components/BottomNavbar";
 import VideoFeed from "@/components/VideoFeed";
 import UploadVideo from "@/components/UploadVideo";
@@ -33,14 +32,10 @@ const Index = () => {
     }
   };
 
-  const userName = user?.first_name || user?.username || 'Роллер';
-  const userBalance = userProfile?.total_points || 0;
-
   return (
     <AuthWrapper>
       <div className="min-h-screen bg-gray-50">
-        <Header userBalance={userBalance} userName={userName} />
-        <main className="pt-14">
+        <main>
           {renderContent()}
         </main>
         <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
