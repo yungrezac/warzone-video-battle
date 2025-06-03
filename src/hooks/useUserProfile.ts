@@ -11,6 +11,8 @@ export const useUserProfile = () => {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Загружаем профиль пользователя:', user.id);
+
       // Получаем профиль пользователя с баллами одним запросом
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -26,25 +28,46 @@ export const useUserProfile = () => {
 
       if (profileError) throw profileError;
 
-      // Получаем статистику видео пользователя одним запросом
-      const { data: videoStats, error: videoStatsError } = await supabase
+      // Получаем список видео пользователя
+      const { data: userVideos, error: videosError } = await supabase
         .from('videos')
-        .select(`
-          id,
-          views,
-          video_likes (count),
-          video_comments (count)
-        `)
+        .select('id')
         .eq('user_id', user.id);
 
-      if (videoStatsError) throw videoStatsError;
+      if (videosError) throw videosError;
 
-      // Подсчитываем статистику
-      const totalVideos = videoStats?.length || 0;
-      const totalViews = videoStats?.reduce((sum, video) => sum + (video.views || 0), 0) || 0;
-      const totalLikes = videoStats?.reduce((sum, video) => sum + (video.video_likes?.length || 0), 0) || 0;
+      const videoIds = userVideos?.map(v => v.id) || [];
+      const totalVideos = videoIds.length;
+
+      let totalLikes = 0;
+      let totalViews = 0;
+
+      if (videoIds.length > 0) {
+        // Подсчитываем общее количество лайков для всех видео пользователя
+        const { count: likesCount } = await supabase
+          .from('video_likes')
+          .select('*', { count: 'exact' })
+          .in('video_id', videoIds);
+
+        totalLikes = likesCount || 0;
+
+        // Подсчитываем общее количество просмотров
+        const { data: viewsData } = await supabase
+          .from('videos')
+          .select('views')
+          .eq('user_id', user.id);
+
+        totalViews = viewsData?.reduce((sum, video) => sum + (video.views || 0), 0) || 0;
+      }
 
       const userPoints = profile.user_points?.[0];
+
+      console.log('Статистика профиля:', { 
+        totalVideos, 
+        totalLikes, 
+        totalViews,
+        videoIds: videoIds.length 
+      });
 
       return {
         ...profile,
@@ -53,7 +76,7 @@ export const useUserProfile = () => {
         total_videos: totalVideos,
         total_likes: totalLikes,
         total_views: totalViews,
-        videos: videoStats || [],
+        videos: userVideos || [],
       };
     },
     enabled: !!user,
