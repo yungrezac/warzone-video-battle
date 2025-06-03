@@ -58,7 +58,7 @@ const Market: React.FC = () => {
                 <Settings className="w-4 h-4 text-orange-600" />
               </div>
               <p className="text-xs font-medium text-gray-700">Запчасти</p>
-              <p className="text-xs text-gray-500">Подшипники, тормоза</p>
+              <p className="text-xs text-gray-500">Подшипники</p>
             </div>
             
             <div className="bg-white rounded-lg p-3 text-center border border-gray-200">
