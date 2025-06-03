@@ -77,7 +77,7 @@ export const useUserVideos = () => {
             user_liked: !!userLike,
             user_rating: userRatingData?.rating || 0,
             // Обновляем thumbnail для роликов с роллерской тематикой
-            thumbnail_url: video.thumbnail_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+            thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         })
       );

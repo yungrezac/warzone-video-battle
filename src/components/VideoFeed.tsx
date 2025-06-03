@@ -98,7 +98,7 @@ const VideoFeed: React.FC = () => {
               title: video.title,
               author: video.user?.username || video.user?.telegram_username || 'Роллер',
               authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-              thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+              thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
               videoUrl: video.video_url,
               likes: video.likes_count || 0,
               comments: video.comments_count || 0,

@@ -112,6 +112,7 @@ export const useVideos = () => {
             average_rating: Number(averageRating.toFixed(1)),
             user_liked: userLiked,
             user_rating: userRating,
+            thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         })
       );
