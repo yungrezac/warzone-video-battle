@@ -6,6 +6,7 @@ import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error } = useVideos();
@@ -13,6 +14,7 @@ const VideoFeed: React.FC = () => {
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const videoRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const { triggerSocialLike, triggerSocialRating } = useAchievementTriggers();
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -25,6 +27,12 @@ const VideoFeed: React.FC = () => {
       console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
       try {
         await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
+        
+        // Триггерим достижения за социальную активность
+        if (!video.user_liked) {
+          await triggerSocialLike();
+        }
+        
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
       } catch (error) {
         console.error('Ошибка при обработке лайка:', error);
@@ -42,6 +50,10 @@ const VideoFeed: React.FC = () => {
     console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
     try {
       await rateVideoMutation.mutateAsync({ videoId, rating });
+      
+      // Триггерим достижения за социальную активность
+      await triggerSocialRating();
+      
       toast.success(`Оценка ${rating} поставлена`);
     } catch (error) {
       console.error('Ошибка при выставлении оценки:', error);
@@ -106,7 +118,7 @@ const VideoFeed: React.FC = () => {
       </div>
 
       <div className="px-2 space-y-2">
-        {videos.map(video => (
+        {videos?.map(video => (
           <div 
             key={video.id}
             ref={(el) => {

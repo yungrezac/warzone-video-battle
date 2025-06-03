@@ -11,74 +11,115 @@ export const useAchievementTriggers = () => {
   const { sendAchievementNotification } = useTelegramNotifications();
 
   // Функция для обновления достижений при загрузке видео
-  const triggerVideoUpload = () => {
+  const triggerVideoUpload = async () => {
     if (!user) return;
     
-    // Достижения за количество видео
-    updateProgress.mutate({ category: 'videos' });
-    
-    // Проверяем время загрузки для временных достижений
-    const now = new Date();
-    const hour = now.getHours();
-    
-    if (hour < 8) {
-      updateProgress.mutate({ category: 'time' }); // Раннее утро
-    } else if (hour >= 22) {
-      updateProgress.mutate({ category: 'time' }); // Ночной роллер
+    console.log('Триггер: загрузка видео');
+    try {
+      // Достижения за количество видео
+      await updateProgress.mutateAsync({ category: 'videos' });
+      
+      // Проверяем время загрузки для временных достижений
+      const now = new Date();
+      const hour = now.getHours();
+      
+      if (hour < 8) {
+        await updateProgress.mutateAsync({ category: 'time' }); // Раннее утро
+      } else if (hour >= 22) {
+        await updateProgress.mutateAsync({ category: 'time' }); // Ночной роллер
+      }
+    } catch (error) {
+      console.error('Ошибка обновления достижений при загрузке видео:', error);
     }
   };
 
   // Функция для обновления достижений при получении лайка
-  const triggerLikeReceived = (totalLikes: number) => {
+  const triggerLikeReceived = async (totalLikes: number) => {
     if (!user) return;
-    updateProgress.mutate({ category: 'likes', newValue: totalLikes });
+    console.log('Триггер: получен лайк, всего лайков:', totalLikes);
+    try {
+      await updateProgress.mutateAsync({ category: 'likes', newValue: totalLikes });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при получении лайка:', error);
+    }
   };
 
   // Функция для обновления достижений при получении просмотров
-  const triggerViewsReceived = (totalViews: number) => {
+  const triggerViewsReceived = async (totalViews: number) => {
     if (!user) return;
-    updateProgress.mutate({ category: 'views', newValue: totalViews });
+    console.log('Триггер: получены просмотры, всего просмотров:', totalViews);
+    try {
+      await updateProgress.mutateAsync({ category: 'views', newValue: totalViews });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при получении просмотров:', error);
+    }
   };
 
   // Функция для обновления достижений при получении рейтинга
-  const triggerRatingReceived = (totalRatings: number, averageRating?: number) => {
+  const triggerRatingReceived = async (totalRatings: number, averageRating?: number) => {
     if (!user) return;
-    updateProgress.mutate({ category: 'ratings', newValue: totalRatings });
-    
-    // Для достижения "Мастерство" проверяем средний рейтинг
-    if (averageRating && averageRating >= 4.5) {
-      updateProgress.mutate({ category: 'rating_avg', newValue: Math.round(averageRating * 10) });
+    console.log('Триггер: получен рейтинг, всего рейтингов:', totalRatings, 'средний рейтинг:', averageRating);
+    try {
+      await updateProgress.mutateAsync({ category: 'ratings', newValue: totalRatings });
+      
+      // Для достижения "Мастерство" проверяем средний рейтинг
+      if (averageRating && averageRating >= 4.5) {
+        await updateProgress.mutateAsync({ category: 'rating_avg', newValue: Math.round(averageRating * 10) });
+      }
+    } catch (error) {
+      console.error('Ошибка обновления достижений при получении рейтинга:', error);
     }
   };
 
   // Функция для обновления достижений при победе
-  const triggerWin = () => {
+  const triggerWin = async () => {
     if (!user) return;
-    updateProgress.mutate({ category: 'wins' });
+    console.log('Триггер: победа');
+    try {
+      await updateProgress.mutateAsync({ category: 'wins' });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при победе:', error);
+    }
   };
 
   // Функция для обновления достижений при лайке другому пользователю
-  const triggerSocialLike = () => {
+  const triggerSocialLike = async () => {
     if (!user) return;
-    updateProgress.mutate({ category: 'social_likes' });
+    console.log('Триггер: лайк другому пользователю');
+    try {
+      await updateProgress.mutateAsync({ category: 'social_likes' });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при социальном лайке:', error);
+    }
   };
 
   // Функция для обновления достижений при оценке другого видео
-  const triggerSocialRating = () => {
+  const triggerSocialRating = async () => {
     if (!user) return;
-    updateProgress.mutate({ category: 'social_ratings' });
+    console.log('Триггер: оценка другого видео');
+    try {
+      await updateProgress.mutateAsync({ category: 'social_ratings' });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при социальном рейтинге:', error);
+    }
   };
 
   // Функция для обновления достижений при комментарии
-  const triggerComment = () => {
+  const triggerComment = async () => {
     if (!user) return;
-    updateProgress.mutate({ category: 'comments' });
+    console.log('Триггер: комментарий');
+    try {
+      await updateProgress.mutateAsync({ category: 'comments' });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при комментарии:', error);
+    }
   };
 
   // Функция для отправки уведомления о новом достижении
   const notifyAchievement = async (achievementTitle: string, achievementIcon: string, rewardPoints: number) => {
     if (!user?.telegram_id) return;
     
+    console.log('Отправляем уведомление о достижении:', achievementTitle);
     try {
       await sendAchievementNotification(user.telegram_id, achievementTitle, achievementIcon, rewardPoints);
     } catch (error) {

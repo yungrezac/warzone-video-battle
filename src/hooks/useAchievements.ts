@@ -28,8 +28,6 @@ export interface UserAchievement {
 }
 
 export const useAchievements = () => {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
@@ -73,6 +71,7 @@ export const useUserAchievements = () => {
 
 export const useUpdateAchievementProgress = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ 
@@ -84,14 +83,98 @@ export const useUpdateAchievementProgress = () => {
       newValue?: number; 
       increment?: number; 
     }) => {
-      const { error } = await supabase.rpc('update_achievement_progress', {
-        p_user_id: (await supabase.auth.getUser()).data.user?.id,
-        p_category: category,
-        p_new_value: newValue || null,
-        p_increment: increment,
-      });
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
 
-      if (error) throw error;
+      console.log('Обновляем прогресс достижений для пользователя:', user.id, 'категория:', category, 'новое значение:', newValue, 'инкремент:', increment);
+
+      // Получаем все активные достижения для данной категории
+      const { data: achievements, error: achievementsError } = await supabase
+        .from('achievements')
+        .select('id, target_value, reward_points')
+        .eq('category', category)
+        .eq('is_active', true);
+
+      if (achievementsError) throw achievementsError;
+
+      if (!achievements || achievements.length === 0) {
+        console.log('Нет активных достижений для категории:', category);
+        return;
+      }
+
+      // Получаем текущий прогресс пользователя для этих достижений
+      const achievementIds = achievements.map(a => a.id);
+      const { data: userAchievements, error: userAchievementsError } = await supabase
+        .from('user_achievements')
+        .select('*')
+        .eq('user_id', user.id)
+        .in('achievement_id', achievementIds)
+        .eq('is_completed', false);
+
+      if (userAchievementsError) throw userAchievementsError;
+
+      // Обновляем прогресс для каждого незавершенного достижения
+      for (const achievement of achievements) {
+        const userAchievement = userAchievements?.find(ua => ua.achievement_id === achievement.id);
+        
+        if (!userAchievement) {
+          console.log('Пользователь не имеет записи для достижения:', achievement.id);
+          continue;
+        }
+
+        if (userAchievement.is_completed) {
+          continue; // Пропускаем уже завершенные достижения
+        }
+
+        let newProgress: number;
+        if (newValue !== undefined) {
+          newProgress = newValue;
+        } else {
+          newProgress = userAchievement.current_progress + increment;
+        }
+
+        const isNowCompleted = newProgress >= achievement.target_value;
+        if (isNowCompleted) {
+          newProgress = achievement.target_value;
+        }
+
+        console.log('Обновляем достижение:', achievement.id, 'прогресс:', userAchievement.current_progress, '->', newProgress, 'завершено:', isNowCompleted);
+
+        // Обновляем прогресс достижения
+        const { error: updateError } = await supabase
+          .from('user_achievements')
+          .update({
+            current_progress: newProgress,
+            is_completed: isNowCompleted,
+            completed_at: isNowCompleted ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userAchievement.id);
+
+        if (updateError) {
+          console.error('Ошибка обновления достижения:', updateError);
+          throw updateError;
+        }
+
+        // Если достижение только что завершено, добавляем баллы
+        if (isNowCompleted && !userAchievement.is_completed) {
+          console.log('Достижение завершено! Добавляем баллы:', achievement.reward_points);
+          
+          const { error: pointsError } = await supabase
+            .from('user_points')
+            .update({
+              total_points: supabase.sql`COALESCE(total_points, 0) + ${achievement.reward_points}`,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', user.id);
+
+          if (pointsError) {
+            console.error('Ошибка обновления баллов:', pointsError);
+            // Не бросаем ошибку, так как это не критично
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
