@@ -9,13 +9,11 @@ const VideoFeed: React.FC = () => {
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
 
-  const handleLike = (videoId: string, isCurrentlyLiked: boolean) => {
-    likeVideoMutation.mutate({ videoId, isLiked: isCurrentlyLiked });
-  };
-
-  const handleComment = (videoId: string) => {
-    console.log(`Opening comments for video ${videoId}`);
-    // TODO: Implement comment modal
+  const handleLike = (videoId: string) => {
+    const video = videos?.find(v => v.id === videoId);
+    if (video) {
+      likeVideoMutation.mutate({ videoId, isLiked: video.user_liked || false });
+    }
   };
 
   const handleRate = (videoId: string, rating: number) => {
@@ -74,7 +72,7 @@ const VideoFeed: React.FC = () => {
               author: video.user?.username || video.user?.telegram_username || 'Роллер',
               authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
               thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
-              videoUrl: video.video_url, // Передаем URL видео
+              videoUrl: video.video_url,
               likes: video.likes_count || 0,
               comments: video.comments_count || 0,
               rating: video.average_rating || 0,
@@ -89,8 +87,7 @@ const VideoFeed: React.FC = () => {
               userLiked: video.user_liked || false,
               userRating: video.user_rating || 0,
             }}
-            onLike={(id) => handleLike(id, video.user_liked || false)}
-            onComment={handleComment}
+            onLike={handleLike}
             onRate={handleRate}
           />
         ))}

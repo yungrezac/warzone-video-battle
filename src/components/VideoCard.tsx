@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Star } from 'lucide-react';
+import { Heart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import VideoPlayer from './VideoPlayer';
+import VideoComments from './VideoComments';
 
 interface Video {
   id: string;
@@ -24,11 +25,10 @@ interface Video {
 interface VideoCardProps {
   video: Video;
   onLike: (id: string) => void;
-  onComment: (id: string) => void;
   onRate: (id: string, rating: number) => void;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onComment, onRate }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   const [showRating, setShowRating] = useState(false);
 
   const handleRate = (rating: number) => {
@@ -98,15 +98,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onComment, onRate 
               {video.likes}
             </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onComment(video.id)}
-              className="text-gray-600 hover:text-blue-500"
-            >
-              <MessageCircle className="w-5 h-5 mr-1" />
-              {video.comments}
-            </Button>
+            <VideoComments 
+              videoId={video.id} 
+              commentsCount={video.comments} 
+            />
 
             <Button
               variant="ghost"
