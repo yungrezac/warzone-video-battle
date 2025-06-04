@@ -121,15 +121,15 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner })
           <div className="grid grid-cols-4 gap-2 text-center mb-4">
             <div className="bg-white/20 rounded-lg p-2 backdrop-blur-sm">
               <Heart className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-sm font-bold">{winner.likes_count || 0}</span>
+              <span className="text-sm font-bold">{(winner as any).likes_count || winner.likes_count || 0}</span>
             </div>
             <div className="bg-white/20 rounded-lg p-2 backdrop-blur-sm">
               <Star className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-sm font-bold">{(winner.average_rating || 0).toFixed(1)}</span>
+              <span className="text-sm font-bold">{((winner as any).average_rating || winner.average_rating || 0).toFixed ? ((winner as any).average_rating || winner.average_rating || 0).toFixed(1) : 0}</span>
             </div>
             <div className="bg-white/20 rounded-lg p-2 backdrop-blur-sm">
               <MessageCircle className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-sm font-bold">{winner.comments_count || 0}</span>
+              <span className="text-sm font-bold">{(winner as any).comments_count || 0}</span>
             </div>
             <div className="bg-white/20 rounded-lg p-2 backdrop-blur-sm">
               <Eye className="w-4 h-4 mx-auto mb-1" />
