@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Crown, Trophy, Heart, Star, Eye, Calendar } from 'lucide-react';
-import { useYesterdayWinner, useTopUsers } from '@/hooks/useWinnerSystem';
+import { Crown, Trophy, Heart, Star, Eye, Calendar, MessageCircle } from 'lucide-react';
+import { useYesterdayWinner, useTodayWinner, useTopUsers } from '@/hooks/useWinnerSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,16 @@ interface WinnerAnnouncementProps {
 }
 
 const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner }) => {
-  const { data: winner, isLoading: winnerLoading } = useYesterdayWinner();
+  const { data: yesterdayWinner, isLoading: yesterdayLoading } = useYesterdayWinner();
+  const { data: todayWinner, isLoading: todayLoading } = useTodayWinner();
   const { data: topUsers, isLoading: topUsersLoading } = useTopUsers();
 
-  if (winnerLoading) {
+  // Определяем какого победителя показывать
+  const winner = todayWinner || yesterdayWinner;
+  const isLoading = todayLoading || yesterdayLoading;
+  const isToday = !!todayWinner;
+
+  if (isLoading) {
     return (
       <div className="p-2 mb-4">
         <Card className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white shadow-xl">
@@ -47,7 +53,7 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner })
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="w-6 h-6" />
-              🏆 Победитель вчерашнего дня
+              🏆 Победитель дня
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -85,7 +91,12 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner })
         <CardHeader className="pb-3 relative z-10">
           <CardTitle className="text-lg flex items-center gap-2">
             <Crown className="w-6 h-6 drop-shadow-lg" />
-            🏆 Победитель вчерашнего дня
+            🏆 {isToday ? 'Победитель сегодня' : 'Победитель вчерашнего дня'}
+            {isToday && (
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/50 text-xs">
+                До 23:59
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         
@@ -117,12 +128,12 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner })
               <span className="text-sm font-bold">{(winner.average_rating || 0).toFixed(1)}</span>
             </div>
             <div className="bg-white/20 rounded-lg p-2 backdrop-blur-sm">
-              <Eye className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-sm font-bold">{winner.views || 0}</span>
+              <MessageCircle className="w-4 h-4 mx-auto mb-1" />
+              <span className="text-sm font-bold">{winner.comments_count || 0}</span>
             </div>
             <div className="bg-white/20 rounded-lg p-2 backdrop-blur-sm">
-              <Trophy className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-xs font-bold">+100</span>
+              <Eye className="w-4 h-4 mx-auto mb-1" />
+              <span className="text-sm font-bold">{winner.views || 0}</span>
             </div>
           </div>
 
