@@ -24,8 +24,10 @@ export const useAchievementTriggers = () => {
       const hour = now.getHours();
       
       if (hour < 8) {
-        await updateProgress.mutateAsync({ category: 'time' }); // Раннее утро
+        console.log('Ранняя загрузка видео (до 8 утра)');
+        await updateProgress.mutateAsync({ category: 'time' }); // Ранняя пташка
       } else if (hour >= 22) {
+        console.log('Поздняя загрузка видео (после 22:00)');
         await updateProgress.mutateAsync({ category: 'time' }); // Ночной роллер
       }
     } catch (error) {
@@ -62,9 +64,16 @@ export const useAchievementTriggers = () => {
     try {
       await updateProgress.mutateAsync({ category: 'ratings', newValue: totalRatings });
       
-      // Для достижения "Мастерство" проверяем средний рейтинг
-      if (averageRating && averageRating >= 4.5) {
-        await updateProgress.mutateAsync({ category: 'rating_avg', newValue: Math.round(averageRating * 10) });
+      // Для достижения "Мастерство" и "Совершенство" проверяем средний рейтинг
+      if (averageRating && totalRatings >= 10) {
+        if (averageRating >= 4.5) {
+          console.log('Проверяем достижение "Мастерство"');
+          await updateProgress.mutateAsync({ category: 'rating_avg', newValue: Math.round(averageRating * 10) });
+        }
+        if (averageRating >= 4.8 && totalRatings >= 20) {
+          console.log('Проверяем достижение "Совершенство"');
+          await updateProgress.mutateAsync({ category: 'rating_avg', newValue: Math.round(averageRating * 10) });
+        }
       }
     } catch (error) {
       console.error('Ошибка обновления достижений при получении рейтинга:', error);
@@ -115,6 +124,28 @@ export const useAchievementTriggers = () => {
     }
   };
 
+  // Функция для обновления достижений при ежедневном входе
+  const triggerDailyLogin = async (streakDays: number) => {
+    if (!user) return;
+    console.log('Триггер: ежедневный вход, дней подряд:', streakDays);
+    try {
+      await updateProgress.mutateAsync({ category: 'daily', newValue: streakDays });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при ежедневном входе:', error);
+    }
+  };
+
+  // Функция для обновления достижений при серии лайков
+  const triggerLikeStreak = async (streakCount: number) => {
+    if (!user) return;
+    console.log('Триггер: серия лайков, видео подряд:', streakCount);
+    try {
+      await updateProgress.mutateAsync({ category: 'streak', newValue: streakCount });
+    } catch (error) {
+      console.error('Ошибка обновления достижений при серии лайков:', error);
+    }
+  };
+
   // Функция для отправки уведомления о новом достижении
   const notifyAchievement = async (achievementTitle: string, achievementIcon: string, rewardPoints: number) => {
     if (!user?.telegram_id) return;
@@ -136,6 +167,8 @@ export const useAchievementTriggers = () => {
     triggerSocialLike,
     triggerSocialRating,
     triggerComment,
+    triggerDailyLogin,
+    triggerLikeStreak,
     notifyAchievement,
   };
 };

@@ -1,8 +1,8 @@
-
 import React, { useRef } from 'react';
 import VideoCard from './VideoCard';
 import WinnerAnnouncement from './WinnerAnnouncement';
 import AdminWinnerControl from './AdminWinnerControl';
+import AchievementNotificationManager from './AchievementNotificationManager';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useTodayWinner } from '@/hooks/useWinnerSystem';
 import { Loader2 } from 'lucide-react';
@@ -114,6 +114,9 @@ const VideoFeed: React.FC = () => {
 
   return (
     <div className="pb-16">
+      {/* Менеджер уведомлений о достижениях */}
+      <AchievementNotificationManager />
+
       {/* Админ панель для определения победителя */}
       <AdminWinnerControl />
 
