@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import VideoCard from './VideoCard';
 import WinnerAnnouncement from './WinnerAnnouncement';
+import AdminWinnerControl from './AdminWinnerControl';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
@@ -107,6 +108,9 @@ const VideoFeed: React.FC = () => {
 
   return (
     <div className="pb-16">
+      {/* Админ панель для определения победителя */}
+      <AdminWinnerControl />
+
       {/* Объявление о победителе */}
       <WinnerAnnouncement onViewWinner={handleViewWinner} />
 
