@@ -59,9 +59,13 @@ export const useYesterdayWinner = () => {
           ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
           : 0;
 
-        winner.likes_count = likesCount || 0;
-        winner.comments_count = commentsCount || 0;
-        winner.average_rating = Number(averageRating.toFixed(1));
+        // Правильно присваиваем все поля
+        return {
+          ...winner,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          average_rating: Number(averageRating.toFixed(1))
+        };
       }
 
       console.log('Победитель найден:', winner);
@@ -126,9 +130,13 @@ export const useTodayWinner = () => {
           ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
           : 0;
 
-        winner.likes_count = likesCount || 0;
-        winner.comments_count = commentsCount || 0;
-        winner.average_rating = Number(averageRating.toFixed(1));
+        // Правильно присваиваем все поля
+        return {
+          ...winner,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          average_rating: Number(averageRating.toFixed(1))
+        };
       }
 
       console.log('Сегодняшний победитель найден:', winner);
