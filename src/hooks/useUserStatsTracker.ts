@@ -1,98 +1,63 @@
 
-import { useEffect, useRef } from 'react';
-import { useUserVideos } from './useUserVideos';
+import { useEffect } from 'react';
+import { useUserProfile } from './useUserProfile';
+import { useUpdateAchievementProgress } from './useAchievements';
 import { useAuth } from '@/components/AuthWrapper';
-import { useAchievementTriggers } from './useAchievementTriggers';
 
 export const useUserStatsTracker = () => {
   const { user } = useAuth();
-  const { data: userVideos } = useUserVideos();
-  const { 
-    triggerLikeReceived, 
-    triggerViewsReceived, 
-    triggerRatingReceived,
-    triggerLikeStreak 
-  } = useAchievementTriggers();
-
-  const lastStatsRef = useRef<{
-    totalLikes: number;
-    totalViews: number;
-    totalRatings: number;
-    consecutiveLikedVideos: number;
-  }>({
-    totalLikes: 0,
-    totalViews: 0,
-    totalRatings: 0,
-    consecutiveLikedVideos: 0
-  });
+  const { data: userProfile } = useUserProfile();
+  const updateProgress = useUpdateAchievementProgress();
 
   useEffect(() => {
-    if (!user || !userVideos) return;
+    if (!user || !userProfile) return;
 
-    console.log('Обновляем статистику пользователя:', userVideos);
-
-    // Подсчитываем общую статистику
-    let totalLikes = 0;
-    let totalViews = 0;
-    let totalRatings = 0;
-    let totalRatingSum = 0;
-    let consecutiveLikedVideos = 0;
-    let currentStreak = 0;
-
-    userVideos.forEach((video, index) => {
-      totalLikes += video.likes_count || 0;
-      totalViews += video.views || 0;
-      
-      if (video.average_rating && video.average_rating > 0) {
-        totalRatings++;
-        totalRatingSum += video.average_rating;
-      }
-
-      // Подсчитываем серию лайков (видео с лайками подряд)
-      if (video.likes_count && video.likes_count > 0) {
-        currentStreak++;
-        consecutiveLikedVideos = Math.max(consecutiveLikedVideos, currentStreak);
-      } else {
-        currentStreak = 0;
-      }
+    console.log('Обновляем прогресс достижений на основе статистики пользователя:', {
+      videos: userProfile.total_videos,
+      likes: userProfile.total_likes,
+      views: userProfile.total_views,
+      wins: userProfile.wins_count
     });
 
-    const averageRating = totalRatings > 0 ? totalRatingSum / totalRatings : 0;
+    // Обновляем достижения на основе текущей статистики
+    const updateAchievements = async () => {
+      try {
+        // Достижения за видео
+        if (userProfile.total_videos > 0) {
+          await updateProgress.mutateAsync({
+            category: 'videos',
+            newValue: userProfile.total_videos
+          });
+        }
 
-    // Обновляем достижения только если статистика изменилась
-    const lastStats = lastStatsRef.current;
-    
-    if (totalLikes !== lastStats.totalLikes) {
-      triggerLikeReceived(totalLikes);
-    }
+        // Достижения за лайки
+        if (userProfile.total_likes > 0) {
+          await updateProgress.mutateAsync({
+            category: 'likes',
+            newValue: userProfile.total_likes
+          });
+        }
 
-    if (totalViews !== lastStats.totalViews) {
-      triggerViewsReceived(totalViews);
-    }
+        // Достижения за просмотры
+        if (userProfile.total_views > 0) {
+          await updateProgress.mutateAsync({
+            category: 'views',
+            newValue: userProfile.total_views
+          });
+        }
 
-    if (totalRatings !== lastStats.totalRatings) {
-      triggerRatingReceived(totalRatings, averageRating);
-    }
-
-    if (consecutiveLikedVideos !== lastStats.consecutiveLikedVideos) {
-      triggerLikeStreak(consecutiveLikedVideos);
-    }
-
-    // Сохраняем текущую статистику
-    lastStatsRef.current = {
-      totalLikes,
-      totalViews,
-      totalRatings,
-      consecutiveLikedVideos
+        // Достижения за победы
+        if (userProfile.wins_count > 0) {
+          await updateProgress.mutateAsync({
+            category: 'wins',
+            newValue: userProfile.wins_count
+          });
+        }
+      } catch (error) {
+        console.error('Ошибка при обновлении прогресса достижений:', error);
+      }
     };
 
-    console.log('Статистика пользователя:', {
-      totalLikes,
-      totalViews,
-      totalRatings,
-      averageRating,
-      consecutiveLikedVideos
-    });
-
-  }, [user, userVideos, triggerLikeReceived, triggerViewsReceived, triggerRatingReceived, triggerLikeStreak]);
+    updateAchievements();
+  }, [user, userProfile, updateProgress]);
 };

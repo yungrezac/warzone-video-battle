@@ -12,28 +12,31 @@ export const useAchievementNotifications = () => {
   const { user } = useAuth();
   const { data: userAchievements } = useUserAchievements();
   const [notifications, setNotifications] = useState<AchievementNotificationData[]>([]);
-  const lastCompletedIdsRef = useRef<Set<string>>(new Set());
+  const previousCompletedRef = useRef<Set<string>>(new Set());
+  const isInitializedRef = useRef(false);
 
   useEffect(() => {
     if (!userAchievements || !user) return;
 
-    // Находим новые завершенные достижения
-    const currentCompletedIds = new Set(
-      userAchievements
-        .filter(ua => ua.is_completed)
-        .map(ua => ua.achievement_id)
-    );
+    const currentCompleted = userAchievements.filter(ua => ua.is_completed);
+    const currentCompletedIds = new Set(currentCompleted.map(ua => ua.achievement_id));
 
-    // Проверяем, какие достижения были только что завершены
-    const newlyCompleted = userAchievements.filter(ua => 
-      ua.is_completed && 
-      !lastCompletedIdsRef.current.has(ua.achievement_id)
+    // Если это первая загрузка, просто сохраняем текущее состояние
+    if (!isInitializedRef.current) {
+      previousCompletedRef.current = currentCompletedIds;
+      isInitializedRef.current = true;
+      return;
+    }
+
+    // Находим новые завершенные достижения
+    const newlyCompleted = currentCompleted.filter(ua => 
+      !previousCompletedRef.current.has(ua.achievement_id)
     );
 
     if (newlyCompleted.length > 0) {
-      console.log('Новые завершенные достижения:', newlyCompleted);
+      console.log('Новые достижения получены:', newlyCompleted.map(ua => ua.achievement.title));
       
-      // Добавляем уведомления для новых достижений
+      // Создаем уведомления для новых достижений
       const newNotifications = newlyCompleted.map(ua => ({
         achievement: ua.achievement,
         id: `${ua.achievement_id}-${Date.now()}-${Math.random()}`,
@@ -42,8 +45,8 @@ export const useAchievementNotifications = () => {
       setNotifications(prev => [...prev, ...newNotifications]);
     }
 
-    // Обновляем ref только при изменении состава завершенных достижений
-    lastCompletedIdsRef.current = currentCompletedIds;
+    // Обновляем предыдущее состояние
+    previousCompletedRef.current = currentCompletedIds;
   }, [userAchievements, user]);
 
   const removeNotification = (notificationId: string) => {

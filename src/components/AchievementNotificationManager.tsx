@@ -7,18 +7,20 @@ const AchievementNotificationManager: React.FC = () => {
   const { notifications, removeNotification } = useAchievementNotifications();
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2 pointer-events-none">
       {notifications.map((notification, index) => (
-        <div 
+        <div
           key={notification.id}
-          style={{ 
-            transform: `translateY(${index * 90}px)`,
-            zIndex: 1000 + index 
+          className="pointer-events-auto"
+          style={{
+            transform: `translateY(${index * 10}px)`,
+            zIndex: 1000 - index,
           }}
         >
           <AchievementNotification
             achievement={notification.achievement}
             onDismiss={() => removeNotification(notification.id)}
+            isVisible={true}
           />
         </div>
       ))}
