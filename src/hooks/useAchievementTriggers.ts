@@ -1,160 +1,244 @@
-
-import { useEffect } from 'react';
-import { useUpdateAchievementProgress } from './useAchievements';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useTelegramNotifications } from './useTelegramNotifications';
 
-// Хук для автоматического обновления достижений при различных действиях
 export const useAchievementTriggers = () => {
-  const updateProgress = useUpdateAchievementProgress();
   const { user } = useAuth();
   const { sendAchievementNotification } = useTelegramNotifications();
 
-  // Функция для обновления достижений при загрузке видео
   const triggerVideoUpload = async () => {
-    if (!user) return;
-    
-    console.log('Триггер: загрузка видео');
+    if (!user?.id) return;
+
+    console.log('Триггерим достижение за первую загрузку видео');
+
     try {
-      // Достижения за количество видео
-      await updateProgress.mutateAsync({ category: 'videos' });
-      
-      // Проверяем время загрузки для временных достижений
-      const now = new Date();
-      const hour = now.getHours();
-      
-      if (hour < 8) {
-        console.log('Ранняя загрузка видео (до 8 утра)');
-        await updateProgress.mutateAsync({ category: 'time' }); // Ранняя пташка
-      } else if (hour >= 22) {
-        console.log('Поздняя загрузка видео (после 22:00)');
-        await updateProgress.mutateAsync({ category: 'time' }); // Ночной роллер
+      const { error } = await supabase.rpc('check_and_grant_achievement', {
+        p_user_id: user.id,
+        p_achievement_category: 'first_video',
+      });
+
+      if (error) {
+        console.error('Ошибка при триггере достижения за первую загрузку видео:', error);
+        throw error;
       }
+
+      console.log('Достижение за первую загрузку видео успешно проверено и выдано');
     } catch (error) {
-      console.error('Ошибка обновления достижений при загрузке видео:', error);
+      console.error('Ошибка в triggerVideoUpload:', error);
+      throw error;
     }
   };
 
-  // Функция для обновления достижений при получении лайка
   const triggerLikeReceived = async (totalLikes: number) => {
-    if (!user) return;
-    console.log('Триггер: получен лайк, всего лайков:', totalLikes);
-    try {
-      await updateProgress.mutateAsync({ category: 'likes', newValue: totalLikes });
-    } catch (error) {
-      console.error('Ошибка обновления достижений при получении лайка:', error);
-    }
-  };
+    if (!user?.id) return;
 
-  // Функция для обновления достижений при получении просмотров
-  const triggerViewsReceived = async (totalViews: number) => {
-    if (!user) return;
-    console.log('Триггер: получены просмотры, всего просмотров:', totalViews);
-    try {
-      await updateProgress.mutateAsync({ category: 'views', newValue: totalViews });
-    } catch (error) {
-      console.error('Ошибка обновления достижений при получении просмотров:', error);
-    }
-  };
+    console.log('Триггерим достижения за лайки:', totalLikes);
 
-  // Функция для обновления достижений при получении рейтинга
-  const triggerRatingReceived = async (totalRatings: number, averageRating?: number) => {
-    if (!user) return;
-    console.log('Триггер: получен рейтинг, всего рейтингов:', totalRatings, 'средний рейтинг:', averageRating);
     try {
-      await updateProgress.mutateAsync({ category: 'ratings', newValue: totalRatings });
-      
-      // Для достижения "Мастерство" и "Совершенство" проверяем средний рейтинг
-      if (averageRating && totalRatings >= 10) {
-        if (averageRating >= 4.5) {
-          console.log('Проверяем достижение "Мастерство"');
-          await updateProgress.mutateAsync({ category: 'rating_avg', newValue: Math.round(averageRating * 10) });
-        }
-        if (averageRating >= 4.8 && totalRatings >= 20) {
-          console.log('Проверяем достижение "Совершенство"');
-          await updateProgress.mutateAsync({ category: 'rating_avg', newValue: Math.round(averageRating * 10) });
-        }
+      const { error } = await supabase.rpc('update_achievement_progress', {
+        p_user_id: user.id,
+        p_category: 'likes_received',
+        p_new_value: totalLikes
+      });
+
+      if (error) {
+        console.error('Ошибка обновления достижений за лайки:', error);
+        throw error;
       }
+
+      console.log('Достижения за лайки успешно обновлены');
     } catch (error) {
-      console.error('Ошибка обновления достижений при получении рейтинга:', error);
+      console.error('Ошибка в triggerLikeReceived:', error);
+      throw error;
     }
   };
 
-  // Функция для обновления достижений при победе
-  const triggerWin = async () => {
-    if (!user) return;
-    console.log('Триггер: победа');
+  const triggerViewsReceived = async (totalViews: number) => {
+    if (!user?.id) return;
+
+    console.log('Триггерим достижения за просмотры:', totalViews);
+
     try {
-      await updateProgress.mutateAsync({ category: 'wins' });
+      const { error } = await supabase.rpc('update_achievement_progress', {
+        p_user_id: user.id,
+        p_category: 'views_received',
+        p_new_value: totalViews
+      });
+
+      if (error) {
+        console.error('Ошибка обновления достижений за просмотры:', error);
+        throw error;
+      }
+
+      console.log('Достижения за просмотры успешно обновлены');
     } catch (error) {
-      console.error('Ошибка обновления достижений при победе:', error);
+      console.error('Ошибка в triggerViewsReceived:', error);
+      throw error;
     }
   };
 
-  // Функция для обновления достижений при лайке другому пользователю
+  const triggerRatingReceived = async (totalRatings: number, averageRating: number) => {
+    if (!user?.id) return;
+
+    console.log('Триггерим достижения за рейтинги:', totalRatings, averageRating);
+
+    try {
+      const { error } = await supabase.rpc('update_achievement_progress', {
+        p_user_id: user.id,
+        p_category: 'rating_received',
+        p_new_value: totalRatings
+      });
+
+      if (error) {
+        console.error('Ошибка обновления достижений за рейтинги:', error);
+        throw error;
+      }
+
+      console.log('Достижения за рейтинги успешно обновлены');
+    } catch (error) {
+      console.error('Ошибка в triggerRatingReceived:', error);
+      throw error;
+    }
+  };
+
+  const triggerLikeStreak = async (streakLength: number) => {
+     if (!user?.id) return;
+
+    console.log('Триггерим достижения за серию лайков:', streakLength);
+
+    try {
+      const { error } = await supabase.rpc('update_achievement_progress', {
+        p_user_id: user.id,
+        p_category: 'like_streak',
+        p_new_value: streakLength
+      });
+
+      if (error) {
+        console.error('Ошибка обновления достижений за серию лайков:', error);
+        throw error;
+      }
+
+      console.log('Достижения за серию лайков успешно обновлены');
+    } catch (error) {
+      console.error('Ошибка в triggerLikeStreak:', error);
+      throw error;
+    }
+  };
+
   const triggerSocialLike = async () => {
-    if (!user) return;
-    console.log('Триггер: лайк другому пользователю');
+    if (!user?.id) return;
+
+    console.log('Триггерим достижение за лайк в соц. сетях');
+
     try {
-      await updateProgress.mutateAsync({ category: 'social_likes' });
+      const { error } = await supabase.rpc('check_and_grant_achievement', {
+        p_user_id: user.id,
+        p_achievement_category: 'social_like',
+      });
+
+      if (error) {
+        console.error('Ошибка при триггере достижения за лайк в соц. сетях:', error);
+        throw error;
+      }
+
+      console.log('Достижение за лайк в соц. сетях успешно проверено и выдано');
     } catch (error) {
-      console.error('Ошибка обновления достижений при социальном лайке:', error);
+      console.error('Ошибка в triggerSocialLike:', error);
+      throw error;
     }
   };
 
-  // Функция для обновления достижений при оценке другого видео
   const triggerSocialRating = async () => {
-    if (!user) return;
-    console.log('Триггер: оценка другого видео');
+    if (!user?.id) return;
+
+    console.log('Триггерим достижение за оценку в соц. сетях');
+
     try {
-      await updateProgress.mutateAsync({ category: 'social_ratings' });
+      const { error } = await supabase.rpc('check_and_grant_achievement', {
+        p_user_id: user.id,
+        p_achievement_category: 'social_rating',
+      });
+
+      if (error) {
+        console.error('Ошибка при триггере достижения за оценку в соц. сетях:', error);
+        throw error;
+      }
+
+      console.log('Достижение за оценку в соц. сетях успешно проверено и выдано');
     } catch (error) {
-      console.error('Ошибка обновления достижений при социальном рейтинге:', error);
+      console.error('Ошибка в triggerSocialRating:', error);
+      throw error;
     }
   };
 
-  // Функция для обновления достижений при комментарии
-  const triggerComment = async () => {
-    if (!user) return;
-    console.log('Триггер: комментарий');
+   const triggerComment = async () => {
+    if (!user?.id) return;
+
+    console.log('Триггерим достижение за первый комментарий');
+
     try {
-      await updateProgress.mutateAsync({ category: 'comments' });
+      const { error } = await supabase.rpc('check_and_grant_achievement', {
+        p_user_id: user.id,
+        p_achievement_category: 'first_comment',
+      });
+
+      if (error) {
+        console.error('Ошибка при триггере достижения за первый комментарий:', error);
+        throw error;
+      }
+
+      console.log('Достижение за первый комментарий успешно проверено и выдано');
     } catch (error) {
-      console.error('Ошибка обновления достижений при комментарии:', error);
+      console.error('Ошибка в triggerComment:', error);
+      throw error;
     }
   };
 
-  // Функция для обновления достижений при ежедневном входе
-  const triggerDailyLogin = async (streakDays: number) => {
-    if (!user) return;
-    console.log('Триггер: ежедневный вход, дней подряд:', streakDays);
+  const triggerTimeBasedAchievement = async (category: string) => {
+    if (!user?.id) return;
+
+    console.log(`Триггерим достижение, основанное на времени: ${category}`);
+
     try {
-      await updateProgress.mutateAsync({ category: 'daily', newValue: streakDays });
+      const { error } = await supabase.rpc('check_and_grant_achievement', {
+        p_user_id: user.id,
+        p_achievement_category: category,
+      });
+
+      if (error) {
+        console.error(`Ошибка при триггере достижения, основанного на времени (${category}):`, error);
+        throw error;
+      }
+
+      console.log(`Достижение, основанное на времени (${category}), успешно проверено и выдано`);
     } catch (error) {
-      console.error('Ошибка обновления достижений при ежедневном входе:', error);
+      console.error(`Ошибка в triggerTimeBasedAchievement (${category}):`, error);
+      throw error;
     }
   };
 
-  // Функция для обновления достижений при серии лайков
-  const triggerLikeStreak = async (streakCount: number) => {
-    if (!user) return;
-    console.log('Триггер: серия лайков, видео подряд:', streakCount);
-    try {
-      await updateProgress.mutateAsync({ category: 'streak', newValue: streakCount });
-    } catch (error) {
-      console.error('Ошибка обновления достижений при серии лайков:', error);
-    }
-  };
+  const triggerWin = async (totalWins: number) => {
+    if (!user?.id) return;
 
-  // Функция для отправки уведомления о новом достижении
-  const notifyAchievement = async (achievementTitle: string, achievementIcon: string, rewardPoints: number) => {
-    if (!user?.telegram_id) return;
-    
-    console.log('Отправляем уведомление о достижении:', achievementTitle);
+    console.log('Триггерим достижения за победы:', totalWins);
+
     try {
-      await sendAchievementNotification(user.telegram_id, achievementTitle, achievementIcon, rewardPoints);
+      // Обновляем прогресс достижений за победы
+      const { error } = await supabase.rpc('update_achievement_progress', {
+        p_user_id: user.id,
+        p_category: 'wins',
+        p_new_value: totalWins
+      });
+
+      if (error) {
+        console.error('Ошибка обновления достижений за победы:', error);
+        throw error;
+      }
+
+      console.log('Достижения за победы успешно обновлены');
     } catch (error) {
-      console.error('Ошибка отправки уведомления о достижении:', error);
+      console.error('Ошибка в triggerWin:', error);
+      throw error;
     }
   };
 
@@ -163,12 +247,11 @@ export const useAchievementTriggers = () => {
     triggerLikeReceived,
     triggerViewsReceived,
     triggerRatingReceived,
-    triggerWin,
+    triggerLikeStreak,
     triggerSocialLike,
     triggerSocialRating,
     triggerComment,
-    triggerDailyLogin,
-    triggerLikeStreak,
-    notifyAchievement,
+    triggerTimeBasedAchievement,
+    triggerWin, // Добавляем новую функцию
   };
 };
