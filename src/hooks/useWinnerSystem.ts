@@ -1,8 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useTelegramNotifications } from './useTelegramNotifications';
-import { useAchievementTriggers } from './useAchievementTriggers';
 
 export const useYesterdayWinner = () => {
   return useQuery({
@@ -61,6 +59,7 @@ export const useYesterdayWinner = () => {
           ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
           : 0;
 
+        // Правильно присваиваем все поля
         return {
           ...winner,
           likes_count: likesCount || 0,
@@ -131,6 +130,7 @@ export const useTodayWinner = () => {
           ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
           : 0;
 
+        // Правильно присваиваем все поля
         return {
           ...winner,
           likes_count: likesCount || 0,
@@ -180,8 +180,6 @@ export const useTopUsers = () => {
 
 export const useCalculateWinner = () => {
   const queryClient = useQueryClient();
-  const { sendDailyWinnerNotification } = useTelegramNotifications();
-  const { triggerWin } = useAchievementTriggers();
 
   return useMutation({
     mutationFn: async () => {
@@ -194,25 +192,10 @@ export const useCalculateWinner = () => {
       yesterdayStart.setHours(0, 0, 0, 0);
       const yesterdayEnd = new Date(yesterday);
       yesterdayEnd.setHours(23, 59, 59, 999);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-      console.log('Ищем видео за период:', yesterdayStart.toISOString(), 'до', yesterdayEnd.toISOString());
-
-      // Получаем все видео за вчерашний день с актуальной статистикой
       const { data: videos, error: videosError } = await supabase
         .from('videos')
-        .select(`
-          *,
-          user:profiles!user_id(
-            id,
-            username,
-            telegram_username,
-            telegram_id,
-            avatar_url,
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .gte('created_at', yesterdayStart.toISOString())
         .lte('created_at', yesterdayEnd.toISOString());
 
@@ -227,50 +210,21 @@ export const useCalculateWinner = () => {
 
       console.log('Найдено видео для расчета:', videos.length);
 
-      // Рассчитываем баллы для каждого видео с актуальной статистикой
+      // Рассчитываем баллы для каждого видео
       let bestVideo = null;
       let bestScore = -1;
 
       for (const video of videos) {
-        // Получаем актуальную статистику
-        const [
-          { count: likesCount },
-          { count: commentsCount },
-          { data: ratings }
-        ] = await Promise.all([
-          supabase
-            .from('video_likes')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id),
-          supabase
-            .from('video_comments')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id),
-          supabase
-            .from('video_ratings')
-            .select('rating')
-            .eq('video_id', video.id)
-        ]);
-
-        const averageRating = ratings && ratings.length > 0
-          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-          : 0;
-
         // Формула: лайки * 3 + рейтинг * 10 + просмотры * 0.1
-        const score = (likesCount || 0) * 3 + 
-                     (averageRating || 0) * 10 + 
+        const score = (video.likes_count || 0) * 3 + 
+                     (video.average_rating || 0) * 10 + 
                      (video.views || 0) * 0.1;
 
-        console.log(`Видео ${video.id}: лайки=${likesCount}, рейтинг=${averageRating}, просмотры=${video.views}, балл=${score}`);
+        console.log(`Видео ${video.id}: лайки=${video.likes_count}, рейтинг=${video.average_rating}, просмотры=${video.views}, балл=${score}`);
 
         if (score > bestScore) {
           bestScore = score;
-          bestVideo = {
-            ...video,
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            average_rating: Number(averageRating.toFixed(1))
-          };
+          bestVideo = video;
         }
       }
 
@@ -285,7 +239,7 @@ export const useCalculateWinner = () => {
         .from('videos')
         .update({
           is_winner: true,
-          winner_date: yesterdayStr
+          winner_date: yesterday.toISOString().split('T')[0]
         })
         .eq('id', bestVideo.id);
 
@@ -294,88 +248,34 @@ export const useCalculateWinner = () => {
         throw updateError;
       }
 
-      // Рассчитываем дополнительные баллы за активность победного видео
-      const baseWinnerPoints = 100;
-      const likesBonus = bestVideo.likes_count * 2; // 2 балла за каждый лайк
-      const commentsBonus = bestVideo.comments_count * 5; // 5 баллов за каждый комментарий  
-      const ratingsBonus = Math.floor(bestVideo.average_rating * 10); // 10 баллов за каждую единицу рейтинга
-      
-      const totalWinnerPoints = baseWinnerPoints + likesBonus + commentsBonus + ratingsBonus;
-      
-      console.log(`Рассчитаны баллы победителя: базовые=${baseWinnerPoints}, за лайки=${likesBonus}, за комментарии=${commentsBonus}, за рейтинг=${ratingsBonus}, итого=${totalWinnerPoints}`);
-      
-      // Получаем текущие баллы пользователя
-      const { data: currentPoints, error: pointsSelectError } = await supabase
+      // Начисляем баллы пользователю - используем обычный update вместо несуществующей функции
+      const { data: currentPoints } = await supabase
         .from('user_points')
         .select('total_points, wins_count')
         .eq('user_id', bestVideo.user_id)
         .single();
 
-      if (pointsSelectError) {
-        console.error('Ошибка получения текущих баллов:', pointsSelectError);
-        throw pointsSelectError;
-      }
-
-      // Обновляем баллы и количество побед
       const { error: pointsError } = await supabase
         .from('user_points')
         .update({
-          total_points: (currentPoints?.total_points || 0) + totalWinnerPoints,
+          total_points: (currentPoints?.total_points || 0) + 100,
           wins_count: (currentPoints?.wins_count || 0) + 1
         })
         .eq('user_id', bestVideo.user_id);
 
       if (pointsError) {
         console.error('Ошибка начисления баллов:', pointsError);
-        throw pointsError;
+        // Продолжаем, даже если не удалось начислить баллы
       }
 
-      console.log(`Начислено ${totalWinnerPoints} баллов пользователю ${bestVideo.user_id}`);
-
-      // Триггерим достижения за победы
-      try {
-        await triggerWin((currentPoints?.wins_count || 0) + 1);
-        console.log('Достижения за победы обновлены');
-      } catch (achievementError) {
-        console.error('Ошибка обновления достижений:', achievementError);
-        // Продолжаем выполнение, не блокируем из-за ошибки достижений
-      }
-
-      // Отправляем уведомление в Telegram о победе с детализацией баллов
-      if (bestVideo.user?.telegram_id) {
-        try {
-          const bonusMessage = likesBonus + commentsBonus + ratingsBonus > 0 
-            ? `\n\n💰 Бонусы за активность:\n• За лайки: +${likesBonus}\n• За комментарии: +${commentsBonus}\n• За рейтинг: +${ratingsBonus}`
-            : '';
-            
-          const fullMessage = `🎉 <b>Поздравляем!</b>\n\nВаше видео "<b>${bestVideo.title}</b>" победило в ежедневном конкурсе!\n\nВы получили <b>${totalWinnerPoints} баллов</b>!${bonusMessage}`;
-          
-          await sendDailyWinnerNotification(
-            bestVideo.user.telegram_id,
-            bestVideo.title,
-            totalWinnerPoints
-          );
-          console.log('Telegram уведомление о победе отправлено');
-        } catch (telegramError) {
-          console.error('Ошибка отправки Telegram уведомления:', telegramError);
-          // Продолжаем выполнение, не блокируем из-за ошибки уведомлений
-        }
-      } else {
-        console.log('У пользователя нет Telegram ID для отправки уведомления');
-      }
-
-      console.log('Победитель установлен, баллы начислены, уведомления отправлены');
+      console.log('Победитель установлен и баллы начислены');
       return bestVideo;
     },
     onSuccess: () => {
-      // Обновляем все связанные запросы
       queryClient.invalidateQueries({ queryKey: ['yesterday-winner'] });
-      queryClient.invalidateQueries({ queryKey: ['today-winner'] });
       queryClient.invalidateQueries({ queryKey: ['top-users'] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
   });
 };

@@ -158,7 +158,7 @@ export const useLikeVideo = () => {
         if (error) throw error;
         
         // Trigger achievement for liking other videos
-        await triggerSocialLike();
+        triggerSocialLike();
 
         // Отправляем уведомление владельцу видео
         try {
@@ -212,7 +212,7 @@ export const useRateVideo = () => {
       if (error) throw error;
       
       // Trigger achievement for rating other videos
-      await triggerSocialRating();
+      triggerSocialRating();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
@@ -286,7 +286,7 @@ export const useUploadVideo = () => {
       console.log('Video record created successfully:', videoData);
       
       // Trigger achievement for uploading video
-      await triggerVideoUpload();
+      triggerVideoUpload();
 
       return videoData;
     },

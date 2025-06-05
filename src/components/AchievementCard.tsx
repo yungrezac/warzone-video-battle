@@ -18,7 +18,6 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ userAchievement }) =>
       case 'likes': return 'bg-red-500';
       case 'views': return 'bg-green-500';
       case 'ratings': return 'bg-yellow-500';
-      case 'rating_avg': return 'bg-amber-500';
       case 'wins': return 'bg-purple-500';
       case 'social_likes': return 'bg-pink-500';
       case 'social_ratings': return 'bg-orange-500';
@@ -36,9 +35,8 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ userAchievement }) =>
       case 'likes': return 'Лайки';
       case 'views': return 'Просмотры';
       case 'ratings': return 'Рейтинги';
-      case 'rating_avg': return 'Качество';
       case 'wins': return 'Победы';
-      case 'social_likes': return 'Активность';
+      case 'social_likes': return 'Социальные';
       case 'social_ratings': return 'Оценки';
       case 'comments': return 'Комментарии';
       case 'time': return 'Время';

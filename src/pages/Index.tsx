@@ -8,8 +8,6 @@ import UploadVideo from "@/components/UploadVideo";
 import Profile from "@/components/Profile";
 import Market from "@/components/Market";
 import Achievements from "@/components/Achievements";
-import AchievementNotificationManager from "@/components/AchievementNotificationManager";
-import AchievementTestButton from "@/components/AchievementTestButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Index = () => {
@@ -41,9 +39,6 @@ const Index = () => {
           {renderContent()}
         </main>
         <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-        <AchievementNotificationManager />
-        {/* Тестовая кнопка для проверки достижений */}
-        {user && <AchievementTestButton />}
       </div>
     </AuthWrapper>
   );

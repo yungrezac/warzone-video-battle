@@ -81,7 +81,7 @@ export const useAddComment = () => {
       console.log('Комментарий добавлен:', data);
 
       // Trigger achievement for commenting
-      await triggerComment();
+      triggerComment();
 
       // Отправляем уведомление владельцу видео
       try {
