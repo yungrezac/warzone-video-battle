@@ -24,6 +24,7 @@ const Profile: React.FC = () => {
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const deleteVideoMutation = useDeleteVideo();
+  const { triggerLikeReceived, triggerViewsReceived, triggerRatingReceived } = useAchievementTriggers();
 
   // Добавляем отслеживание статистики пользователя
   useUserStatsTracker();
@@ -46,7 +47,7 @@ const Profile: React.FC = () => {
         triggerRatingReceived(totalRatings, avgRating);
       }
     }
-  }, [userProfile, userVideos, user]);
+  }, [userProfile, userVideos, user, triggerLikeReceived, triggerViewsReceived, triggerRatingReceived]);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
