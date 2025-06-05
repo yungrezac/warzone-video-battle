@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useTelegramNotifications } from './useTelegramNotifications';
@@ -12,9 +13,10 @@ export const useAchievementTriggers = () => {
     console.log('Триггерим достижение за первую загрузку видео');
 
     try {
-      const { error } = await supabase.rpc('check_and_grant_achievement', {
+      const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_achievement_category: 'first_video',
+        p_category: 'videos',
+        p_increment: 1
       });
 
       if (error) {
@@ -37,7 +39,7 @@ export const useAchievementTriggers = () => {
     try {
       const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_category: 'likes_received',
+        p_category: 'likes',
         p_new_value: totalLikes
       });
 
@@ -61,7 +63,7 @@ export const useAchievementTriggers = () => {
     try {
       const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_category: 'views_received',
+        p_category: 'views',
         p_new_value: totalViews
       });
 
@@ -85,7 +87,7 @@ export const useAchievementTriggers = () => {
     try {
       const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_category: 'rating_received',
+        p_category: 'ratings',
         p_new_value: totalRatings
       });
 
@@ -109,7 +111,7 @@ export const useAchievementTriggers = () => {
     try {
       const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_category: 'like_streak',
+        p_category: 'streak',
         p_new_value: streakLength
       });
 
@@ -131,9 +133,10 @@ export const useAchievementTriggers = () => {
     console.log('Триггерим достижение за лайк в соц. сетях');
 
     try {
-      const { error } = await supabase.rpc('check_and_grant_achievement', {
+      const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_achievement_category: 'social_like',
+        p_category: 'social_likes',
+        p_increment: 1
       });
 
       if (error) {
@@ -154,9 +157,10 @@ export const useAchievementTriggers = () => {
     console.log('Триггерим достижение за оценку в соц. сетях');
 
     try {
-      const { error } = await supabase.rpc('check_and_grant_achievement', {
+      const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_achievement_category: 'social_rating',
+        p_category: 'social_ratings',
+        p_increment: 1
       });
 
       if (error) {
@@ -177,9 +181,10 @@ export const useAchievementTriggers = () => {
     console.log('Триггерим достижение за первый комментарий');
 
     try {
-      const { error } = await supabase.rpc('check_and_grant_achievement', {
+      const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_achievement_category: 'first_comment',
+        p_category: 'comments',
+        p_increment: 1
       });
 
       if (error) {
@@ -200,9 +205,10 @@ export const useAchievementTriggers = () => {
     console.log(`Триггерим достижение, основанное на времени: ${category}`);
 
     try {
-      const { error } = await supabase.rpc('check_and_grant_achievement', {
+      const { error } = await supabase.rpc('update_achievement_progress', {
         p_user_id: user.id,
-        p_achievement_category: category,
+        p_category: category,
+        p_increment: 1
       });
 
       if (error) {
@@ -252,6 +258,6 @@ export const useAchievementTriggers = () => {
     triggerSocialRating,
     triggerComment,
     triggerTimeBasedAchievement,
-    triggerWin, // Добавляем новую функцию
+    triggerWin,
   };
 };

@@ -1,72 +1,64 @@
 
 import React, { useEffect, useState } from 'react';
-import { Achievement } from '@/hooks/useAchievements';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
+import { Card, CardContent } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface AchievementNotificationProps {
-  achievement: Achievement;
-  onClose: () => void;
-  isVisible: boolean;
-  style?: React.CSSProperties;
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  reward_points: number;
 }
 
-const AchievementNotification: React.FC<AchievementNotificationProps> = ({
-  achievement,
-  onClose,
-  isVisible,
-  style,
-}) => {
-  const [shouldShow, setShouldShow] = useState(false);
-  const { notifyAchievement } = useAchievementTriggers();
+interface AchievementNotificationProps {
+  achievement: Achievement | null;
+  onDismiss: () => void;
+}
+
+const AchievementNotification: React.FC<AchievementNotificationProps> = ({ achievement, onDismiss }) => {
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (isVisible) {
-      setShouldShow(true);
-      
-      // Отправляем Telegram уведомление о достижении
-      notifyAchievement(achievement.title, achievement.icon, achievement.reward_points);
-      
+    if (achievement) {
+      setVisible(true);
       const timer = setTimeout(() => {
-        onClose();
-      }, 5000);
-      return () => clearTimeout(timer);
-    } else {
-      setShouldShow(false);
-    }
-  }, [isVisible, onClose, achievement, notifyAchievement]);
+        setVisible(false);
+        setTimeout(onDismiss, 300); // Ждем завершения анимации
+      }, 4000);
 
-  if (!shouldShow) return null;
+      return () => clearTimeout(timer);
+    }
+  }, [achievement, onDismiss]);
+
+  if (!achievement) return null;
 
   return (
-    <div 
-      className={`fixed left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ${
-        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
-      }`}
-      style={style}
-    >
-      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg shadow-lg p-4 max-w-sm mx-4 animate-bounce">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="text-3xl mr-3 animate-pulse">{achievement.icon}</span>
-            <div>
-              <h3 className="font-bold text-sm">🎉 Достижение получено!</h3>
-              <p className="text-xs opacity-90 font-semibold">{achievement.title}</p>
-              <p className="text-xs opacity-75 mt-1">+{achievement.reward_points} баллов 💎</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-white hover:bg-white/20 h-6 w-6 p-0"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-      </div>
-    </div>
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, y: -100, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -100, scale: 0.8 }}
+          transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+          className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-80"
+        >
+          <Card className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white border-0 shadow-2xl">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <div className="text-3xl mb-2">{achievement.icon}</div>
+                <h3 className="font-bold text-lg mb-1">🏆 Достижение получено!</h3>
+                <h4 className="font-semibold text-base mb-1">{achievement.title}</h4>
+                <p className="text-sm opacity-90 mb-2">{achievement.description}</p>
+                <div className="bg-white/20 rounded-full px-3 py-1 text-sm font-bold">
+                  +{achievement.reward_points} баллов!
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

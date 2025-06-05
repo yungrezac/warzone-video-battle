@@ -294,8 +294,15 @@ export const useCalculateWinner = () => {
         throw updateError;
       }
 
-      // Начисляем баллы за победу (100 баллов)
-      const winnerPoints = 100;
+      // Рассчитываем дополнительные баллы за активность победного видео
+      const baseWinnerPoints = 100;
+      const likesBonus = bestVideo.likes_count * 2; // 2 балла за каждый лайк
+      const commentsBonus = bestVideo.comments_count * 5; // 5 баллов за каждый комментарий  
+      const ratingsBonus = Math.floor(bestVideo.average_rating * 10); // 10 баллов за каждую единицу рейтинга
+      
+      const totalWinnerPoints = baseWinnerPoints + likesBonus + commentsBonus + ratingsBonus;
+      
+      console.log(`Рассчитаны баллы победителя: базовые=${baseWinnerPoints}, за лайки=${likesBonus}, за комментарии=${commentsBonus}, за рейтинг=${ratingsBonus}, итого=${totalWinnerPoints}`);
       
       // Получаем текущие баллы пользователя
       const { data: currentPoints, error: pointsSelectError } = await supabase
@@ -313,7 +320,7 @@ export const useCalculateWinner = () => {
       const { error: pointsError } = await supabase
         .from('user_points')
         .update({
-          total_points: (currentPoints?.total_points || 0) + winnerPoints,
+          total_points: (currentPoints?.total_points || 0) + totalWinnerPoints,
           wins_count: (currentPoints?.wins_count || 0) + 1
         })
         .eq('user_id', bestVideo.user_id);
@@ -323,7 +330,7 @@ export const useCalculateWinner = () => {
         throw pointsError;
       }
 
-      console.log(`Начислено ${winnerPoints} баллов пользователю ${bestVideo.user_id}`);
+      console.log(`Начислено ${totalWinnerPoints} баллов пользователю ${bestVideo.user_id}`);
 
       // Триггерим достижения за победы
       try {
@@ -334,13 +341,19 @@ export const useCalculateWinner = () => {
         // Продолжаем выполнение, не блокируем из-за ошибки достижений
       }
 
-      // Отправляем уведомление в Telegram о победе
+      // Отправляем уведомление в Telegram о победе с детализацией баллов
       if (bestVideo.user?.telegram_id) {
         try {
+          const bonusMessage = likesBonus + commentsBonus + ratingsBonus > 0 
+            ? `\n\n💰 Бонусы за активность:\n• За лайки: +${likesBonus}\n• За комментарии: +${commentsBonus}\n• За рейтинг: +${ratingsBonus}`
+            : '';
+            
+          const fullMessage = `🎉 <b>Поздравляем!</b>\n\nВаше видео "<b>${bestVideo.title}</b>" победило в ежедневном конкурсе!\n\nВы получили <b>${totalWinnerPoints} баллов</b>!${bonusMessage}`;
+          
           await sendDailyWinnerNotification(
             bestVideo.user.telegram_id,
             bestVideo.title,
-            winnerPoints
+            totalWinnerPoints
           );
           console.log('Telegram уведомление о победе отправлено');
         } catch (telegramError) {
