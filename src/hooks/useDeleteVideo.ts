@@ -87,12 +87,19 @@ export const useDeleteVideo = () => {
       }
 
       console.log('Видео успешно удалено');
+      return videoId;
     },
-    onSuccess: () => {
-      // Обновляем кэш
+    onSuccess: (deletedVideoId) => {
+      console.log('Успешно удалено видео:', deletedVideoId, 'Обновляем кэш...');
+      
+      // Обновляем все связанные кэши
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      
+      // Принудительно обновляем кэш пользователя
+      queryClient.invalidateQueries({ queryKey: ['user-videos', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile', user?.id] });
     },
     onError: (error) => {
       console.error('Ошибка удаления видео:', error);

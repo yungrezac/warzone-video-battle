@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Award } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -17,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 
 const Profile: React.FC = () => {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
-  const { data: userVideos, isLoading: videosLoading } = useUserVideos();
+  const { data: userVideos, isLoading: videosLoading, refetch: refetchUserVideos } = useUserVideos();
   const { data: achievementStats } = useAchievementStats();
   const { data: userAchievements } = useUserAchievements();
   const { user } = useAuth();
@@ -85,6 +86,7 @@ const Profile: React.FC = () => {
   };
 
   const handleDeleteClick = (videoId: string, videoTitle: string) => {
+    console.log('Нажата кнопка удаления для видео:', videoId, videoTitle);
     setVideoToDelete({ id: videoId, title: videoTitle });
     setDeleteDialogOpen(true);
   };
@@ -92,11 +94,15 @@ const Profile: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (!videoToDelete) return;
 
+    console.log('Подтверждение удаления видео:', videoToDelete.id);
     try {
       await deleteVideoMutation.mutateAsync(videoToDelete.id);
       toast.success('Видео успешно удалено');
       setDeleteDialogOpen(false);
       setVideoToDelete(null);
+      
+      // Принудительно обновляем данные профиля и видео
+      await refetchUserVideos();
     } catch (error) {
       console.error('Ошибка удаления видео:', error);
       toast.error('Ошибка при удалении видео');
@@ -302,12 +308,13 @@ const Profile: React.FC = () => {
                     }}
                     onLike={handleLike}
                     onRate={handleRate}
+                    currentUserId={user?.id}
                   />
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteClick(video.id, video.title)}
-                    className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700"
+                    className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 z-10"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
