@@ -20,7 +20,6 @@ const AchievementNotificationManager: React.FC = () => {
           <AchievementNotification
             achievement={notification.achievement}
             onDismiss={() => removeNotification(notification.id)}
-            isVisible={true}
           />
         </div>
       ))}
