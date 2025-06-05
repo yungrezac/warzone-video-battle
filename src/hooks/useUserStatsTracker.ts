@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useUserVideos } from './useUserVideos';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementTriggers } from './useAchievementTriggers';
@@ -13,6 +13,18 @@ export const useUserStatsTracker = () => {
     triggerRatingReceived,
     triggerLikeStreak 
   } = useAchievementTriggers();
+
+  const lastStatsRef = useRef<{
+    totalLikes: number;
+    totalViews: number;
+    totalRatings: number;
+    consecutiveLikedVideos: number;
+  }>({
+    totalLikes: 0,
+    totalViews: 0,
+    totalRatings: 0,
+    consecutiveLikedVideos: 0
+  });
 
   useEffect(() => {
     if (!user || !userVideos) return;
@@ -47,22 +59,32 @@ export const useUserStatsTracker = () => {
 
     const averageRating = totalRatings > 0 ? totalRatingSum / totalRatings : 0;
 
-    // Обновляем достижения
-    if (totalLikes > 0) {
+    // Обновляем достижения только если статистика изменилась
+    const lastStats = lastStatsRef.current;
+    
+    if (totalLikes !== lastStats.totalLikes) {
       triggerLikeReceived(totalLikes);
     }
 
-    if (totalViews > 0) {
+    if (totalViews !== lastStats.totalViews) {
       triggerViewsReceived(totalViews);
     }
 
-    if (totalRatings > 0) {
+    if (totalRatings !== lastStats.totalRatings) {
       triggerRatingReceived(totalRatings, averageRating);
     }
 
-    if (consecutiveLikedVideos > 0) {
+    if (consecutiveLikedVideos !== lastStats.consecutiveLikedVideos) {
       triggerLikeStreak(consecutiveLikedVideos);
     }
+
+    // Сохраняем текущую статистику
+    lastStatsRef.current = {
+      totalLikes,
+      totalViews,
+      totalRatings,
+      consecutiveLikedVideos
+    };
 
     console.log('Статистика пользователя:', {
       totalLikes,

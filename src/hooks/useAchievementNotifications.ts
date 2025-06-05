@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useUserAchievements, Achievement } from './useAchievements';
 import { useAuth } from '@/components/AuthWrapper';
 
@@ -12,7 +12,7 @@ export const useAchievementNotifications = () => {
   const { user } = useAuth();
   const { data: userAchievements } = useUserAchievements();
   const [notifications, setNotifications] = useState<AchievementNotificationData[]>([]);
-  const [lastCompletedIds, setLastCompletedIds] = useState<Set<string>>(new Set());
+  const lastCompletedIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!userAchievements || !user) return;
@@ -27,7 +27,7 @@ export const useAchievementNotifications = () => {
     // Проверяем, какие достижения были только что завершены
     const newlyCompleted = userAchievements.filter(ua => 
       ua.is_completed && 
-      !lastCompletedIds.has(ua.achievement_id)
+      !lastCompletedIdsRef.current.has(ua.achievement_id)
     );
 
     if (newlyCompleted.length > 0) {
@@ -36,14 +36,15 @@ export const useAchievementNotifications = () => {
       // Добавляем уведомления для новых достижений
       const newNotifications = newlyCompleted.map(ua => ({
         achievement: ua.achievement,
-        id: `${ua.achievement_id}-${Date.now()}`,
+        id: `${ua.achievement_id}-${Date.now()}-${Math.random()}`,
       }));
 
       setNotifications(prev => [...prev, ...newNotifications]);
     }
 
-    setLastCompletedIds(currentCompletedIds);
-  }, [userAchievements, user, lastCompletedIds]);
+    // Обновляем ref только при изменении состава завершенных достижений
+    lastCompletedIdsRef.current = currentCompletedIds;
+  }, [userAchievements, user]);
 
   const removeNotification = (notificationId: string) => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));

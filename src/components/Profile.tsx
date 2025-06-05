@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Award } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -8,6 +7,7 @@ import { useDeleteVideo } from '@/hooks/useDeleteVideo';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementStats, useUserAchievements } from '@/hooks/useAchievements';
 import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
+import { useUserStatsTracker } from '@/hooks/useUserStatsTracker';
 import { Loader2 } from 'lucide-react';
 import VideoCard from './VideoCard';
 import DeleteVideoDialog from './DeleteVideoDialog';
@@ -24,7 +24,9 @@ const Profile: React.FC = () => {
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const deleteVideoMutation = useDeleteVideo();
-  const { triggerLikeReceived, triggerViewsReceived, triggerRatingReceived } = useAchievementTriggers();
+
+  // Добавляем отслеживание статистики пользователя
+  useUserStatsTracker();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<{id: string, title: string} | null>(null);
