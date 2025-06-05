@@ -12,9 +12,7 @@ const AchievementNotificationManager: React.FC = () => {
         <AchievementNotification
           key={notification.id}
           achievement={notification.achievement}
-          onClose={() => removeNotification(notification.id)}
-          isVisible={true}
-          style={{ top: `${20 + index * 80}px` }}
+          onDismiss={() => removeNotification(notification.id)}
         />
       ))}
     </>
