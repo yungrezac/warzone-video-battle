@@ -4,7 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/AuthWrapper';
 import CategoryFeed from './CategoryFeed';
 
-const NewVideoFeed: React.FC = () => {
+interface NewVideoFeedProps {
+  onNavigateToUpload?: () => void;
+}
+
+const NewVideoFeed: React.FC<NewVideoFeedProps> = ({ onNavigateToUpload }) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState([
     {
@@ -70,9 +74,10 @@ const NewVideoFeed: React.FC = () => {
         <TabsContent value="battle" className="m-0">
           <CategoryFeed
             category="battle"
-            title="Battle посты"
+            title="Видео батлы"
             posts={posts}
             onCreatePost={handleCreatePost}
+            onUploadVideo={onNavigateToUpload}
           />
         </TabsContent>
         

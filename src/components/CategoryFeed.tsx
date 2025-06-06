@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import PostCreator from './PostCreator';
@@ -19,10 +19,19 @@ interface CategoryFeedProps {
   title: string;
   posts: Post[];
   onCreatePost: (post: { title: string; content: string; category: string }) => void;
+  onUploadVideo?: () => void;
 }
 
-const CategoryFeed: React.FC<CategoryFeedProps> = ({ category, title, posts, onCreatePost }) => {
+const CategoryFeed: React.FC<CategoryFeedProps> = ({ 
+  category, 
+  title, 
+  posts, 
+  onCreatePost, 
+  onUploadVideo 
+}) => {
   const [showCreator, setShowCreator] = useState(false);
+
+  const isBattleCategory = category === 'battle';
 
   return (
     <div>
@@ -30,15 +39,24 @@ const CategoryFeed: React.FC<CategoryFeedProps> = ({ category, title, posts, onC
         <h2 className="text-lg font-semibold">{title}</h2>
         <Button 
           size="sm" 
-          onClick={() => setShowCreator(true)}
-          className="bg-blue-600 hover:bg-blue-700"
+          onClick={isBattleCategory ? onUploadVideo : () => setShowCreator(true)}
+          className={isBattleCategory ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700"}
         >
-          <Plus className="w-4 h-4 mr-1" />
-          Создать
+          {isBattleCategory ? (
+            <>
+              <Upload className="w-4 h-4 mr-1" />
+              Загрузить видео
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4 mr-1" />
+              Создать
+            </>
+          )}
         </Button>
       </div>
 
-      {showCreator && (
+      {showCreator && !isBattleCategory && (
         <PostCreator
           category={category}
           onClose={() => setShowCreator(false)}
@@ -62,8 +80,18 @@ const CategoryFeed: React.FC<CategoryFeedProps> = ({ category, title, posts, onC
         
         {posts.filter(post => post.category === category).length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            <p className="text-sm">Пока нет постов в этой категории</p>
-            <p className="text-xs">Будьте первым, кто создаст пост!</p>
+            <p className="text-sm">
+              {isBattleCategory 
+                ? 'Пока нет видео в этой категории' 
+                : 'Пока нет постов в этой категории'
+              }
+            </p>
+            <p className="text-xs">
+              {isBattleCategory 
+                ? 'Будьте первым, кто загрузит видео!' 
+                : 'Будьте первым, кто создаст пост!'
+              }
+            </p>
           </div>
         )}
       </div>

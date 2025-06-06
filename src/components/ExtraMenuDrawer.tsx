@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { 
-  Upload, 
   Trophy, 
   ShoppingBag, 
   Settings, 
@@ -26,7 +25,6 @@ interface ExtraMenuDrawerProps {
 
 const ExtraMenuDrawer: React.FC<ExtraMenuDrawerProps> = ({ isOpen, onClose, onNavigate }) => {
   const menuItems = [
-    { id: 'upload', icon: Upload, label: 'Загрузить видео', color: 'text-blue-600' },
     { id: 'market', icon: ShoppingBag, label: 'Магазин', color: 'text-green-600' },
     { id: 'settings', icon: Settings, label: 'Настройки', color: 'text-gray-600' },
     { id: 'help', icon: HelpCircle, label: 'Помощь', color: 'text-purple-600' },

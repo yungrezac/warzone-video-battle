@@ -17,10 +17,14 @@ const Index = () => {
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
 
+  const handleNavigateToUpload = () => {
+    setActiveTab('upload');
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <NewVideoFeed />;
+        return <NewVideoFeed onNavigateToUpload={handleNavigateToUpload} />;
       case 'map':
         return <MapPage />;
       case 'users':
@@ -34,7 +38,7 @@ const Index = () => {
       case 'market':
         return <Market />;
       default:
-        return <NewVideoFeed />;
+        return <NewVideoFeed onNavigateToUpload={handleNavigateToUpload} />;
     }
   };
 
