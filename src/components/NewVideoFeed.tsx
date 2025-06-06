@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/AuthWrapper';
 import CategoryFeed from './CategoryFeed';
+import { useCommunityPosts, useCreatePost } from '@/hooks/useCommunityPosts';
 
 interface NewVideoFeedProps {
   onNavigateToUpload?: () => void;
@@ -10,43 +11,35 @@ interface NewVideoFeedProps {
 
 const NewVideoFeed: React.FC<NewVideoFeedProps> = ({ onNavigateToUpload }) => {
   const { user } = useAuth();
-  const [posts, setPosts] = useState([
-    {
-      id: '1',
-      title: 'Добро пожаловать в RollTricks!',
-      content: 'Это первый пост в общей категории. Здесь можно делиться всем, что связано с роллерспортом.',
-      category: 'general',
-      author: 'Admin',
-      timestamp: '2 часа назад'
-    },
-    {
-      id: '2',
-      title: 'Battle сезон 2024 стартует!',
-      content: 'Приготовьтесь к самым крутым баттлам этого года. Призовой фонд 100,000 рублей!',
-      category: 'battle',
-      author: 'EventManager',
-      timestamp: '1 час назад'
-    },
-    {
-      id: '3',
-      title: 'Новое обновление приложения',
-      content: 'Добавлены новые функции: карта спотов, система достижений и многое другое.',
-      category: 'news',
-      author: 'Developer',
-      timestamp: '30 минут назад'
-    }
-  ]);
+  const { data: posts } = useCommunityPosts();
+  const createPost = useCreatePost();
 
-  const handleCreatePost = (newPost: { title: string; content: string; category: string }) => {
-    const post = {
-      id: Date.now().toString(),
-      ...newPost,
-      author: user?.username || user?.telegram_username || 'Пользователь',
-      timestamp: 'только что'
-    };
-    
-    setPosts(prev => [post, ...prev]);
+  const handleCreatePost = async (newPost: { title: string; content: string; category: string }) => {
+    try {
+      await createPost.mutateAsync({
+        title: newPost.title,
+        content: newPost.content,
+        category: newPost.category as 'general' | 'battle' | 'news',
+      });
+    } catch (error) {
+      console.error('Ошибка создания поста:', error);
+    }
   };
+
+  // Преобразуем посты в формат, ожидаемый CategoryFeed
+  const formattedPosts = (posts || []).map(post => ({
+    id: post.id,
+    title: post.title,
+    content: post.content || '',
+    category: post.category,
+    author: post.user?.username || post.user?.telegram_username || 'Пользователь',
+    timestamp: new Date(post.created_at).toLocaleString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }));
 
   return (
     <div className="pb-16">
@@ -66,7 +59,7 @@ const NewVideoFeed: React.FC<NewVideoFeedProps> = ({ onNavigateToUpload }) => {
           <CategoryFeed
             category="general"
             title="Общие посты"
-            posts={posts}
+            posts={formattedPosts}
             onCreatePost={handleCreatePost}
           />
         </TabsContent>
@@ -75,7 +68,7 @@ const NewVideoFeed: React.FC<NewVideoFeedProps> = ({ onNavigateToUpload }) => {
           <CategoryFeed
             category="battle"
             title="Видео батлы"
-            posts={posts}
+            posts={formattedPosts}
             onCreatePost={handleCreatePost}
             onUploadVideo={onNavigateToUpload}
           />
@@ -85,7 +78,7 @@ const NewVideoFeed: React.FC<NewVideoFeedProps> = ({ onNavigateToUpload }) => {
           <CategoryFeed
             category="news"
             title="Новости"
-            posts={posts}
+            posts={formattedPosts}
             onCreatePost={handleCreatePost}
           />
         </TabsContent>

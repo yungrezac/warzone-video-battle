@@ -1,231 +1,207 @@
 
-import React, { useState } from 'react';
-import { ShoppingBag, Star, Filter, Search, Heart, ShoppingCart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  category: 'skates' | 'protection' | 'accessories' | 'clothing';
-  isNew?: boolean;
-  isOnSale?: boolean;
-  isFavorite?: boolean;
-  brand: string;
-}
+import { Separator } from '@/components/ui/separator';
+import { ShoppingBag, Star, Award, Gem, Zap } from 'lucide-react';
+import { useStoreItems, useUserPurchases, usePurchaseItem } from '@/hooks/useStoreItems';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useToast } from '@/hooks/use-toast';
 
 const Market: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const { data: items, isLoading: itemsLoading } = useStoreItems();
+  const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
+  const { data: userProfile } = useUserProfile();
+  const purchaseItem = usePurchaseItem();
+  const { toast } = useToast();
 
-  const products: Product[] = [
-    {
-      id: '1',
-      name: 'Rollerblade Twister Edge',
-      price: 24990,
-      originalPrice: 29990,
-      rating: 4.8,
-      reviewCount: 124,
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop',
-      category: 'skates',
-      isOnSale: true,
-      brand: 'Rollerblade'
-    },
-    {
-      id: '2',
-      name: 'K2 FIT 84 Pro',
-      price: 18990,
-      rating: 4.6,
-      reviewCount: 89,
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop',
-      category: 'skates',
-      isNew: true,
-      brand: 'K2'
-    },
-    {
-      id: '3',
-      name: 'Защита Rollerblade Pro',
-      price: 5990,
-      rating: 4.5,
-      reviewCount: 67,
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200&h=200&fit=crop',
-      category: 'protection',
-      brand: 'Rollerblade'
-    },
-    {
-      id: '4',
-      name: 'Шлем Triple Eight',
-      price: 3990,
-      rating: 4.7,
-      reviewCount: 45,
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop',
-      category: 'protection',
-      isFavorite: true,
-      brand: 'Triple Eight'
-    },
-    {
-      id: '5',
-      name: 'Подшипники Bones Reds',
-      price: 2490,
-      rating: 4.9,
-      reviewCount: 156,
-      image: 'https://images.unsplash.com/photo-1609205258634-34ad1a7dea8b?w=200&h=200&fit=crop',
-      category: 'accessories',
-      brand: 'Bones'
-    },
-    {
-      id: '6',
-      name: 'Футболка RollerClub',
-      price: 1590,
-      originalPrice: 1990,
-      rating: 4.3,
-      reviewCount: 28,
-      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200&h=200&fit=crop',
-      category: 'clothing',
-      isOnSale: true,
-      brand: 'RollerClub'
+  const handlePurchase = async (itemId: string, price: number) => {
+    try {
+      await purchaseItem.mutateAsync({ itemId });
+      toast({
+        title: "Успешно!",
+        description: "Покупка совершена",
+      });
+    } catch (error: any) {
+      console.error('Ошибка покупки:', error);
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось совершить покупку",
+        variant: "destructive",
+      });
     }
-  ];
-
-  const categories = [
-    { id: 'all', name: 'Все' },
-    { id: 'skates', name: 'Ролики' },
-    { id: 'protection', name: 'Защита' },
-    { id: 'accessories', name: 'Аксессуары' },
-    { id: 'clothing', name: 'Одежда' }
-  ];
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
-  const handleAddToCart = (productId: string) => {
-    console.log('Добавляем в корзину:', productId);
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'badges': return <Award className="w-4 h-4" />;
+      case 'frames': return <Star className="w-4 h-4" />;
+      case 'emojis': return <Gem className="w-4 h-4" />;
+      case 'premium': return <Zap className="w-4 h-4" />;
+      default: return <ShoppingBag className="w-4 h-4" />;
+    }
   };
 
-  const handleToggleFavorite = (productId: string) => {
-    console.log('Переключаем избранное:', productId);
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'badges': return 'bg-yellow-100 text-yellow-800';
+      case 'frames': return 'bg-purple-100 text-purple-800';
+      case 'emojis': return 'bg-pink-100 text-pink-800';
+      case 'premium': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
+
+  const groupedItems = items?.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+    acc[item.category].push(item);
+    return acc;
+  }, {} as Record<string, typeof items>) || {};
+
+  const categoryNames = {
+    badges: 'Значки',
+    frames: 'Рамки',
+    emojis: 'Эмодзи',
+    premium: 'Премиум'
+  };
+
+  if (itemsLoading) {
+    return (
+      <div className="p-3 pb-16">
+        <div className="text-center">Загрузка...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-16">
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-3">
-        <h1 className="text-xl font-bold flex items-center">
-          <ShoppingBag className="w-5 h-5 mr-2" />
-          Магазин
-        </h1>
-        <p className="text-orange-100 text-sm">Все для роллерспорта</p>
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold flex items-center">
+              <ShoppingBag className="w-6 h-6 mr-2" />
+              Магазин
+            </h1>
+            <p className="text-green-100 text-sm">Тратьте баллы на крутые вещи</p>
+          </div>
+          <div className="text-right">
+            <div className="bg-white/20 rounded-lg px-3 py-1">
+              <div className="text-xs text-green-100">Ваши баллы</div>
+              <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="p-3">
-        <div className="flex gap-2 mb-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Поиск товаров..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button variant="outline" size="sm">
-            <Filter className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full mb-4">
-          <TabsList className="grid w-full grid-cols-5">
-            {categories.map(category => (
-              <TabsTrigger key={category.id} value={category.id} className="text-xs">
-                {category.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-
-        <div className="grid grid-cols-2 gap-3">
-          {filteredProducts.map(product => (
-            <Card key={product.id} className="p-2 relative">
-              {product.isNew && (
-                <Badge className="absolute top-2 left-2 bg-green-500 text-white text-xs z-10">
-                  Новинка
-                </Badge>
-              )}
-              {product.isOnSale && (
-                <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs z-10">
-                  Скидка
-                </Badge>
-              )}
-              
-              <button
-                onClick={() => handleToggleFavorite(product.id)}
-                className="absolute top-2 right-2 z-10 p-1"
-              >
-                <Heart 
-                  className={`w-4 h-4 ${product.isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} 
-                />
-              </button>
-
-              <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+      <div className="p-3 space-y-4">
+        {Object.entries(groupedItems).map(([category, categoryItems]) => (
+          <div key={category}>
+            <div className="flex items-center space-x-2 mb-3">
+              <div className={`p-2 rounded-lg ${getCategoryColor(category)}`}>
+                {getCategoryIcon(category)}
               </div>
-
-              <div className="space-y-1">
-                <h3 className="font-semibold text-sm line-clamp-2">{product.name}</h3>
-                <p className="text-xs text-gray-500">{product.brand}</p>
-                
-                <div className="flex items-center space-x-1">
-                  <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                  <span className="text-xs text-gray-600">{product.rating}</span>
-                  <span className="text-xs text-gray-500">({product.reviewCount})</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-sm">{formatPrice(product.price)}</span>
-                    {product.originalPrice && (
-                      <span className="text-xs text-gray-500 line-through ml-1">
-                        {formatPrice(product.originalPrice)}
-                      </span>
-                    )}
+              <h2 className="text-lg font-semibold">{categoryNames[category] || category}</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {categoryItems.map(item => (
+                <Card key={item.id} className="p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      {item.image_url ? (
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {getCategoryIcon(item.category)}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-sm">{item.name}</h3>
+                          <p className="text-xs text-gray-600 mt-1">{item.description}</p>
+                        </div>
+                        <Badge variant="secondary" className={getCategoryColor(item.category)}>
+                          {categoryNames[item.category] || item.category}
+                        </Badge>
+                      </div>
+                      
+                      <Separator className="my-2" />
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-1">
+                          <Star className="w-4 h-4 text-yellow-500" />
+                          <span className="text-sm font-semibold">{item.price} баллов</span>
+                        </div>
+                        
+                        <Button
+                          size="sm"
+                          onClick={() => handlePurchase(item.id, item.price)}
+                          disabled={!userProfile || userProfile.total_points < item.price || purchaseItem.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {purchaseItem.isPending ? 'Покупка...' : 'Купить'}
+                        </Button>
+                      </div>
+                      
+                      {userProfile && userProfile.total_points < item.price && (
+                        <p className="text-xs text-red-500 mt-1">Недостаточно баллов</p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ))}
 
-                <Button
-                  size="sm"
-                  onClick={() => handleAddToCart(product.id)}
-                  className="w-full mt-2 h-8 text-xs"
-                >
-                  <ShoppingCart className="w-3 h-3 mr-1" />
-                  В корзину
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 && (
+        {Object.keys(groupedItems).length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            <ShoppingBag className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Товары не найдены</p>
+            <ShoppingBag className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+            <p className="text-sm">Магазин пуст</p>
+            <p className="text-xs">Скоро здесь появятся крутые товары!</p>
+          </div>
+        )}
+
+        {purchases && purchases.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold mb-3 flex items-center">
+              <ShoppingBag className="w-5 h-5 mr-2" />
+              Мои покупки
+            </h2>
+            
+            <div className="space-y-2">
+              {purchases.slice(0, 5).map(purchase => (
+                <Card key={purchase.id} className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-1 rounded ${getCategoryColor(purchase.item?.category || 'default')}`}>
+                        {getCategoryIcon(purchase.item?.category || 'default')}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{purchase.item?.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(purchase.created_at).toLocaleDateString('ru-RU')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold">-{purchase.total_points} баллов</p>
+                      <p className="text-xs text-gray-500">x{purchase.quantity}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>
