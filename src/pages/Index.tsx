@@ -2,12 +2,14 @@
 import { useState } from "react";
 import AuthWrapper from "@/components/AuthWrapper";
 import { useAuth } from "@/components/AuthWrapper";
-import BottomNavbar from "@/components/BottomNavbar";
-import VideoFeed from "@/components/VideoFeed";
+import NewBottomNavbar from "@/components/NewBottomNavbar";
+import NewVideoFeed from "@/components/NewVideoFeed";
 import UploadVideo from "@/components/UploadVideo";
 import Profile from "@/components/Profile";
 import Market from "@/components/Market";
-import Achievements from "@/components/Achievements";
+import MapPage from "@/components/MapPage";
+import UsersPage from "@/components/UsersPage";
+import CommunityPage from "@/components/CommunityPage";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Index = () => {
@@ -18,17 +20,21 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <VideoFeed />;
-      case 'upload':
-        return <UploadVideo />;
-      case 'achievements':
-        return <Achievements />;
-      case 'market':
-        return <Market />;
+        return <NewVideoFeed />;
+      case 'map':
+        return <MapPage />;
+      case 'users':
+        return <UsersPage />;
+      case 'community':
+        return <CommunityPage />;
       case 'profile':
         return <Profile />;
+      case 'upload':
+        return <UploadVideo />;
+      case 'market':
+        return <Market />;
       default:
-        return <VideoFeed />;
+        return <NewVideoFeed />;
     }
   };
 
@@ -38,7 +44,7 @@ const Index = () => {
         <main>
           {renderContent()}
         </main>
-        <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+        <NewBottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </AuthWrapper>
   );
