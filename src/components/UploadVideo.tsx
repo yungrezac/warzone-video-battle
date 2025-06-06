@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Video, X, ExternalLink } from 'lucide-react';
+import { Upload, Video, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -104,23 +104,6 @@ const UploadVideo: React.FC = () => {
             <p className="text-gray-500 mb-3 text-sm">
               Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 50MB
             </p>
-            
-            {/* Блок с информацией о сжатии видео */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-blue-800 text-xs mb-2">
-                Видео больше 50MB? Сожмите его бесплатно:
-              </p>
-              <a 
-                href="https://www.freeconvert.com/video-compressor" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs font-medium"
-              >
-                <ExternalLink className="w-3 h-3 mr-1" />
-                Сжать видео онлайн
-              </a>
-            </div>
-            
             <input
               ref={fileInputRef}
               type="file"

@@ -2,22 +2,17 @@
 import React, { useRef } from 'react';
 import VideoCard from './VideoCard';
 import WinnerAnnouncement from './WinnerAnnouncement';
-import AdminWinnerControl from './AdminWinnerControl';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
-import { useTodayWinner } from '@/hooks/useWinnerSystem';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
-import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error } = useVideos();
-  const { data: todayWinner } = useTodayWinner();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const videoRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const { triggerSocialLike, triggerSocialRating } = useAchievementTriggers();
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -30,12 +25,6 @@ const VideoFeed: React.FC = () => {
       console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
       try {
         await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
-        
-        // Триггерим достижения за социальную активность
-        if (!video.user_liked) {
-          await triggerSocialLike();
-        }
-        
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
       } catch (error) {
         console.error('Ошибка при обработке лайка:', error);
@@ -53,10 +42,6 @@ const VideoFeed: React.FC = () => {
     console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
     try {
       await rateVideoMutation.mutateAsync({ videoId, rating });
-      
-      // Триггерим достижения за социальную активность
-      await triggerSocialRating();
-      
       toast.success(`Оценка ${rating} поставлена`);
     } catch (error) {
       console.error('Ошибка при выставлении оценки:', error);
@@ -108,15 +93,8 @@ const VideoFeed: React.FC = () => {
     );
   }
 
-  // Разделяем видео на победное (если есть сегодняшний победитель) и остальные
-  const winnerVideo = todayWinner ? videos.find(v => v.id === todayWinner.id) : null;
-  const otherVideos = winnerVideo ? videos.filter(v => v.id !== winnerVideo.id) : videos;
-
   return (
     <div className="pb-16">
-      {/* Админ панель для определения победителя */}
-      <AdminWinnerControl />
-
       {/* Объявление о победителе */}
       <WinnerAnnouncement onViewWinner={handleViewWinner} />
 
@@ -128,45 +106,7 @@ const VideoFeed: React.FC = () => {
       </div>
 
       <div className="px-2 space-y-2">
-        {/* Показываем победное видео первым, если есть сегодняшний победитель */}
-        {winnerVideo && (
-          <div 
-            key={winnerVideo.id}
-            ref={(el) => {
-              videoRefs.current[winnerVideo.id] = el;
-            }}
-          >
-            <VideoCard
-              video={{
-                id: winnerVideo.id,
-                title: winnerVideo.title,
-                author: winnerVideo.user?.username || winnerVideo.user?.telegram_username || 'Роллер',
-                authorAvatar: winnerVideo.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-                thumbnail: winnerVideo.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
-                videoUrl: winnerVideo.video_url,
-                likes: winnerVideo.likes_count || 0,
-                comments: winnerVideo.comments_count || 0,
-                rating: winnerVideo.average_rating || 0,
-                views: winnerVideo.views,
-                isWinner: true, // Принудительно помечаем как победителя
-                timestamp: new Date(winnerVideo.created_at).toLocaleString('ru-RU', {
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }),
-                userLiked: winnerVideo.user_liked || false,
-                userRating: winnerVideo.user_rating || 0,
-                userId: winnerVideo.user_id,
-              }}
-              onLike={handleLike}
-              onRate={handleRate}
-            />
-          </div>
-        )}
-
-        {/* Остальные видео */}
-        {otherVideos?.map(video => (
+        {videos.map(video => (
           <div 
             key={video.id}
             ref={(el) => {

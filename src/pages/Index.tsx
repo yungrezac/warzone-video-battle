@@ -2,14 +2,12 @@
 import { useState } from "react";
 import AuthWrapper from "@/components/AuthWrapper";
 import { useAuth } from "@/components/AuthWrapper";
-import NewBottomNavbar from "@/components/NewBottomNavbar";
-import NewVideoFeed from "@/components/NewVideoFeed";
+import BottomNavbar from "@/components/BottomNavbar";
+import VideoFeed from "@/components/VideoFeed";
 import UploadVideo from "@/components/UploadVideo";
 import Profile from "@/components/Profile";
 import Market from "@/components/Market";
-import MapPage from "@/components/MapPage";
-import UsersPage from "@/components/UsersPage";
-import CommunityPage from "@/components/CommunityPage";
+import Achievements from "@/components/Achievements";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Index = () => {
@@ -17,28 +15,20 @@ const Index = () => {
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
 
-  const handleNavigateToUpload = () => {
-    setActiveTab('upload');
-  };
-
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <NewVideoFeed onNavigateToUpload={handleNavigateToUpload} />;
-      case 'map':
-        return <MapPage />;
-      case 'users':
-        return <UsersPage />;
-      case 'community':
-        return <CommunityPage />;
-      case 'profile':
-        return <Profile />;
+        return <VideoFeed />;
       case 'upload':
         return <UploadVideo />;
+      case 'achievements':
+        return <Achievements />;
       case 'market':
         return <Market />;
+      case 'profile':
+        return <Profile />;
       default:
-        return <NewVideoFeed onNavigateToUpload={handleNavigateToUpload} />;
+        return <VideoFeed />;
     }
   };
 
@@ -48,7 +38,7 @@ const Index = () => {
         <main>
           {renderContent()}
         </main>
-        <NewBottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </AuthWrapper>
   );

@@ -1,210 +1,159 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ShoppingBag, Star, Gift, Crown, Zap, Settings, Package, Circle, Square, Hexagon } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ShoppingBag, Star, Award, Gem, Zap } from 'lucide-react';
-import { useStoreItems, useUserPurchases, usePurchaseItem } from '@/hooks/useStoreItems';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import AdminWinnerControl from './AdminWinnerControl';
 
 const Market: React.FC = () => {
-  const { data: items, isLoading: itemsLoading } = useStoreItems();
-  const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
-  const { data: userProfile } = useUserProfile();
-  const purchaseItem = usePurchaseItem();
-  const { toast } = useToast();
-
-  const handlePurchase = async (itemId: string, price: number) => {
-    try {
-      await purchaseItem.mutateAsync({ itemId });
-      toast({
-        title: "Успешно!",
-        description: "Покупка совершена",
-      });
-    } catch (error: any) {
-      console.error('Ошибка покупки:', error);
-      toast({
-        title: "Ошибка",
-        description: error.message || "Не удалось совершить покупку",
-        variant: "destructive",
-      });
+  const upcomingFeatures = [
+    {
+      title: "Премиум статус",
+      description: "Эксклюзивные возможности",
+      icon: Star,
+      color: "text-yellow-500",
+      bgColor: "bg-yellow-50",
+      borderColor: "border-yellow-200"
+    },
+    {
+      title: "Эксклюзивные бейджи",
+      description: "Уникальные награды",
+      icon: Crown,
+      color: "text-purple-500",
+      bgColor: "bg-purple-50",
+      borderColor: "border-purple-200"
     }
-  };
+  ];
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'badges': return <Award className="w-4 h-4" />;
-      case 'frames': return <Star className="w-4 h-4" />;
-      case 'emojis': return <Gem className="w-4 h-4" />;
-      case 'premium': return <Zap className="w-4 h-4" />;
-      default: return <ShoppingBag className="w-4 h-4" />;
+  const rollerProducts = [
+    {
+      title: "Запчасти",
+      description: "Подшипники",
+      icon: Settings,
+      color: "text-orange-600",
+      bgColor: "bg-orange-100"
+    },
+    {
+      title: "Колеса",
+      description: "Разные размеры",
+      icon: Circle,
+      color: "text-green-600",
+      bgColor: "bg-green-100"
+    },
+    {
+      title: "Рамы",
+      description: "Алюминий, карбон",
+      icon: Square,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100"
+    },
+    {
+      title: "Ролики",
+      description: "Фрискейт, слалом",
+      icon: Hexagon,
+      color: "text-red-600",
+      bgColor: "bg-red-100"
     }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'badges': return 'bg-yellow-100 text-yellow-800';
-      case 'frames': return 'bg-purple-100 text-purple-800';
-      case 'emojis': return 'bg-pink-100 text-pink-800';
-      case 'premium': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const groupedItems = items?.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
-    }
-    acc[item.category].push(item);
-    return acc;
-  }, {} as Record<string, typeof items>) || {};
-
-  const categoryNames = {
-    badges: 'Значки',
-    frames: 'Рамки',
-    emojis: 'Эмодзи',
-    premium: 'Премиум'
-  };
-
-  if (itemsLoading) {
-    return (
-      <div className="p-3 pb-16">
-        <div className="text-center">Загрузка...</div>
-      </div>
-    );
-  }
+  ];
 
   return (
-    <div className="pb-16">
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold flex items-center">
-              <ShoppingBag className="w-6 h-6 mr-2" />
-              Магазин
-            </h1>
-            <p className="text-green-100 text-sm">Тратьте баллы на крутые вещи</p>
-          </div>
-          <div className="text-right">
-            <div className="bg-white/20 rounded-lg px-3 py-1">
-              <div className="text-xs text-green-100">Ваши баллы</div>
-              <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
+    <div className="p-4 pb-20 max-w-4xl mx-auto">
+      {/* Admin Winner Control */}
+      <AdminWinnerControl />
+
+      {/* Header Section */}
+      <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 mb-6">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <ShoppingBag className="w-8 h-8" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl text-white">Маркет</CardTitle>
+              <CardDescription className="text-purple-100">
+                Тратьте заработанные баллы на крутые награды!
+              </CardDescription>
             </div>
           </div>
+        </CardHeader>
+      </Card>
+
+      {/* Coming Soon Section */}
+      <div className="text-center mb-8">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 border border-blue-100">
+          <Gift className="w-10 h-10 text-blue-500" />
+        </div>
+        
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">
+          Скоро тут можно будет потратить баллы
+        </h2>
+        
+        <p className="text-gray-600 mb-8 max-w-md mx-auto">
+          Мы готовим для вас удивительные награды! Продолжайте участвовать в соревнованиях и копить баллы.
+        </p>
+      </div>
+
+      {/* Upcoming Features */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Скоро в маркете</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {upcomingFeatures.map((feature, index) => (
+            <Card key={index} className={`${feature.bgColor} ${feature.borderColor} border-2 border-dashed hover:shadow-md transition-shadow`}>
+              <CardContent className="p-4 text-center">
+                <div className="flex justify-center mb-3">
+                  <feature.icon className={`w-8 h-8 ${feature.color}`} />
+                </div>
+                <h4 className="font-medium text-gray-800 mb-1">{feature.title}</h4>
+                <p className="text-sm text-gray-600 mb-3">{feature.description}</p>
+                <Badge variant="outline" className="text-xs">
+                  Скоро
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 
-      <div className="p-3 space-y-4">
-        {Object.entries(groupedItems).map(([category, categoryItems]) => (
-          <div key={category}>
-            <div className="flex items-center space-x-2 mb-3">
-              <div className={`p-2 rounded-lg ${getCategoryColor(category)}`}>
-                {getCategoryIcon(category)}
-              </div>
-              <h2 className="text-lg font-semibold">{categoryNames[category] || category}</h2>
+      {/* Roller Shop Section */}
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+        <CardHeader className="text-center pb-4">
+          <div className="flex justify-center mb-3">
+            <div className="p-3 bg-blue-500 rounded-full">
+              <Zap className="w-8 h-8 text-white" />
             </div>
-            
-            <div className="grid grid-cols-1 gap-3">
-              {categoryItems.map(item => (
-                <Card key={item.id} className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      {item.image_url ? (
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          {getCategoryIcon(item.category)}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold text-sm">{item.name}</h3>
-                          <p className="text-xs text-gray-600 mt-1">{item.description}</p>
-                        </div>
-                        <Badge variant="secondary" className={getCategoryColor(item.category)}>
-                          {categoryNames[item.category] || item.category}
-                        </Badge>
-                      </div>
-                      
-                      <Separator className="my-2" />
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-1">
-                          <Star className="w-4 h-4 text-yellow-500" />
-                          <span className="text-sm font-semibold">{item.price} баллов</span>
-                        </div>
-                        
-                        <Button
-                          size="sm"
-                          onClick={() => handlePurchase(item.id, item.price)}
-                          disabled={!userProfile || userProfile.total_points < item.price || purchaseItem.isPending}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {purchaseItem.isPending ? 'Покупка...' : 'Купить'}
-                        </Button>
-                      </div>
-                      
-                      {userProfile && userProfile.total_points < item.price && (
-                        <p className="text-xs text-red-500 mt-1">Недостаточно баллов</p>
-                      )}
-                    </div>
+          </div>
+          <CardTitle className="text-xl text-gray-800">
+            Роллерский магазин
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Скоро появится возможность покупки роллерских товаров за накопленные баллы!
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {rollerProducts.map((product, index) => (
+              <Card key={index} className="bg-white hover:shadow-md transition-shadow border border-gray-200">
+                <CardContent className="p-4 text-center">
+                  <div className={`w-12 h-12 ${product.bgColor} rounded-full flex items-center justify-center mx-auto mb-3`}>
+                    <product.icon className={`w-6 h-6 ${product.color}`} />
                   </div>
-                </Card>
-              ))}
-            </div>
+                  <h5 className="font-medium text-gray-800 mb-1 text-sm">{product.title}</h5>
+                  <p className="text-xs text-gray-500">{product.description}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        ))}
-
-        {Object.keys(groupedItems).length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <ShoppingBag className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm">Магазин пуст</p>
-            <p className="text-xs">Скоро здесь появятся крутые товары!</p>
+          
+          <div className="mt-6 text-center">
+            <Button variant="outline" className="bg-white hover:bg-blue-50 border-blue-200">
+              <Package className="w-4 h-4 mr-2" />
+              Уведомить о запуске
+            </Button>
           </div>
-        )}
-
-        {purchases && purchases.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold mb-3 flex items-center">
-              <ShoppingBag className="w-5 h-5 mr-2" />
-              Мои покупки
-            </h2>
-            
-            <div className="space-y-2">
-              {purchases.slice(0, 5).map(purchase => (
-                <Card key={purchase.id} className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-1 rounded ${getCategoryColor(purchase.item?.category || 'default')}`}>
-                        {getCategoryIcon(purchase.item?.category || 'default')}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{purchase.item?.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(purchase.created_at).toLocaleDateString('ru-RU')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold">-{purchase.total_points} баллов</p>
-                      <p className="text-xs text-gray-500">x{purchase.quantity}</p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

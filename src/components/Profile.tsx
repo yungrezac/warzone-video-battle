@@ -10,14 +10,13 @@ import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
 import { Loader2 } from 'lucide-react';
 import VideoCard from './VideoCard';
 import DeleteVideoDialog from './DeleteVideoDialog';
-import AchievementsModal from './AchievementsModal';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const Profile: React.FC = () => {
-  const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = useUserProfile();
-  const { data: userVideos, isLoading: videosLoading, refetch: refetchVideos } = useUserVideos();
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile();
+  const { data: userVideos, isLoading: videosLoading } = useUserVideos();
   const { data: achievementStats } = useAchievementStats();
   const { data: userAchievements } = useUserAchievements();
   const { user } = useAuth();
@@ -28,7 +27,6 @@ const Profile: React.FC = () => {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<{id: string, title: string} | null>(null);
-  const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
 
   // Update achievements when user stats change
   useEffect(() => {
@@ -151,7 +149,7 @@ const Profile: React.FC = () => {
             <div className="flex items-center mt-0.5 text-blue-100">
               <Calendar className="w-3 h-3 mr-1" />
               <span className="text-xs">
-                В RollTricks с {new Date(userProfile?.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                В Roller Tricks с {new Date(userProfile?.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
               </span>
             </div>
           </div>
@@ -207,19 +205,10 @@ const Profile: React.FC = () => {
         {/* Achievement Section */}
         {achievementStats && (
           <div className="bg-white rounded-lg shadow-md p-2 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-base font-semibold flex items-center">
-                <Award className="w-4 h-4 mr-2 text-purple-500" />
-                Достижения
-              </h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setAchievementsModalOpen(true)}
-              >
-                Все достижения
-              </Button>
-            </div>
+            <h3 className="text-base font-semibold mb-2 flex items-center">
+              <Award className="w-4 h-4 mr-2 text-purple-500" />
+              Достижения
+            </h3>
             
             <div className="grid grid-cols-3 gap-2 text-center mb-3">
               <div className="bg-purple-50 rounded-lg p-2">
@@ -331,11 +320,6 @@ const Profile: React.FC = () => {
         onConfirm={handleDeleteConfirm}
         isDeleting={deleteVideoMutation.isPending}
         videoTitle={videoToDelete?.title || ''}
-      />
-
-      <AchievementsModal
-        isOpen={achievementsModalOpen}
-        onClose={() => setAchievementsModalOpen(false)}
       />
     </div>
   );
