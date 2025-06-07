@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementTriggers } from './useAchievementTriggers';
 import { useTelegramNotifications } from './useTelegramNotifications';
+import { toast } from 'sonner';
 
 export interface VideoComment {
   id: string;
@@ -83,15 +84,28 @@ export const useAddComment = () => {
 
       // Начисляем 3 балла за комментарий
       console.log('💰 Начисляем 3 балла за комментарий...');
-      const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
-        p_user_id: user.id,
-        p_points_change: 3
-      });
+      try {
+        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: 3
+        });
 
-      if (pointsError) {
+        if (pointsError) {
+          console.error('❌ Ошибка при начислении баллов за комментарий:', pointsError);
+          toast.error('Ошибка начисления баллов');
+        } else {
+          console.log('✅ Баллы за комментарий начислены успешно:', pointsData);
+          toast.success('+3 балла за комментарий!', {
+            duration: 2000,
+            style: {
+              background: 'linear-gradient(to right, #10b981, #059669)',
+              color: 'white',
+            },
+          });
+        }
+      } catch (pointsError) {
         console.error('❌ Ошибка при начислении баллов за комментарий:', pointsError);
-      } else {
-        console.log('✅ Баллы за комментарий начислены успешно:', pointsData);
+        toast.error('Ошибка начисления баллов');
       }
 
       // Trigger achievement for commenting
@@ -120,19 +134,56 @@ export const useAddComment = () => {
       
       return data;
     },
+    onMutate: async ({ videoId, content }) => {
+      // Оптимистичное обновление баллов в профиле
+      console.log('🔄 Оптимистичное обновление баллов +3 за комментарий');
+      
+      // Обновляем профиль пользователя оптимистично
+      queryClient.setQueryData(['user-profile', user?.id], (oldData: any) => {
+        if (oldData) {
+          return {
+            ...oldData,
+            total_points: (oldData.total_points || 0) + 3
+          };
+        }
+        return oldData;
+      });
+
+      // Показываем уведомление о баллах сразу
+      toast.success('+3 балла за комментарий!', {
+        duration: 2000,
+        style: {
+          background: 'linear-gradient(to right, #10b981, #059669)',
+          color: 'white',
+        },
+      });
+    },
     onSuccess: (data, { videoId }) => {
       console.log('🔄 Комментарий успешно добавлен, обновляем кэш');
       // Обновляем кэш комментариев для данного видео
       queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       // Также обновляем счетчик комментариев в списке видео
       queryClient.invalidateQueries({ queryKey: ['videos'] });
-      // Обновляем профиль пользователя для отображения новых баллов
+      // Обновляем профиль пользователя для отображения актуальных баллов
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       // Обновляем достижения
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
-    onError: (error) => {
+    onError: (error, { videoId, content }) => {
       console.error('❌ Ошибка добавления комментария:', error);
+      
+      // Откатываем оптимистичное обновление при ошибке
+      queryClient.setQueryData(['user-profile', user?.id], (oldData: any) => {
+        if (oldData) {
+          return {
+            ...oldData,
+            total_points: Math.max(0, (oldData.total_points || 0) - 3)
+          };
+        }
+        return oldData;
+      });
+      
+      toast.error('Ошибка добавления комментария');
     },
   });
 };
