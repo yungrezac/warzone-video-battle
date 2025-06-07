@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -148,13 +149,17 @@ export const useLikeVideo = () => {
         if (error) throw error;
 
         // Убираем 2 балла за снятие лайка
-        const { error: pointsError } = await supabase.rpc('update_user_points', {
-          p_user_id: user.id,
-          p_points_change: -2
-        });
+        try {
+          const { error: pointsError } = await supabase.rpc('update_user_points', {
+            p_user_id: user.id,
+            p_points_change: -2
+          });
 
-        if (pointsError) {
-          console.error('Ошибка при снятии баллов за убранный лайк:', pointsError);
+          if (pointsError) {
+            console.error('Ошибка при снятии баллов за убранный лайк:', pointsError);
+          }
+        } catch (pointsError) {
+          console.error('Ошибка при вызове функции снятия баллов:', pointsError);
         }
       } else {
         // Add like
@@ -168,13 +173,17 @@ export const useLikeVideo = () => {
         if (error) throw error;
         
         // Начисляем 2 балла за лайк
-        const { error: pointsError } = await supabase.rpc('update_user_points', {
-          p_user_id: user.id,
-          p_points_change: 2
-        });
+        try {
+          const { error: pointsError } = await supabase.rpc('update_user_points', {
+            p_user_id: user.id,
+            p_points_change: 2
+          });
 
-        if (pointsError) {
-          console.error('Ошибка при начислении баллов за лайк:', pointsError);
+          if (pointsError) {
+            console.error('Ошибка при начислении баллов за лайк:', pointsError);
+          }
+        } catch (pointsError) {
+          console.error('Ошибка при вызове функции начисления баллов:', pointsError);
         }
         
         // Trigger achievement for liking other videos
@@ -233,13 +242,17 @@ export const useRateVideo = () => {
       if (error) throw error;
       
       // Начисляем 1 балл за оценку
-      const { error: pointsError } = await supabase.rpc('update_user_points', {
-        p_user_id: user.id,
-        p_points_change: 1
-      });
+      try {
+        const { error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: 1
+        });
 
-      if (pointsError) {
-        console.error('Ошибка при начислении баллов за оценку:', pointsError);
+        if (pointsError) {
+          console.error('Ошибка при начислении баллов за оценку:', pointsError);
+        }
+      } catch (pointsError) {
+        console.error('Ошибка при вызове функции начисления баллов:', pointsError);
       }
       
       // Trigger achievement for rating other videos

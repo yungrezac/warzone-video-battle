@@ -82,13 +82,17 @@ export const useAddComment = () => {
       console.log('Комментарий добавлен:', data);
 
       // Начисляем 3 балла за комментарий
-      const { error: pointsError } = await supabase.rpc('update_user_points', {
-        p_user_id: user.id,
-        p_points_change: 3
-      });
+      try {
+        const { error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: 3
+        });
 
-      if (pointsError) {
-        console.error('Ошибка при начислении баллов за комментарий:', pointsError);
+        if (pointsError) {
+          console.error('Ошибка при начислении баллов за комментарий:', pointsError);
+        }
+      } catch (pointsError) {
+        console.error('Ошибка при вызове функции начисления баллов:', pointsError);
       }
 
       // Trigger achievement for commenting

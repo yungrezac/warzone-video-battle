@@ -597,6 +597,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_user_points: {
+        Args: { p_user_id: string; p_points_change: number }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
