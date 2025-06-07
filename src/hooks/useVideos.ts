@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementTriggers } from './useAchievementTriggers';
 import { useTelegramNotifications } from './useTelegramNotifications';
-import { toast } from 'sonner';
 
 interface Video {
   id: string;
@@ -150,28 +149,15 @@ export const useLikeVideo = () => {
 
         // Убираем 2 балла за снятие лайка
         console.log('💰 Убираем 2 балла за снятие лайка...');
-        try {
-          const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
-            p_user_id: user.id,
-            p_points_change: -2
-          });
+        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: -2
+        });
 
-          if (pointsError) {
-            console.error('❌ Ошибка при снятии баллов за убранный лайк:', pointsError);
-            toast.error('Ошибка при снятии баллов');
-          } else {
-            console.log('✅ Баллы за убранный лайк сняты успешно:', pointsData);
-            toast.info('-2 балла за снятый лайк', {
-              duration: 2000,
-              style: {
-                background: 'linear-gradient(to right, #f59e0b, #d97706)',
-                color: 'white',
-              },
-            });
-          }
-        } catch (pointsError) {
+        if (pointsError) {
           console.error('❌ Ошибка при снятии баллов за убранный лайк:', pointsError);
-          toast.error('Ошибка при снятии баллов');
+        } else {
+          console.log('✅ Баллы за убранный лайк сняты успешно:', pointsData);
         }
       } else {
         // Add like
@@ -186,28 +172,15 @@ export const useLikeVideo = () => {
         
         // Начисляем 2 балла за лайк
         console.log('💰 Начисляем 2 балла за лайк...');
-        try {
-          const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
-            p_user_id: user.id,
-            p_points_change: 2
-          });
+        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: 2
+        });
 
-          if (pointsError) {
-            console.error('❌ Ошибка при начислении баллов за лайк:', pointsError);
-            toast.error('Ошибка начисления баллов');
-          } else {
-            console.log('✅ Баллы за лайк начислены успешно:', pointsData);
-            toast.success('+2 балла за лайк!', {
-              duration: 2000,
-              style: {
-                background: 'linear-gradient(to right, #ef4444, #dc2626)',
-                color: 'white',
-              },
-            });
-          }
-        } catch (pointsError) {
+        if (pointsError) {
           console.error('❌ Ошибка при начислении баллов за лайк:', pointsError);
-          toast.error('Ошибка начисления баллов');
+        } else {
+          console.log('✅ Баллы за лайк начислены успешно:', pointsData);
         }
         
         // Trigger achievement for liking other videos
@@ -235,64 +208,12 @@ export const useLikeVideo = () => {
         }
       }
     },
-    onMutate: async ({ videoId, isLiked }) => {
-      // Оптимистичное обновление баллов в профиле
-      const pointsChange = isLiked ? -2 : 2;
-      console.log('🔄 Оптимистичное обновление баллов:', pointsChange, 'за лайк');
-      
-      // Обновляем профиль пользователя оптимистично
-      queryClient.setQueryData(['user-profile', user?.id], (oldData: any) => {
-        if (oldData) {
-          return {
-            ...oldData,
-            total_points: Math.max(0, (oldData.total_points || 0) + pointsChange)
-          };
-        }
-        return oldData;
-      });
-
-      // Показываем уведомление о баллах сразу
-      if (isLiked) {
-        toast.info('-2 балла за снятый лайк', {
-          duration: 2000,
-          style: {
-            background: 'linear-gradient(to right, #f59e0b, #d97706)',
-            color: 'white',
-          },
-        });
-      } else {
-        toast.success('+2 балла за лайк!', {
-          duration: 2000,
-          style: {
-            background: 'linear-gradient(to right, #ef4444, #dc2626)',
-            color: 'white',
-          },
-        });
-      }
-    },
     onSuccess: () => {
       console.log('🔄 Лайк обработан успешно, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
-    },
-    onError: (error, { videoId, isLiked }) => {
-      console.error('❌ Ошибка при обработке лайка:', error);
-      
-      // Откатываем оптимистичное обновление при ошибке
-      const pointsChange = isLiked ? 2 : -2; // Обратное действие
-      queryClient.setQueryData(['user-profile', user?.id], (oldData: any) => {
-        if (oldData) {
-          return {
-            ...oldData,
-            total_points: Math.max(0, (oldData.total_points || 0) + pointsChange)
-          };
-        }
-        return oldData;
-      });
-      
-      toast.error('Ошибка при обработке лайка');
     },
   });
 };
@@ -322,57 +243,20 @@ export const useRateVideo = () => {
       
       // Начисляем 1 балл за оценку
       console.log('💰 Начисляем 1 балл за оценку...');
-      try {
-        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
-          p_user_id: user.id,
-          p_points_change: 1
-        });
+      const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+        p_user_id: user.id,
+        p_points_change: 1
+      });
 
-        if (pointsError) {
-          console.error('❌ Ошибка при начислении баллов за оценку:', pointsError);
-          toast.error('Ошибка начисления баллов');
-        } else {
-          console.log('✅ Баллы за оценку начислены успешно:', pointsData);
-          toast.success('+1 балл за оценку!', {
-            duration: 2000,
-            style: {
-              background: 'linear-gradient(to right, #8b5cf6, #7c3aed)',
-              color: 'white',
-            },
-          });
-        }
-      } catch (pointsError) {
+      if (pointsError) {
         console.error('❌ Ошибка при начислении баллов за оценку:', pointsError);
-        toast.error('Ошибка начисления баллов');
+      } else {
+        console.log('✅ Баллы за оценку начислены успешно:', pointsData);
       }
       
       // Trigger achievement for rating other videos
       console.log('🏆 Обновляем достижения за оценку...');
       triggerSocialRating();
-    },
-    onMutate: async ({ videoId, rating }) => {
-      // Оптимистичное обновление баллов в профиле
-      console.log('🔄 Оптимистичное обновление баллов +1 за оценку');
-      
-      // Обновляем профиль пользователя оптимистично
-      queryClient.setQueryData(['user-profile', user?.id], (oldData: any) => {
-        if (oldData) {
-          return {
-            ...oldData,
-            total_points: (oldData.total_points || 0) + 1
-          };
-        }
-        return oldData;
-      });
-
-      // Показываем уведомление о баллах сразу
-      toast.success('+1 балл за оценку!', {
-        duration: 2000,
-        style: {
-          background: 'linear-gradient(to right, #8b5cf6, #7c3aed)',
-          color: 'white',
-        },
-      });
     },
     onSuccess: () => {
       console.log('🔄 Оценка выставлена успешно, обновляем кэш');
@@ -380,22 +264,6 @@ export const useRateVideo = () => {
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
-    },
-    onError: (error, { videoId, rating }) => {
-      console.error('❌ Ошибка при выставлении оценки:', error);
-      
-      // Откатываем оптимистичное обновление при ошибке
-      queryClient.setQueryData(['user-profile', user?.id], (oldData: any) => {
-        if (oldData) {
-          return {
-            ...oldData,
-            total_points: Math.max(0, (oldData.total_points || 0) - 1)
-          };
-        }
-        return oldData;
-      });
-      
-      toast.error('Ошибка при выставлении оценки');
     },
   });
 };
