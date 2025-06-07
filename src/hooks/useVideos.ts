@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementTriggers } from './useAchievementTriggers';
 import { useTelegramNotifications } from './useTelegramNotifications';
+import { toast } from 'sonner';
 
 interface Video {
   id: string;
