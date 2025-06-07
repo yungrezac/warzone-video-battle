@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -136,7 +135,7 @@ export const useLikeVideo = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Mutation - Like video:', videoId, 'isLiked:', isLiked);
+      console.log('💖 Mutation - Like video:', videoId, 'isLiked:', isLiked);
 
       if (isLiked) {
         // Remove like
@@ -149,17 +148,16 @@ export const useLikeVideo = () => {
         if (error) throw error;
 
         // Убираем 2 балла за снятие лайка
-        try {
-          const { error: pointsError } = await supabase.rpc('update_user_points', {
-            p_user_id: user.id,
-            p_points_change: -2
-          });
+        console.log('💰 Убираем 2 балла за снятие лайка...');
+        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: -2
+        });
 
-          if (pointsError) {
-            console.error('Ошибка при снятии баллов за убранный лайк:', pointsError);
-          }
-        } catch (pointsError) {
-          console.error('Ошибка при вызове функции снятия баллов:', pointsError);
+        if (pointsError) {
+          console.error('❌ Ошибка при снятии баллов за убранный лайк:', pointsError);
+        } else {
+          console.log('✅ Баллы за убранный лайк сняты успешно:', pointsData);
         }
       } else {
         // Add like
@@ -173,20 +171,20 @@ export const useLikeVideo = () => {
         if (error) throw error;
         
         // Начисляем 2 балла за лайк
-        try {
-          const { error: pointsError } = await supabase.rpc('update_user_points', {
-            p_user_id: user.id,
-            p_points_change: 2
-          });
+        console.log('💰 Начисляем 2 балла за лайк...');
+        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: 2
+        });
 
-          if (pointsError) {
-            console.error('Ошибка при начислении баллов за лайк:', pointsError);
-          }
-        } catch (pointsError) {
-          console.error('Ошибка при вызове функции начисления баллов:', pointsError);
+        if (pointsError) {
+          console.error('❌ Ошибка при начислении баллов за лайк:', pointsError);
+        } else {
+          console.log('✅ Баллы за лайк начислены успешно:', pointsData);
         }
         
         // Trigger achievement for liking other videos
+        console.log('🏆 Обновляем достижения за лайк...');
         triggerSocialLike();
 
         // Отправляем уведомление владельцу видео
@@ -211,9 +209,11 @@ export const useLikeVideo = () => {
       }
     },
     onSuccess: () => {
+      console.log('🔄 Лайк обработан успешно, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
   });
 };
@@ -229,7 +229,7 @@ export const useRateVideo = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Mutation - Rate video:', videoId, 'rating:', rating);
+      console.log('⭐ Mutation - Rate video:', videoId, 'rating:', rating);
 
       const { error } = await supabase
         .from('video_ratings')
@@ -242,26 +242,28 @@ export const useRateVideo = () => {
       if (error) throw error;
       
       // Начисляем 1 балл за оценку
-      try {
-        const { error: pointsError } = await supabase.rpc('update_user_points', {
-          p_user_id: user.id,
-          p_points_change: 1
-        });
+      console.log('💰 Начисляем 1 балл за оценку...');
+      const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+        p_user_id: user.id,
+        p_points_change: 1
+      });
 
-        if (pointsError) {
-          console.error('Ошибка при начислении баллов за оценку:', pointsError);
-        }
-      } catch (pointsError) {
-        console.error('Ошибка при вызове функции начисления баллов:', pointsError);
+      if (pointsError) {
+        console.error('❌ Ошибка при начислении баллов за оценку:', pointsError);
+      } else {
+        console.log('✅ Баллы за оценку начислены успешно:', pointsData);
       }
       
       // Trigger achievement for rating other videos
+      console.log('🏆 Обновляем достижения за оценку...');
       triggerSocialRating();
     },
     onSuccess: () => {
+      console.log('🔄 Оценка выставлена успешно, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
   });
 };

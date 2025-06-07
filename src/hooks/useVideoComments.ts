@@ -59,7 +59,7 @@ export const useAddComment = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Добавляем комментарий:', { videoId, content, userId: user.id });
+      console.log('🎯 Добавляем комментарий:', { videoId, content, userId: user.id });
 
       const { data, error } = await supabase
         .from('video_comments')
@@ -75,27 +75,27 @@ export const useAddComment = () => {
         .single();
 
       if (error) {
-        console.error('Ошибка добавления комментария:', error);
+        console.error('❌ Ошибка добавления комментария:', error);
         throw error;
       }
       
-      console.log('Комментарий добавлен:', data);
+      console.log('✅ Комментарий добавлен:', data);
 
       // Начисляем 3 балла за комментарий
-      try {
-        const { error: pointsError } = await supabase.rpc('update_user_points', {
-          p_user_id: user.id,
-          p_points_change: 3
-        });
+      console.log('💰 Начисляем 3 балла за комментарий...');
+      const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+        p_user_id: user.id,
+        p_points_change: 3
+      });
 
-        if (pointsError) {
-          console.error('Ошибка при начислении баллов за комментарий:', pointsError);
-        }
-      } catch (pointsError) {
-        console.error('Ошибка при вызове функции начисления баллов:', pointsError);
+      if (pointsError) {
+        console.error('❌ Ошибка при начислении баллов за комментарий:', pointsError);
+      } else {
+        console.log('✅ Баллы за комментарий начислены успешно:', pointsData);
       }
 
       // Trigger achievement for commenting
+      console.log('🏆 Обновляем достижения за комментарий...');
       triggerComment();
 
       // Отправляем уведомление владельцу видео
@@ -121,16 +121,18 @@ export const useAddComment = () => {
       return data;
     },
     onSuccess: (data, { videoId }) => {
-      console.log('Комментарий успешно добавлен, обновляем кэш');
+      console.log('🔄 Комментарий успешно добавлен, обновляем кэш');
       // Обновляем кэш комментариев для данного видео
       queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       // Также обновляем счетчик комментариев в списке видео
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       // Обновляем профиль пользователя для отображения новых баллов
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      // Обновляем достижения
+      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
     onError: (error) => {
-      console.error('Ошибка добавления комментария:', error);
+      console.error('❌ Ошибка добавления комментария:', error);
     },
   });
 };
