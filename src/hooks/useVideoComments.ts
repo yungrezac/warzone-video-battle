@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -80,6 +81,16 @@ export const useAddComment = () => {
       
       console.log('Комментарий добавлен:', data);
 
+      // Начисляем 3 балла за комментарий
+      const { error: pointsError } = await supabase.rpc('update_user_points', {
+        p_user_id: user.id,
+        p_points_change: 3
+      });
+
+      if (pointsError) {
+        console.error('Ошибка при начислении баллов за комментарий:', pointsError);
+      }
+
       // Trigger achievement for commenting
       triggerComment();
 
@@ -111,6 +122,8 @@ export const useAddComment = () => {
       queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       // Также обновляем счетчик комментариев в списке видео
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      // Обновляем профиль пользователя для отображения новых баллов
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error) => {
       console.error('Ошибка добавления комментария:', error);

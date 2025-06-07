@@ -146,6 +146,16 @@ export const useLikeVideo = () => {
           .eq('user_id', user.id);
 
         if (error) throw error;
+
+        // Убираем 2 балла за снятие лайка
+        const { error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: -2
+        });
+
+        if (pointsError) {
+          console.error('Ошибка при снятии баллов за убранный лайк:', pointsError);
+        }
       } else {
         // Add like
         const { error } = await supabase
@@ -156,6 +166,16 @@ export const useLikeVideo = () => {
           });
 
         if (error) throw error;
+        
+        // Начисляем 2 балла за лайк
+        const { error: pointsError } = await supabase.rpc('update_user_points', {
+          p_user_id: user.id,
+          p_points_change: 2
+        });
+
+        if (pointsError) {
+          console.error('Ошибка при начислении баллов за лайк:', pointsError);
+        }
         
         // Trigger achievement for liking other videos
         triggerSocialLike();
@@ -184,6 +204,7 @@ export const useLikeVideo = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };
@@ -211,12 +232,23 @@ export const useRateVideo = () => {
 
       if (error) throw error;
       
+      // Начисляем 1 балл за оценку
+      const { error: pointsError } = await supabase.rpc('update_user_points', {
+        p_user_id: user.id,
+        p_points_change: 1
+      });
+
+      if (pointsError) {
+        console.error('Ошибка при начислении баллов за оценку:', pointsError);
+      }
+      
       // Trigger achievement for rating other videos
       triggerSocialRating();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };
