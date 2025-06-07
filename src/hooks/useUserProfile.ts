@@ -26,7 +26,10 @@ export const useUserProfile = () => {
         .eq('id', user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Ошибка загрузки профиля:', profileError);
+        throw profileError;
+      }
 
       // Получаем список видео пользователя
       const { data: userVideos, error: videosError } = await supabase
@@ -34,7 +37,10 @@ export const useUserProfile = () => {
         .select('id')
         .eq('user_id', user.id);
 
-      if (videosError) throw videosError;
+      if (videosError) {
+        console.error('Ошибка загрузки видео:', videosError);
+        throw videosError;
+      }
 
       const videoIds = userVideos?.map(v => v.id) || [];
       const totalVideos = videoIds.length;
@@ -60,13 +66,35 @@ export const useUserProfile = () => {
         totalViews = viewsData?.reduce((sum, video) => sum + (video.views || 0), 0) || 0;
       }
 
-      const userPoints = profile.user_points?.[0];
+      // Убеждаемся что у пользователя есть запись в user_points
+      let userPoints = profile.user_points?.[0];
+      
+      if (!userPoints) {
+        console.log('Создаем запись user_points для пользователя:', user.id);
+        const { data: newPoints, error: createPointsError } = await supabase
+          .from('user_points')
+          .insert({
+            user_id: user.id,
+            total_points: 0,
+            wins_count: 0
+          })
+          .select()
+          .single();
+
+        if (createPointsError) {
+          console.error('Ошибка создания user_points:', createPointsError);
+          userPoints = { total_points: 0, wins_count: 0 };
+        } else {
+          userPoints = newPoints;
+        }
+      }
 
       console.log('Статистика профиля:', { 
         totalVideos, 
         totalLikes, 
         totalViews,
-        videoIds: videoIds.length 
+        points: userPoints?.total_points || 0,
+        wins: userPoints?.wins_count || 0
       });
 
       return {

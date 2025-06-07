@@ -143,24 +143,51 @@ export const useCalculateWinner = () => {
         throw updateError;
       }
 
-      // Начисляем баллы пользователю - используем обычный update вместо несуществующей функции
-      const { data: currentPoints } = await supabase
+      // Начисляем баллы пользователю и обновляем достижения
+      const { data: currentPoints, error: pointsSelectError } = await supabase
         .from('user_points')
         .select('total_points, wins_count')
         .eq('user_id', bestVideo.user_id)
         .single();
 
-      const { error: pointsError } = await supabase
-        .from('user_points')
-        .update({
-          total_points: (currentPoints?.total_points || 0) + 100,
-          wins_count: (currentPoints?.wins_count || 0) + 1
-        })
-        .eq('user_id', bestVideo.user_id);
+      if (pointsSelectError) {
+        console.error('Ошибка получения текущих баллов:', pointsSelectError);
+        // Создаем запись если её нет
+        const { error: insertError } = await supabase
+          .from('user_points')
+          .insert({
+            user_id: bestVideo.user_id,
+            total_points: 100,
+            wins_count: 1
+          });
+        
+        if (insertError) {
+          console.error('Ошибка создания записи баллов:', insertError);
+        }
+      } else {
+        // Обновляем существующую запись
+        const { error: pointsUpdateError } = await supabase
+          .from('user_points')
+          .update({
+            total_points: (currentPoints?.total_points || 0) + 100,
+            wins_count: (currentPoints?.wins_count || 0) + 1
+          })
+          .eq('user_id', bestVideo.user_id);
 
-      if (pointsError) {
-        console.error('Ошибка начисления баллов:', pointsError);
-        // Продолжаем, даже если не удалось начислить баллы
+        if (pointsUpdateError) {
+          console.error('Ошибка обновления баллов:', pointsUpdateError);
+        }
+
+        // Обновляем достижения связанные с победами
+        try {
+          await supabase.rpc('update_achievement_progress', {
+            p_user_id: bestVideo.user_id,
+            p_category: 'wins',
+            p_new_value: (currentPoints?.wins_count || 0) + 1
+          });
+        } catch (achievementError) {
+          console.error('Ошибка обновления достижений:', achievementError);
+        }
       }
 
       console.log('Победитель установлен и баллы начислены');
@@ -171,6 +198,7 @@ export const useCalculateWinner = () => {
       queryClient.invalidateQueries({ queryKey: ['top-users'] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
   });
 };

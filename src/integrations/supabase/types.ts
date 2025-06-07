@@ -122,6 +122,42 @@ export type Database = {
         }
         Relationships: []
       }
+      questions: {
+        Row: {
+          answer_image_url: string | null
+          answer_text: string | null
+          answered_at: string | null
+          created_at: string
+          id: string
+          is_answered: boolean
+          question_text: string
+          target_username: string
+          updated_at: string
+        }
+        Insert: {
+          answer_image_url?: string | null
+          answer_text?: string | null
+          answered_at?: string | null
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          question_text: string
+          target_username: string
+          updated_at?: string
+        }
+        Update: {
+          answer_image_url?: string | null
+          answer_text?: string | null
+          answered_at?: string | null
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          question_text?: string
+          target_username?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       routes: {
         Row: {
           average_speed: number | null

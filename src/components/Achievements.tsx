@@ -33,6 +33,16 @@ const Achievements: React.FC = () => {
     );
   }
 
+  if (!userAchievements || userAchievements.length === 0) {
+    return (
+      <div className="p-3 pb-16">
+        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-3 py-2 rounded text-sm">
+          Загружаем достижения...
+        </div>
+      </div>
+    );
+  }
+
   const categories = [
     { key: 'videos', name: 'Видео', icon: '🎬', color: 'bg-blue-500' },
     { key: 'likes', name: 'Лайки', icon: '❤️', color: 'bg-red-500' },

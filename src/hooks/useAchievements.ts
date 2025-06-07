@@ -54,18 +54,46 @@ export const useUserAchievements = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('user_achievements')
-        .select(`
-          *,
-          achievement:achievements(*)
-        `)
-        .eq('user_id', user.id)
-        .order('is_completed', { ascending: true })
-        .order('current_progress', { ascending: false });
+      // Получаем все активные достижения
+      const { data: allAchievements, error: achievementsError } = await supabase
+        .from('achievements')
+        .select('*')
+        .eq('is_active', true);
 
-      if (error) throw error;
-      return data as UserAchievement[];
+      if (achievementsError) throw achievementsError;
+
+      // Получаем прогресс пользователя по достижениям
+      const { data: userProgress, error: progressError } = await supabase
+        .from('user_achievements')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (progressError) throw progressError;
+
+      // Создаем карту прогресса пользователя
+      const progressMap = new Map();
+      userProgress?.forEach(up => {
+        progressMap.set(up.achievement_id, up);
+      });
+
+      // Объединяем данные - для каждого достижения показываем прогресс (или 0 если нет)
+      const result = allAchievements?.map(achievement => {
+        const userProgress = progressMap.get(achievement.id);
+        
+        return {
+          id: userProgress?.id || `new-${achievement.id}`,
+          user_id: user.id,
+          achievement_id: achievement.id,
+          current_progress: userProgress?.current_progress || 0,
+          is_completed: userProgress?.is_completed || false,
+          completed_at: userProgress?.completed_at || null,
+          created_at: userProgress?.created_at || new Date().toISOString(),
+          updated_at: userProgress?.updated_at || new Date().toISOString(),
+          achievement: achievement,
+        };
+      }) || [];
+
+      return result as UserAchievement[];
     },
     enabled: !!user?.id,
   });
@@ -108,15 +136,25 @@ export const useAchievementStats = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      // Получаем все активные достижения
+      const { data: allAchievements, error: achievementsError } = await supabase
+        .from('achievements')
+        .select('id')
+        .eq('is_active', true);
+
+      if (achievementsError) throw achievementsError;
+
+      // Получаем завершенные достижения пользователя
+      const { data: completedAchievements, error: completedError } = await supabase
         .from('user_achievements')
-        .select('is_completed')
-        .eq('user_id', user.id);
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true);
 
-      if (error) throw error;
+      if (completedError) throw completedError;
 
-      const total = data.length;
-      const completed = data.filter(item => item.is_completed).length;
+      const total = allAchievements?.length || 0;
+      const completed = completedAchievements?.length || 0;
       const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
       return {
