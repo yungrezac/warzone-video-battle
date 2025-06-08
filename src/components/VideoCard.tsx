@@ -6,6 +6,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Link, useLocation } from 'react-router-dom';
 import VideoPlayer from './VideoPlayer';
 import VideoComments from './VideoComments';
+import CategoryBadge from './CategoryBadge';
 
 interface Video {
   id: string;
@@ -23,6 +24,7 @@ interface Video {
   userLiked?: boolean;
   userRating?: number;
   userId?: string;
+  category?: 'Rollers' | 'BMX' | 'Skateboard';
 }
 
 interface VideoCardProps {
@@ -81,33 +83,40 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
       </div>
 
       <div className="p-2">
-        <div className="flex items-center mb-1.5">
-          {video.userId && !isOnUserProfile ? (
-            <Link to={`/user/${video.userId}`} className="flex items-center flex-1 min-w-0 hover:opacity-80">
-              <img 
-                src={video.authorAvatar} 
-                alt={video.author}
-                className="w-7 h-7 rounded-full mr-2"
-              />
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
-                <p className="text-gray-600 text-xs">@{video.author}</p>
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center flex-1 min-w-0">
+            {video.userId && !isOnUserProfile ? (
+              <Link to={`/user/${video.userId}`} className="flex items-center flex-1 min-w-0 hover:opacity-80">
+                <img 
+                  src={video.authorAvatar} 
+                  alt={video.author}
+                  className="w-7 h-7 rounded-full mr-2"
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
+                  <p className="text-gray-600 text-xs">@{video.author}</p>
+                </div>
+              </Link>
+            ) : (
+              <div className="flex items-center flex-1 min-w-0">
+                <img 
+                  src={video.authorAvatar} 
+                  alt={video.author}
+                  className="w-7 h-7 rounded-full mr-2"
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
+                  <p className="text-gray-600 text-xs">@{video.author}</p>
+                </div>
               </div>
-            </Link>
-          ) : (
-            <div className="flex items-center flex-1 min-w-0">
-              <img 
-                src={video.authorAvatar} 
-                alt={video.author}
-                className="w-7 h-7 rounded-full mr-2"
-              />
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
-                <p className="text-gray-600 text-xs">@{video.author}</p>
-              </div>
-            </div>
-          )}
-          <span className="text-gray-500 text-xs ml-2">{video.timestamp}</span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            {video.category && (
+              <CategoryBadge category={video.category} />
+            )}
+            <span className="text-gray-500 text-xs">{video.timestamp}</span>
+          </div>
         </div>
 
         <div className="flex items-center justify-between">

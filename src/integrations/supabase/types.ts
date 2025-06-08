@@ -530,6 +530,7 @@ export type Database = {
       videos: {
         Row: {
           average_rating: number | null
+          category: string
           created_at: string
           description: string | null
           id: string
@@ -545,6 +546,7 @@ export type Database = {
         }
         Insert: {
           average_rating?: number | null
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -560,6 +562,7 @@ export type Database = {
         }
         Update: {
           average_rating?: number | null
+          category?: string
           created_at?: string
           description?: string | null
           id?: string

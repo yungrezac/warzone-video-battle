@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useUploadVideo } from '@/hooks/useVideos';
 import { useToast } from '@/hooks/use-toast';
+import CategorySelector from './CategorySelector';
 
 const UploadVideo: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<'Rollers' | 'BMX' | 'Skateboard'>('Rollers');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadVideo();
   const { toast } = useToast();
@@ -57,12 +59,14 @@ const UploadVideo: React.FC = () => {
         title: title.trim(),
         description: description.trim() || undefined,
         videoFile: selectedFile,
+        category: category,
       });
 
       // Очищаем форму после успешной загрузки
       setSelectedFile(null);
       setTitle('');
       setDescription('');
+      setCategory('Rollers');
       
       // Сбрасываем input
       if (fileInputRef.current) {
@@ -91,7 +95,7 @@ const UploadVideo: React.FC = () => {
     <div className="p-3 pb-16">
       <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-4 rounded-lg mb-4">
         <h2 className="text-xl font-bold mb-1">Загрузить трюк</h2>
-        <p className="opacity-90 text-sm">Поделитесь своим лучшим трюком на роликах и участвуйте в ежедневном соревновании!</p>
+        <p className="opacity-90 text-sm">Поделитесь своим лучшим трюком и участвуйте в ежедневном соревновании!</p>
       </div>
 
       <div className="space-y-4">
@@ -138,6 +142,11 @@ const UploadVideo: React.FC = () => {
         )}
 
         <div className="space-y-3">
+          <CategorySelector 
+            selectedCategory={category}
+            onCategoryChange={setCategory}
+          />
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Название трюка *

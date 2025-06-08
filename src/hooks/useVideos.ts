@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementTriggers } from './useAchievementTriggers';
 import { useTelegramNotifications } from './useTelegramNotifications';
+import { toast } from 'sonner';
 
 interface Video {
   id: string;
@@ -16,6 +17,7 @@ interface Video {
   updated_at: string;
   is_winner?: boolean;
   winner_date?: string;
+  category: string;
   user?: {
     id: string;
     username?: string;
@@ -277,11 +279,13 @@ export const useUploadVideo = () => {
     mutationFn: async ({ 
       title, 
       description, 
-      videoFile 
+      videoFile,
+      category 
     }: { 
       title: string; 
       description?: string; 
-      videoFile: File; 
+      videoFile: File;
+      category: 'Rollers' | 'BMX' | 'Skateboard';
     }) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
@@ -321,6 +325,7 @@ export const useUploadVideo = () => {
           description,
           video_url: publicUrl,
           user_id: user.id,
+          category,
         })
         .select()
         .single();
