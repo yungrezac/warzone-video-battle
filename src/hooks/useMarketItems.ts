@@ -4,6 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
 
+// Type for the purchase function response
+interface PurchaseResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  total_cost?: number;
+}
+
 export const useMarketItems = () => {
   return useQuery({
     queryKey: ['market-items'],
@@ -49,11 +57,13 @@ export const usePurchaseItem = () => {
         throw error;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Purchase failed');
+      const response = data as PurchaseResponse;
+
+      if (!response.success) {
+        throw new Error(response.error || 'Purchase failed');
       }
 
-      return data;
+      return response;
     },
     onSuccess: (data) => {
       console.log('Покупка успешна:', data);
