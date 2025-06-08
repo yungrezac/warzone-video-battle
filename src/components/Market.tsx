@@ -1,66 +1,27 @@
 
 import React from 'react';
-import { ShoppingBag, Star, Gift, Crown, Zap, Settings, Package, Circle, Square, Hexagon } from 'lucide-react';
+import { ShoppingBag, Package } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useMarketItems } from '@/hooks/useMarketItems';
+import { useAuth } from '@/components/AuthWrapper';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import AdminWinnerControl from './AdminWinnerControl';
+import AdminMarketPanel from './AdminMarketPanel';
+import MarketItemCard from './MarketItemCard';
+import { Loader2 } from 'lucide-react';
 
 const Market: React.FC = () => {
-  const upcomingFeatures = [
-    {
-      title: "Премиум статус",
-      description: "Эксклюзивные возможности",
-      icon: Star,
-      color: "text-yellow-500",
-      bgColor: "bg-yellow-50",
-      borderColor: "border-yellow-200"
-    },
-    {
-      title: "Эксклюзивные бейджи",
-      description: "Уникальные награды",
-      icon: Crown,
-      color: "text-purple-500",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200"
-    }
-  ];
-
-  const rollerProducts = [
-    {
-      title: "Запчасти",
-      description: "Подшипники",
-      icon: Settings,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100"
-    },
-    {
-      title: "Колеса",
-      description: "Разные размеры",
-      icon: Circle,
-      color: "text-green-600",
-      bgColor: "bg-green-100"
-    },
-    {
-      title: "Рамы",
-      description: "Алюминий, карбон",
-      icon: Square,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100"
-    },
-    {
-      title: "Ролики",
-      description: "Фрискейт, слалом",
-      icon: Hexagon,
-      color: "text-red-600",
-      bgColor: "bg-red-100"
-    }
-  ];
+  const { user } = useAuth();
+  const { data: userProfile } = useUserProfile();
+  const { data: marketItems, isLoading, error } = useMarketItems();
 
   return (
     <div className="p-4 pb-20 max-w-4xl mx-auto">
       {/* Admin Winner Control */}
       <AdminWinnerControl />
+
+      {/* Admin Market Panel */}
+      <AdminMarketPanel />
 
       {/* Header Section */}
       <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 mb-6">
@@ -76,84 +37,59 @@ const Market: React.FC = () => {
               </CardDescription>
             </div>
           </div>
-        </CardHeader>
-      </Card>
-
-      {/* Coming Soon Section */}
-      <div className="text-center mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 border border-blue-100">
-          <Gift className="w-10 h-10 text-blue-500" />
-        </div>
-        
-        <h2 className="text-2xl font-bold text-gray-800 mb-3">
-          Скоро тут можно будет потратить баллы
-        </h2>
-        
-        <p className="text-gray-600 mb-8 max-w-md mx-auto">
-          Мы готовим для вас удивительные награды! Продолжайте участвовать в соревнованиях и копить баллы.
-        </p>
-      </div>
-
-      {/* Upcoming Features */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Скоро в маркете</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {upcomingFeatures.map((feature, index) => (
-            <Card key={index} className={`${feature.bgColor} ${feature.borderColor} border-2 border-dashed hover:shadow-md transition-shadow`}>
-              <CardContent className="p-4 text-center">
-                <div className="flex justify-center mb-3">
-                  <feature.icon className={`w-8 h-8 ${feature.color}`} />
-                </div>
-                <h4 className="font-medium text-gray-800 mb-1">{feature.title}</h4>
-                <p className="text-sm text-gray-600 mb-3">{feature.description}</p>
-                <Badge variant="outline" className="text-xs">
-                  Скоро
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Roller Shop Section */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-        <CardHeader className="text-center pb-4">
-          <div className="flex justify-center mb-3">
-            <div className="p-3 bg-blue-500 rounded-full">
-              <Zap className="w-8 h-8 text-white" />
+          {user && (
+            <div className="mt-3 p-3 bg-white/10 rounded-lg">
+              <p className="text-white">
+                Ваши баллы: <span className="font-bold text-yellow-300">{userProfile?.total_points || 0}</span>
+              </p>
             </div>
-          </div>
-          <CardTitle className="text-xl text-gray-800">
-            Роллерский магазин
-          </CardTitle>
-          <CardDescription className="text-gray-600">
-            Скоро появится возможность покупки роллерских товаров за накопленные баллы!
-          </CardDescription>
+          )}
         </CardHeader>
-        
-        <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {rollerProducts.map((product, index) => (
-              <Card key={index} className="bg-white hover:shadow-md transition-shadow border border-gray-200">
-                <CardContent className="p-4 text-center">
-                  <div className={`w-12 h-12 ${product.bgColor} rounded-full flex items-center justify-center mx-auto mb-3`}>
-                    <product.icon className={`w-6 h-6 ${product.color}`} />
-                  </div>
-                  <h5 className="font-medium text-gray-800 mb-1 text-sm">{product.title}</h5>
-                  <p className="text-xs text-gray-500">{product.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          <div className="mt-6 text-center">
-            <Button variant="outline" className="bg-white hover:bg-blue-50 border-blue-200">
-              <Package className="w-4 h-4 mr-2" />
-              Уведомить о запуске
-            </Button>
-          </div>
-        </CardContent>
       </Card>
+
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex justify-center items-center min-h-[300px]">
+          <Loader2 className="w-6 h-6 animate-spin" />
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <div className="p-3">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+            Ошибка загрузки товаров: {error.message}
+          </div>
+        </div>
+      )}
+
+      {/* Market Items */}
+      {!isLoading && !error && (
+        <>
+          {marketItems && marketItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {marketItems.map((item) => (
+                <MarketItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            /* Empty state */
+            <div className="text-center py-12">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 border border-gray-200">
+                <Package className="w-10 h-10 text-gray-400" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                Пока пусто
+              </h2>
+              
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                В маркете пока нет товаров. Администратор скоро добавит интересные награды!
+              </p>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
