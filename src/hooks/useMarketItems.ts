@@ -57,7 +57,7 @@ export const usePurchaseItem = () => {
         throw error;
       }
 
-      const response = data as PurchaseResponse;
+      const response = data as unknown as PurchaseResponse;
 
       if (!response.success) {
         throw new Error(response.error || 'Purchase failed');
