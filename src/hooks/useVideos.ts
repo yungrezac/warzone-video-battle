@@ -140,7 +140,7 @@ export const useVideos = () => {
 export const useLikeVideo = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { triggerSocialLike } = useAchievementTriggers();
+  const { triggerSocialLike, triggerLikeReceived } = useAchievementTriggers();
   const { sendLikeNotification } = useTelegramNotifications();
 
   return useMutation({
@@ -150,6 +150,13 @@ export const useLikeVideo = () => {
       }
 
       console.log('💖 Mutation - Like video:', videoId, 'isLiked:', isLiked);
+
+      // Получаем информацию о видео и его владельце
+      const { data: video } = await supabase
+        .from('videos')
+        .select('user_id, title')
+        .eq('id', videoId)
+        .single();
 
       if (isLiked) {
         // Remove like
@@ -172,6 +179,37 @@ export const useLikeVideo = () => {
           console.error('❌ Ошибка при снятии баллов за убранный лайк:', pointsError);
         } else {
           console.log('✅ Баллы за убранный лайк сняты успешно:', pointsData);
+        }
+
+        // Обновляем достижения владельца видео за полученные лайки
+        if (video?.user_id) {
+          console.log('🏆 Обновляем достижения владельца видео за убранный лайк...');
+          
+          // Получаем новое количество лайков для владельца видео
+          const { data: ownerVideos } = await supabase
+            .from('videos')
+            .select('id')
+            .eq('user_id', video.user_id);
+
+          if (ownerVideos) {
+            const videoIds = ownerVideos.map(v => v.id);
+            const { count: totalLikes } = await supabase
+              .from('video_likes')
+              .select('*', { count: 'exact' })
+              .in('video_id', videoIds);
+
+            // Обновляем достижения за полученные лайки
+            const { error: achievementError } = await supabase.rpc('update_achievement_progress', {
+              p_user_id: video.user_id,
+              p_category: 'likes',
+              p_new_value: totalLikes || 0,
+              p_increment: 1
+            });
+
+            if (achievementError) {
+              console.error('❌ Ошибка обновления достижений владельца за лайки:', achievementError);
+            }
+          }
         }
       } else {
         // Add like
@@ -201,9 +239,42 @@ export const useLikeVideo = () => {
         console.log('🏆 Обновляем достижения за лайк...');
         triggerSocialLike();
 
+        // Обновляем достижения владельца видео за полученные лайки
+        if (video?.user_id && video.user_id !== user.id) {
+          console.log('🏆 Обновляем достижения владельца видео за полученный лайк...');
+          
+          // Получаем новое количество лайков для владельца видео
+          const { data: ownerVideos } = await supabase
+            .from('videos')
+            .select('id')
+            .eq('user_id', video.user_id);
+
+          if (ownerVideos) {
+            const videoIds = ownerVideos.map(v => v.id);
+            const { count: totalLikes } = await supabase
+              .from('video_likes')
+              .select('*', { count: 'exact' })
+              .in('video_id', videoIds);
+
+            // Обновляем достижения за полученные лайки
+            const { error: achievementError } = await supabase.rpc('update_achievement_progress', {
+              p_user_id: video.user_id,
+              p_category: 'likes',
+              p_new_value: totalLikes || 0,
+              p_increment: 1
+            });
+
+            if (achievementError) {
+              console.error('❌ Ошибка обновления достижений владельца за лайки:', achievementError);
+            } else {
+              console.log('✅ Достижения владельца за лайки обновлены');
+            }
+          }
+        }
+
         // Отправляем уведомление владельцу видео
         try {
-          const { data: video } = await supabase
+          const { data: videoWithUser } = await supabase
             .from('videos')
             .select(`
               title,
@@ -213,9 +284,9 @@ export const useLikeVideo = () => {
             .eq('id', videoId)
             .single();
 
-          if (video && video.user?.telegram_id && video.user_id !== user.id) {
+          if (videoWithUser && videoWithUser.user?.telegram_id && videoWithUser.user_id !== user.id) {
             const likerName = user.first_name || user.username || 'Роллер';
-            await sendLikeNotification(video.user.telegram_id, likerName, video.title);
+            await sendLikeNotification(videoWithUser.user.telegram_id, likerName, videoWithUser.title);
           }
         } catch (notificationError) {
           console.error('Ошибка отправки уведомления о лайке:', notificationError);
@@ -245,6 +316,13 @@ export const useRateVideo = () => {
 
       console.log('⭐ Mutation - Rate video:', videoId, 'rating:', rating);
 
+      // Получаем информацию о видео и его владельце
+      const { data: video } = await supabase
+        .from('videos')
+        .select('user_id')
+        .eq('id', videoId)
+        .single();
+
       const { error } = await supabase
         .from('video_ratings')
         .upsert({
@@ -271,6 +349,60 @@ export const useRateVideo = () => {
       // Trigger achievement for rating other videos
       console.log('🏆 Обновляем достижения за оценку...');
       triggerSocialRating();
+
+      // Обновляем достижения владельца видео за полученные рейтинги
+      if (video?.user_id && video.user_id !== user.id) {
+        console.log('🏆 Обновляем достижения владельца видео за полученный рейтинг...');
+        
+        // Получаем новую статистику рейтингов для владельца видео
+        const { data: ownerVideos } = await supabase
+          .from('videos')
+          .select('id')
+          .eq('user_id', video.user_id);
+
+        if (ownerVideos) {
+          const videoIds = ownerVideos.map(v => v.id);
+          
+          // Получаем все рейтинги для видео владельца
+          const { data: allRatings } = await supabase
+            .from('video_ratings')
+            .select('rating')
+            .in('video_id', videoIds);
+
+          if (allRatings && allRatings.length > 0) {
+            const totalRatings = allRatings.length;
+            const averageRating = allRatings.reduce((sum, r) => sum + r.rating, 0) / totalRatings;
+
+            // Обновляем достижения за количество рейтингов
+            const { error: ratingsError } = await supabase.rpc('update_achievement_progress', {
+              p_user_id: video.user_id,
+              p_category: 'ratings',
+              p_new_value: totalRatings,
+              p_increment: 1
+            });
+
+            if (ratingsError) {
+              console.error('❌ Ошибка обновления достижений владельца за рейтинги:', ratingsError);
+            } else {
+              console.log('✅ Достижения владельца за рейтинги обновлены');
+            }
+
+            // Обновляем достижения за средний рейтинг
+            if (averageRating >= 4.5) {
+              const { error: avgRatingError } = await supabase.rpc('update_achievement_progress', {
+                p_user_id: video.user_id,
+                p_category: 'rating_avg',
+                p_new_value: Math.round(averageRating * 10),
+                p_increment: 1
+              });
+
+              if (avgRatingError) {
+                console.error('❌ Ошибка обновления достижений владельца за средний рейтинг:', avgRatingError);
+              }
+            }
+          }
+        }
+      }
     },
     onSuccess: () => {
       console.log('🔄 Оценка выставлена успешно, обновляем кэш');

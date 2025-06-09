@@ -61,6 +61,13 @@ export const useAddComment = () => {
 
       console.log('🎯 Добавляем комментарий:', { videoId, content, userId: user.id });
 
+      // Получаем информацию о видео и его владельце
+      const { data: video } = await supabase
+        .from('videos')
+        .select('user_id, title')
+        .eq('id', videoId)
+        .single();
+
       const { data, error } = await supabase
         .from('video_comments')
         .insert({
@@ -98,9 +105,42 @@ export const useAddComment = () => {
       console.log('🏆 Обновляем достижения за комментарий...');
       triggerComment();
 
+      // Обновляем достижения владельца видео за полученные комментарии
+      if (video?.user_id && video.user_id !== user.id) {
+        console.log('🏆 Обновляем достижения владельца видео за полученный комментарий...');
+        
+        // Получаем новое количество комментариев для владельца видео
+        const { data: ownerVideos } = await supabase
+          .from('videos')
+          .select('id')
+          .eq('user_id', video.user_id);
+
+        if (ownerVideos) {
+          const videoIds = ownerVideos.map(v => v.id);
+          const { count: totalComments } = await supabase
+            .from('video_comments')
+            .select('*', { count: 'exact' })
+            .in('video_id', videoIds);
+
+          // Обновляем достижения за полученные комментарии
+          const { error: achievementError } = await supabase.rpc('update_achievement_progress', {
+            p_user_id: video.user_id,
+            p_category: 'comments',
+            p_new_value: totalComments || 0,
+            p_increment: 1
+          });
+
+          if (achievementError) {
+            console.error('❌ Ошибка обновления достижений владельца за комментарии:', achievementError);
+          } else {
+            console.log('✅ Достижения владельца за комментарии обновлены');
+          }
+        }
+      }
+
       // Отправляем уведомление владельцу видео
       try {
-        const { data: video } = await supabase
+        const { data: videoWithUser } = await supabase
           .from('videos')
           .select(`
             title,
@@ -110,9 +150,9 @@ export const useAddComment = () => {
           .eq('id', videoId)
           .single();
 
-        if (video && video.user?.telegram_id && video.user_id !== user.id) {
+        if (videoWithUser && videoWithUser.user?.telegram_id && videoWithUser.user_id !== user.id) {
           const commenterName = user.first_name || user.username || 'Роллер';
-          await sendCommentNotification(video.user.telegram_id, commenterName, video.title, content);
+          await sendCommentNotification(videoWithUser.user.telegram_id, commenterName, videoWithUser.title, content);
         }
       } catch (notificationError) {
         console.error('Ошибка отправки уведомления о комментарии:', notificationError);
