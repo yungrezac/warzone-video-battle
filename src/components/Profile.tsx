@@ -205,10 +205,20 @@ const Profile: React.FC = () => {
         {/* Achievement Section */}
         {achievementStats && (
           <div className="bg-white rounded-lg shadow-md p-2 mb-3">
-            <h3 className="text-base font-semibold mb-2 flex items-center">
-              <Award className="w-4 h-4 mr-2 text-purple-500" />
-              Достижения
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-base font-semibold flex items-center">
+                <Award className="w-4 h-4 mr-2 text-purple-500" />
+                Достижения
+              </h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.dispatchEvent(new CustomEvent('showAchievements'))}
+                className="text-xs"
+              >
+                Все
+              </Button>
+            </div>
             
             <div className="grid grid-cols-3 gap-2 text-center mb-3">
               <div className="bg-purple-50 rounded-lg p-2">
