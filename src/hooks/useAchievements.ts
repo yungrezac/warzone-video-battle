@@ -54,7 +54,7 @@ export const useUserAchievements = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      console.log('Загружаем достижения пользователя:', user.id);
+      console.log('🏆 Загружаем достижения пользователя:', user.id);
 
       // Получаем все активные достижения
       const { data: allAchievements, error: achievementsError } = await supabase
@@ -63,9 +63,11 @@ export const useUserAchievements = () => {
         .eq('is_active', true);
 
       if (achievementsError) {
-        console.error('Ошибка загрузки достижений:', achievementsError);
+        console.error('❌ Ошибка загрузки достижений:', achievementsError);
         throw achievementsError;
       }
+
+      console.log('📊 Всего активных достижений:', allAchievements?.length);
 
       // Получаем прогресс пользователя по достижениям
       const { data: userProgress, error: progressError } = await supabase
@@ -74,11 +76,11 @@ export const useUserAchievements = () => {
         .eq('user_id', user.id);
 
       if (progressError) {
-        console.error('Ошибка загрузки прогресса:', progressError);
+        console.error('❌ Ошибка загрузки прогресса:', progressError);
         throw progressError;
       }
 
-      console.log('Загруженный прогресс пользователя:', userProgress);
+      console.log('📈 Записей прогресса пользователя:', userProgress?.length || 0);
 
       // Создаем карту прогресса пользователя
       const progressMap = new Map();
@@ -94,7 +96,7 @@ export const useUserAchievements = () => {
 
       // Создаем записи для отсутствующих достижений
       if (missingProgressAchievements.length > 0) {
-        console.log('Создаем записи для отсутствующих достижений:', missingProgressAchievements.length);
+        console.log('➕ Создаем записи для отсутствующих достижений:', missingProgressAchievements.length);
         
         const newProgressRecords = missingProgressAchievements.map(achievement => ({
           user_id: user.id,
@@ -109,8 +111,9 @@ export const useUserAchievements = () => {
           .select('*');
 
         if (createError) {
-          console.error('Ошибка создания записей прогресса:', createError);
+          console.error('❌ Ошибка создания записей прогресса:', createError);
         } else {
+          console.log('✅ Создано записей прогресса:', createdProgress?.length);
           // Добавляем созданные записи к прогрессу
           createdProgress?.forEach(cp => {
             progressMap.set(cp.achievement_id, cp);
@@ -124,6 +127,7 @@ export const useUserAchievements = () => {
         
         if (!userProgress) {
           // Если записи всё ещё нет (ошибка создания), создаем виртуальную
+          console.warn('⚠️ Нет записи прогресса для достижения:', achievement.title);
           return {
             id: `virtual-${achievement.id}`,
             user_id: user.id,
@@ -143,7 +147,9 @@ export const useUserAchievements = () => {
         };
       }) || [];
 
-      console.log('Финальный результат достижений:', result);
+      console.log('🎯 Финальный результат достижений:', result.length, 'записей');
+      console.log('✅ Выполненных достижений:', result.filter(r => r.is_completed).length);
+      
       return result as UserAchievement[];
     },
     enabled: !!user?.id,
@@ -163,16 +169,34 @@ export const useUpdateAchievementProgress = () => {
       newValue?: number; 
       increment?: number; 
     }) => {
+      console.log('🔄 Обновляем прогресс достижений:', {
+        category,
+        newValue,
+        increment
+      });
+
+      const { data: user } = await supabase.auth.getUser();
+      
+      if (!user.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { error } = await supabase.rpc('update_achievement_progress', {
-        p_user_id: (await supabase.auth.getUser()).data.user?.id,
+        p_user_id: user.user.id,
         p_category: category,
         p_new_value: newValue || null,
         p_increment: increment,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Ошибка обновления достижений:', error);
+        throw error;
+      }
+
+      console.log('✅ Достижения обновлены успешно');
     },
     onSuccess: () => {
+      console.log('🔄 Обновляем кэш после изменения достижений...');
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },

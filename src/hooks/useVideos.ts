@@ -53,6 +53,8 @@ export const useVideos = () => {
       // Получаем дополнительную статистику для каждого видео
       const videosWithStats = await Promise.all(
         videos.map(async (video) => {
+          console.log('Статистика видео', video.id, ':');
+          
           // Получаем информацию о пользователе
           const { data: userProfile } = await supabase
             .from('profiles')
@@ -106,6 +108,16 @@ export const useVideos = () => {
             userRating = userRatingData?.rating || 0;
           }
 
+          const videoStats = {
+            likes: likesCount || 0,
+            comments: commentsCount || 0,
+            avgRating: Number(averageRating.toFixed(1)),
+            userLiked,
+            userRating,
+          };
+          
+          console.log('Статистика видео', video.id, ':', videoStats);
+
           return {
             ...video,
             user: userProfile,
@@ -119,7 +131,7 @@ export const useVideos = () => {
         })
       );
 
-      console.log('Видео с статистикой загружены:', videosWithStats);
+      console.log('Видео с обновленной статистикой:', videosWithStats);
       return videosWithStats;
     },
   });
@@ -291,14 +303,14 @@ export const useUploadVideo = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Starting video upload...');
+      console.log('🎬 Начинаем загрузку видео для пользователя:', user.id);
 
       // Generate a unique filename
       const fileExt = videoFile.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      console.log('Uploading file to storage...', filePath);
+      console.log('📁 Загружаем файл в хранилище...', filePath);
 
       // Upload video file to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -306,7 +318,7 @@ export const useUploadVideo = () => {
         .upload(filePath, videoFile);
 
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
+        console.error('❌ Ошибка загрузки в хранилище:', uploadError);
         throw uploadError;
       }
 
@@ -315,7 +327,7 @@ export const useUploadVideo = () => {
         .from('videos')
         .getPublicUrl(filePath);
 
-      console.log('File uploaded, creating database record...', publicUrl);
+      console.log('✅ Файл загружен, создаем запись в БД...', publicUrl);
 
       // Create video record in database
       const { data: videoData, error: dbError } = await supabase
@@ -331,21 +343,87 @@ export const useUploadVideo = () => {
         .single();
 
       if (dbError) {
-        console.error('Database insert error:', dbError);
+        console.error('❌ Ошибка создания записи в БД:', dbError);
         throw dbError;
       }
 
-      console.log('Video record created successfully:', videoData);
+      console.log('✅ Видео создано успешно:', videoData);
       
-      // Trigger achievement for uploading video
-      triggerVideoUpload();
+      // Начисляем баллы за загрузку видео
+      console.log('💰 Начисляем 10 баллов за загрузку видео...');
+      const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+        p_user_id: user.id,
+        p_points_change: 10
+      });
+
+      if (pointsError) {
+        console.error('❌ Ошибка при начислении баллов:', pointsError);
+      } else {
+        console.log('✅ Баллы начислены успешно:', pointsData);
+      }
+
+      // Обновляем достижения за загрузку видео
+      console.log('🏆 Запускаем обновление достижений за загрузку видео...');
+      
+      // Сначала обновляем достижения за количество видео
+      console.log('📊 Обновляем достижения категории "videos"...');
+      const { error: videoAchievementError } = await supabase.rpc('update_achievement_progress', {
+        p_user_id: user.id,
+        p_category: 'videos',
+        p_new_value: null,
+        p_increment: 1
+      });
+
+      if (videoAchievementError) {
+        console.error('❌ Ошибка обновления достижений за видео:', videoAchievementError);
+      } else {
+        console.log('✅ Достижения за видео обновлены');
+      }
+
+      // Проверяем временные достижения
+      const now = new Date();
+      const hour = now.getHours();
+      
+      if (hour < 8) {
+        console.log('🌅 Раннее утро - обновляем временные достижения...');
+        const { error: timeAchievementError } = await supabase.rpc('update_achievement_progress', {
+          p_user_id: user.id,
+          p_category: 'time',
+          p_new_value: null,
+          p_increment: 1
+        });
+        
+        if (timeAchievementError) {
+          console.error('❌ Ошибка обновления временных достижений:', timeAchievementError);
+        }
+      } else if (hour >= 22) {
+        console.log('🌙 Поздний вечер - обновляем временные достижения...');
+        const { error: timeAchievementError } = await supabase.rpc('update_achievement_progress', {
+          p_user_id: user.id,
+          p_category: 'time',
+          p_new_value: null,
+          p_increment: 1
+        });
+        
+        if (timeAchievementError) {
+          console.error('❌ Ошибка обновления временных достижений:', timeAchievementError);
+        }
+      }
 
       return videoData;
     },
     onSuccess: () => {
+      console.log('🔄 Видео загружено успешно, обновляем кэш...');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
+      
+      toast.success('Видео загружено! Достижения обновлены.');
+    },
+    onError: (error) => {
+      console.error('❌ Ошибка загрузки видео:', error);
+      toast.error('Ошибка загрузки видео');
     },
   });
 };
