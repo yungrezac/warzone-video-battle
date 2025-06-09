@@ -60,6 +60,26 @@ const VideoFeed: React.FC = () => {
     );
   }
 
+  // Преобразуем данные из базы в формат Video для VideoCard
+  const transformedVideos = videos?.map(video => ({
+    id: video.id,
+    title: video.title,
+    author: video.user?.username || 'Неизвестный пользователь',
+    authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+    thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
+    videoUrl: video.video_url,
+    likes: video.likes_count || 0,
+    comments: video.comments_count || 0,
+    rating: video.average_rating || 0,
+    views: video.views || 0,
+    isWinner: video.is_winner || false,
+    timestamp: new Date(video.created_at).toLocaleDateString('ru-RU'),
+    userLiked: video.user_liked || false,
+    userRating: video.user_rating || 0,
+    userId: video.user_id,
+    category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
+  })) || [];
+
   return (
     <div className="pb-16">
       {/* Upload Button */}
@@ -78,8 +98,8 @@ const VideoFeed: React.FC = () => {
 
       {/* Video Feed */}
       <div className="space-y-3 px-3">
-        {videos && videos.length > 0 ? (
-          videos.map(video => (
+        {transformedVideos && transformedVideos.length > 0 ? (
+          transformedVideos.map(video => (
             <VideoCard
               key={video.id}
               video={video}
