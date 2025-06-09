@@ -54,13 +54,18 @@ export const useUserAchievements = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      console.log('Загружаем достижения пользователя:', user.id);
+
       // Получаем все активные достижения
       const { data: allAchievements, error: achievementsError } = await supabase
         .from('achievements')
         .select('*')
         .eq('is_active', true);
 
-      if (achievementsError) throw achievementsError;
+      if (achievementsError) {
+        console.error('Ошибка загрузки достижений:', achievementsError);
+        throw achievementsError;
+      }
 
       // Получаем прогресс пользователя по достижениям
       const { data: userProgress, error: progressError } = await supabase
@@ -68,7 +73,12 @@ export const useUserAchievements = () => {
         .select('*')
         .eq('user_id', user.id);
 
-      if (progressError) throw progressError;
+      if (progressError) {
+        console.error('Ошибка загрузки прогресса:', progressError);
+        throw progressError;
+      }
+
+      console.log('Загруженный прогресс пользователя:', userProgress);
 
       // Создаем карту прогресса пользователя
       const progressMap = new Map();
@@ -76,23 +86,64 @@ export const useUserAchievements = () => {
         progressMap.set(up.achievement_id, up);
       });
 
-      // Объединяем данные - для каждого достижения показываем прогресс (или 0 если нет)
+      // Для каждого достижения проверяем, есть ли у пользователя запись о прогрессе
+      // Если нет - создаем её автоматически
+      const missingProgressAchievements = allAchievements?.filter(achievement => 
+        !progressMap.has(achievement.id)
+      ) || [];
+
+      // Создаем записи для отсутствующих достижений
+      if (missingProgressAchievements.length > 0) {
+        console.log('Создаем записи для отсутствующих достижений:', missingProgressAchievements.length);
+        
+        const newProgressRecords = missingProgressAchievements.map(achievement => ({
+          user_id: user.id,
+          achievement_id: achievement.id,
+          current_progress: 0,
+          is_completed: false,
+        }));
+
+        const { data: createdProgress, error: createError } = await supabase
+          .from('user_achievements')
+          .insert(newProgressRecords)
+          .select('*');
+
+        if (createError) {
+          console.error('Ошибка создания записей прогресса:', createError);
+        } else {
+          // Добавляем созданные записи к прогрессу
+          createdProgress?.forEach(cp => {
+            progressMap.set(cp.achievement_id, cp);
+          });
+        }
+      }
+
+      // Объединяем данные - для каждого достижения показываем прогресс
       const result = allAchievements?.map(achievement => {
         const userProgress = progressMap.get(achievement.id);
         
+        if (!userProgress) {
+          // Если записи всё ещё нет (ошибка создания), создаем виртуальную
+          return {
+            id: `virtual-${achievement.id}`,
+            user_id: user.id,
+            achievement_id: achievement.id,
+            current_progress: 0,
+            is_completed: false,
+            completed_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            achievement: achievement,
+          };
+        }
+
         return {
-          id: userProgress?.id || `new-${achievement.id}`,
-          user_id: user.id,
-          achievement_id: achievement.id,
-          current_progress: userProgress?.current_progress || 0,
-          is_completed: userProgress?.is_completed || false,
-          completed_at: userProgress?.completed_at || null,
-          created_at: userProgress?.created_at || new Date().toISOString(),
-          updated_at: userProgress?.updated_at || new Date().toISOString(),
+          ...userProgress,
           achievement: achievement,
         };
       }) || [];
 
+      console.log('Финальный результат достижений:', result);
       return result as UserAchievement[];
     },
     enabled: !!user?.id,
