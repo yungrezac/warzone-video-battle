@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useUserAchievements } from '@/hooks/useAchievements';
+import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { PointsHistoryDialog } from '@/components/PointsHistoryDialog';
 import { NotificationSettingsDialog } from '@/components/NotificationSettingsDialog';
 import { WithdrawalDialog } from '@/components/WithdrawalDialog';
 import Market from '@/components/Market';
+import { toast } from 'sonner';
 import { 
   Trophy, 
   Heart, 
@@ -30,11 +32,36 @@ const Profile = () => {
   const { data: profile, isLoading: profileLoading } = useUserProfile();
   const { data: videos, isLoading: videosLoading } = useUserVideos();
   const { data: achievements, isLoading: achievementsLoading } = useUserAchievements();
+  const likeVideoMutation = useLikeVideo();
+  const rateVideoMutation = useRateVideo();
   
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [marketDialogOpen, setMarketDialogOpen] = useState(false);
+
+  const handleLike = async (videoId: string) => {
+    const video = videos?.find(v => v.id === videoId);
+    if (video) {
+      try {
+        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
+        toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
+      } catch (error) {
+        console.error('Ошибка при обработке лайка:', error);
+        toast.error('Ошибка при обработке лайка');
+      }
+    }
+  };
+
+  const handleRate = async (videoId: string, rating: number) => {
+    try {
+      await rateVideoMutation.mutateAsync({ videoId, rating });
+      toast.success(`Оценка ${rating} поставлена`);
+    } catch (error) {
+      console.error('Ошибка при выставлении оценки:', error);
+      toast.error('Ошибка при выставлении оценки');
+    }
+  };
 
   if (profileLoading) {
     return (
@@ -234,7 +261,8 @@ const Profile = () => {
                     userLiked: video.user_liked || false,
                     userRating: video.user_rating || 0,
                   }}
-                  showActions={true}
+                  onLike={handleLike}
+                  onRate={handleRate}
                 />
               ))}
             </div>
