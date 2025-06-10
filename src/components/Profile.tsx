@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
@@ -217,7 +218,22 @@ const Profile = () => {
               {videos.map((video) => (
                 <VideoCard
                   key={video.id}
-                  video={video}
+                  video={{
+                    id: video.id,
+                    title: video.title,
+                    author: profile.username || profile.first_name || 'Пользователь',
+                    authorAvatar: profile.avatar_url || '',
+                    thumbnail: video.thumbnail_url || '',
+                    videoUrl: video.video_url,
+                    likes: video.likes_count || 0,
+                    comments: video.comments_count || 0,
+                    rating: video.average_rating || 0,
+                    views: video.views || 0,
+                    isWinner: video.is_winner || false,
+                    timestamp: new Date(video.created_at).toLocaleString('ru-RU'),
+                    userLiked: video.user_liked || false,
+                    userRating: video.user_rating || 0,
+                  }}
                   showActions={true}
                 />
               ))}
@@ -237,10 +253,7 @@ const Profile = () => {
               {achievements.map((userAchievement) => (
                 <AchievementCard
                   key={userAchievement.id}
-                  achievement={userAchievement.achievement}
-                  userProgress={userAchievement.current_progress}
-                  isCompleted={userAchievement.is_completed}
-                  completedAt={userAchievement.completed_at}
+                  userAchievement={userAchievement}
                 />
               ))}
             </div>

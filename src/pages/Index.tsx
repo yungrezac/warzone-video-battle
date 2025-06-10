@@ -3,17 +3,26 @@ import { useState, useEffect } from "react";
 import AuthWrapper from "@/components/AuthWrapper";
 import { useAuth } from "@/components/AuthWrapper";
 import BottomNavbar from "@/components/BottomNavbar";
-import VideoFeed from "@/components/VideoFeed";
+import HomeFeed from "@/components/HomeFeed";
 import Profile from "@/components/Profile";
 import Market from "@/components/Market";
 import MapView from "@/components/MapView";
 import Achievements from "@/components/Achievements";
+import CategorySelection from "@/components/CategorySelection";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const [showCategorySelection, setShowCategorySelection] = useState(false);
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
+
+  // Проверяем, нужно ли показать выбор категории
+  useEffect(() => {
+    if (userProfile && !userProfile.sport_category) {
+      setShowCategorySelection(true);
+    }
+  }, [userProfile]);
 
   useEffect(() => {
     const handleShowAchievements = () => {
@@ -27,7 +36,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <VideoFeed />;
+        return <HomeFeed />;
       case 'map':
         return <MapView />;
       case 'achievements':
@@ -37,7 +46,7 @@ const Index = () => {
       case 'profile':
         return <Profile />;
       default:
-        return <VideoFeed />;
+        return <HomeFeed />;
     }
   };
 
@@ -61,6 +70,11 @@ const Index = () => {
           </div>
         )}
       </div>
+      
+      {/* Показываем выбор категории при первом входе */}
+      {showCategorySelection && (
+        <CategorySelection onComplete={() => setShowCategorySelection(false)} />
+      )}
     </AuthWrapper>
   );
 };
