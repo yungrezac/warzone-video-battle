@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
@@ -7,14 +6,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { VideoCard } from '@/components/VideoCard';
-import { AchievementCard } from '@/components/AchievementCard';
+import VideoCard from '@/components/VideoCard';
+import AchievementCard from '@/components/AchievementCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { PointsHistoryDialog } from '@/components/PointsHistoryDialog';
 import { NotificationSettingsDialog } from '@/components/NotificationSettingsDialog';
 import { WithdrawalDialog } from '@/components/WithdrawalDialog';
-import { Market } from '@/components/Market';
+import Market from '@/components/Market';
 import { 
   Trophy, 
   Heart, 
@@ -26,7 +25,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 
-export const Profile = () => {
+const Profile = () => {
   const { data: profile, isLoading: profileLoading } = useUserProfile();
   const { data: videos, isLoading: videosLoading } = useUserVideos();
   const { data: achievements, isLoading: achievementsLoading } = useUserAchievements();
@@ -288,3 +287,5 @@ export const Profile = () => {
     </div>
   );
 };
+
+export default Profile;

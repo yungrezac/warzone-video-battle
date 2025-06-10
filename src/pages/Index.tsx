@@ -6,6 +6,7 @@ import BottomNavbar from "@/components/BottomNavbar";
 import VideoFeed from "@/components/VideoFeed";
 import Profile from "@/components/Profile";
 import Market from "@/components/Market";
+import MapView from "@/components/MapView";
 import Achievements from "@/components/Achievements";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
@@ -27,6 +28,8 @@ const Index = () => {
     switch (activeTab) {
       case 'home':
         return <VideoFeed />;
+      case 'map':
+        return <MapView />;
       case 'achievements':
         return <Achievements />;
       case 'market':
