@@ -119,200 +119,14 @@ export type Database = {
         }
         Relationships: []
       }
-      notification_settings: {
-        Row: {
-          comments_notifications: boolean
-          created_at: string
-          id: string
-          likes_notifications: boolean
-          system_notifications: boolean
-          updated_at: string
-          user_id: string
-          winners_notifications: boolean
-        }
-        Insert: {
-          comments_notifications?: boolean
-          created_at?: string
-          id?: string
-          likes_notifications?: boolean
-          system_notifications?: boolean
-          updated_at?: string
-          user_id: string
-          winners_notifications?: boolean
-        }
-        Update: {
-          comments_notifications?: boolean
-          created_at?: string
-          id?: string
-          likes_notifications?: boolean
-          system_notifications?: boolean
-          updated_at?: string
-          user_id?: string
-          winners_notifications?: boolean
-        }
-        Relationships: []
-      }
-      points_history: {
-        Row: {
-          created_at: string
-          description: string
-          id: string
-          operation_type: string
-          points_change: number
-          reference_id: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description: string
-          id?: string
-          operation_type: string
-          points_change: number
-          reference_id?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          id?: string
-          operation_type?: string
-          points_change?: number
-          reference_id?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      post_comments: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          media_urls: string[] | null
-          post_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          media_urls?: string[] | null
-          post_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          media_urls?: string[] | null
-          post_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "post_comments_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      post_likes: {
-        Row: {
-          created_at: string
-          id: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "post_likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      posts: {
-        Row: {
-          comments_count: number | null
-          content: string
-          created_at: string
-          id: string
-          likes_count: number | null
-          media_urls: string[] | null
-          route_id: string | null
-          spot_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          comments_count?: number | null
-          content: string
-          created_at?: string
-          id?: string
-          likes_count?: number | null
-          media_urls?: string[] | null
-          route_id?: string | null
-          spot_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          comments_count?: number | null
-          content?: string
-          created_at?: string
-          id?: string
-          likes_count?: number | null
-          media_urls?: string[] | null
-          route_id?: string | null
-          spot_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "posts_route_id_fkey"
-            columns: ["route_id"]
-            isOneToOne: false
-            referencedRelation: "routes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "posts_spot_id_fkey"
-            columns: ["spot_id"]
-            isOneToOne: false
-            referencedRelation: "spots"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           avatar_url: string | null
-          city: string | null
           created_at: string
           first_name: string | null
           id: string
           is_premium: boolean | null
           last_name: string | null
-          sport_category: string | null
           telegram_id: string | null
           telegram_photo_url: string | null
           telegram_username: string | null
@@ -321,13 +135,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
-          city?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
           is_premium?: boolean | null
           last_name?: string | null
-          sport_category?: string | null
           telegram_id?: string | null
           telegram_photo_url?: string | null
           telegram_username?: string | null
@@ -336,13 +148,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
-          city?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
           is_premium?: boolean | null
           last_name?: string | null
-          sport_category?: string | null
           telegram_id?: string | null
           telegram_photo_url?: string | null
           telegram_username?: string | null
@@ -350,59 +160,6 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
-      }
-      purchase_requests: {
-        Row: {
-          admin_comment: string | null
-          created_at: string
-          delivery_address: string
-          delivery_name: string
-          delivery_phone: string
-          id: string
-          item_id: string
-          processed_at: string | null
-          quantity: number
-          status: string
-          total_cost: number
-          user_id: string
-        }
-        Insert: {
-          admin_comment?: string | null
-          created_at?: string
-          delivery_address: string
-          delivery_name: string
-          delivery_phone: string
-          id?: string
-          item_id: string
-          processed_at?: string | null
-          quantity?: number
-          status?: string
-          total_cost: number
-          user_id: string
-        }
-        Update: {
-          admin_comment?: string | null
-          created_at?: string
-          delivery_address?: string
-          delivery_name?: string
-          delivery_phone?: string
-          id?: string
-          item_id?: string
-          processed_at?: string | null
-          quantity?: number
-          status?: string
-          total_cost?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "purchase_requests_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "market_items"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       questions: {
         Row: {
@@ -440,77 +197,9 @@ export type Database = {
         }
         Relationships: []
       }
-      route_comments: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          media_urls: string[] | null
-          route_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          media_urls?: string[] | null
-          route_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          media_urls?: string[] | null
-          route_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "route_comments_route_id_fkey"
-            columns: ["route_id"]
-            isOneToOne: false
-            referencedRelation: "routes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      route_likes: {
-        Row: {
-          created_at: string
-          id: string
-          route_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          route_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          route_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "route_likes_route_id_fkey"
-            columns: ["route_id"]
-            isOneToOne: false
-            referencedRelation: "routes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       routes: {
         Row: {
           average_speed: number | null
-          comments_count: number | null
           created_at: string
           description: string | null
           distance: number | null
@@ -518,8 +207,6 @@ export type Database = {
           end_latitude: number | null
           end_longitude: number | null
           id: string
-          likes_count: number | null
-          media_urls: string[] | null
           name: string
           route_points: Json | null
           start_latitude: number | null
@@ -528,7 +215,6 @@ export type Database = {
         }
         Insert: {
           average_speed?: number | null
-          comments_count?: number | null
           created_at?: string
           description?: string | null
           distance?: number | null
@@ -536,8 +222,6 @@ export type Database = {
           end_latitude?: number | null
           end_longitude?: number | null
           id?: string
-          likes_count?: number | null
-          media_urls?: string[] | null
           name: string
           route_points?: Json | null
           start_latitude?: number | null
@@ -546,7 +230,6 @@ export type Database = {
         }
         Update: {
           average_speed?: number | null
-          comments_count?: number | null
           created_at?: string
           description?: string | null
           distance?: number | null
@@ -554,8 +237,6 @@ export type Database = {
           end_latitude?: number | null
           end_longitude?: number | null
           id?: string
-          likes_count?: number | null
-          media_urls?: string[] | null
           name?: string
           route_points?: Json | null
           start_latitude?: number | null
@@ -572,136 +253,31 @@ export type Database = {
           },
         ]
       }
-      spot_comment_likes: {
-        Row: {
-          comment_id: string
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          comment_id: string
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          comment_id?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "spot_comment_likes_comment_id_fkey"
-            columns: ["comment_id"]
-            isOneToOne: false
-            referencedRelation: "spot_comments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      spot_comments: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          media_urls: string[] | null
-          spot_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          media_urls?: string[] | null
-          spot_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          media_urls?: string[] | null
-          spot_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "spot_comments_spot_id_fkey"
-            columns: ["spot_id"]
-            isOneToOne: false
-            referencedRelation: "spots"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      spot_likes: {
-        Row: {
-          created_at: string
-          id: string
-          spot_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          spot_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          spot_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "spot_likes_spot_id_fkey"
-            columns: ["spot_id"]
-            isOneToOne: false
-            referencedRelation: "spots"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       spots: {
         Row: {
-          comments_count: number | null
           created_at: string
           description: string | null
           id: string
           latitude: number
-          likes_count: number | null
           longitude: number
-          media_urls: string[] | null
           name: string
           user_id: string | null
         }
         Insert: {
-          comments_count?: number | null
           created_at?: string
           description?: string | null
           id?: string
           latitude: number
-          likes_count?: number | null
           longitude: number
-          media_urls?: string[] | null
           name: string
           user_id?: string | null
         }
         Update: {
-          comments_count?: number | null
           created_at?: string
           description?: string | null
           id?: string
           latitude?: number
-          likes_count?: number | null
           longitude?: number
-          media_urls?: string[] | null
           name?: string
           user_id?: string | null
         }
@@ -1087,63 +663,11 @@ export type Database = {
           },
         ]
       }
-      withdrawal_requests: {
-        Row: {
-          admin_comment: string | null
-          amount_points: number
-          amount_rubles: number
-          bank_name: string
-          created_at: string
-          id: string
-          phone_number: string
-          processed_at: string | null
-          recipient_name: string
-          status: string
-          user_id: string
-        }
-        Insert: {
-          admin_comment?: string | null
-          amount_points: number
-          amount_rubles: number
-          bank_name: string
-          created_at?: string
-          id?: string
-          phone_number: string
-          processed_at?: string | null
-          recipient_name: string
-          status?: string
-          user_id: string
-        }
-        Update: {
-          admin_comment?: string | null
-          amount_points?: number
-          amount_rubles?: number
-          bank_name?: string
-          created_at?: string
-          id?: string
-          phone_number?: string
-          processed_at?: string | null
-          recipient_name?: string
-          status?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      create_points_history: {
-        Args: {
-          p_user_id: string
-          p_points_change: number
-          p_operation_type: string
-          p_description: string
-          p_reference_id?: string
-        }
-        Returns: undefined
-      }
       purchase_item: {
         Args: { p_item_id: string; p_quantity?: number }
         Returns: Json
@@ -1158,13 +682,7 @@ export type Database = {
         Returns: undefined
       }
       update_user_points: {
-        Args:
-          | { p_user_id: string; p_points_change: number }
-          | {
-              p_user_id: string
-              p_points_change: number
-              p_description?: string
-            }
+        Args: { p_user_id: string; p_points_change: number }
         Returns: undefined
       }
     }
