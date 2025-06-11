@@ -93,18 +93,6 @@ const BannerRotation: React.FC = () => {
             </Button>
           </div>
         </div>
-        
-        {/* Индикаторы ротации */}
-        <div className="absolute bottom-1 right-2 flex gap-1">
-          {chatBanners.map((_, index) => (
-            <div 
-              key={index}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                index === currentIndex ? 'bg-white' : 'bg-white/40'
-              }`}
-            />
-          ))}
-        </div>
       </Card>
     </div>
   );
