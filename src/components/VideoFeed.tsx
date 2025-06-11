@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
@@ -223,7 +222,8 @@ const VideoFeed: React.FC = () => {
               user_liked: video.user_liked,
               user_rating: video.user_rating,
               likes_count: video.likes_count,
-              comments_count: video.comments_count
+              comments_count: video.comments_count,
+              average_rating: video.average_rating
             });
 
             return (
@@ -243,7 +243,7 @@ const VideoFeed: React.FC = () => {
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
                     rating: video.average_rating || 0,
-                    views: video.views,
+                    views: video.views || 0,
                     isWinner: video.is_winner,
                     timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
                       day: 'numeric',
