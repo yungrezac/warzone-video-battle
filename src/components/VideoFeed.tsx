@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
@@ -107,8 +108,8 @@ const VideoFeed: React.FC = () => {
       ) : (
         <div className="space-y-4 p-2">
           {videos?.map((video) => {
-            const user = video.user;
-            const displayName = user?.username || user?.telegram_username || user?.first_name || 'Роллер';
+            const videoUser = video.profiles;
+            const displayName = videoUser?.username || videoUser?.telegram_username || videoUser?.first_name || 'Роллер';
             
             return (
               <div key={video.id} data-video-id={video.id}>
@@ -117,7 +118,7 @@ const VideoFeed: React.FC = () => {
                     id: video.id,
                     title: video.title,
                     author: displayName,
-                    authorAvatar: user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                    authorAvatar: videoUser?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
                     thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
                     videoUrl: video.video_url,
                     likes: video.likes_count || 0,

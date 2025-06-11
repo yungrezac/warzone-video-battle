@@ -46,3 +46,16 @@ export const useIncrementVideoViews = () => {
     },
   });
 };
+
+export const useVideoViews = () => {
+  const incrementViewsMutation = useIncrementVideoViews();
+
+  const markVideoAsViewed = (videoId: string) => {
+    incrementViewsMutation.mutate(videoId);
+  };
+
+  return {
+    markVideoAsViewed,
+    isLoading: incrementViewsMutation.isPending
+  };
+};
