@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Video, X, Edit, ArrowLeft } from 'lucide-react';
+import { Upload as UploadIcon, Video, X, Edit, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -125,7 +125,7 @@ const Upload: React.FC = () => {
         <div className="space-y-4">
           {!selectedFile ? (
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+              <UploadIcon className="w-10 h-10 text-gray-400 mx-auto mb-3" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
                 Выберите видео для загрузки
               </h3>
