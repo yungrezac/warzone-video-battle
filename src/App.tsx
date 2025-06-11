@@ -26,14 +26,20 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthWrapper>
       {({ user, loading }) => {
+        console.log('App render - user:', user, 'loading:', loading);
+        
         if (loading) {
+          console.log('Показываем TelegramAuth из-за loading');
           return <TelegramAuth />;
         }
 
         if (!user) {
+          console.log('Показываем TelegramAuth из-за отсутствия пользователя');
           return <TelegramAuth />;
         }
 
+        console.log('Показываем основное приложение для пользователя:', user.id);
+        
         return (
           <VideoPlaybackProvider>
             <TooltipProvider>

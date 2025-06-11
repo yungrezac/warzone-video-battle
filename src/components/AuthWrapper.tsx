@@ -45,23 +45,31 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   useEffect(() => {
     const initializeUser = async () => {
       try {
-        console.log('Инициализируем пользователя...');
+        console.log('🔄 Инициализируем пользователя...');
         
         // Сначала проверяем сохраненного пользователя в localStorage для быстрой загрузки
         const savedUser = localStorage.getItem('roller_tricks_user');
         if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          console.log('Быстрая загрузка сохраненного пользователя:', userData);
-          setUser(userData);
-          setLoading(false);
-          return;
+          try {
+            const userData = JSON.parse(savedUser);
+            console.log('⚡ Быстрая загрузка сохраненного пользователя:', userData);
+            setUser(userData);
+            setLoading(false);
+            return;
+          } catch (parseError) {
+            console.error('❌ Ошибка парсинга сохраненного пользователя:', parseError);
+            localStorage.removeItem('roller_tricks_user');
+          }
         }
 
         // Проверяем, запущено ли приложение в Telegram WebApp
-        if (window.Telegram?.WebApp) {
-          console.log('Telegram WebApp обнаружен');
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+          console.log('📱 Telegram WebApp обнаружен');
           const tg = window.Telegram.WebApp;
           tg.ready();
+          
+          console.log('📱 Telegram WebApp initData:', tg.initData);
+          console.log('📱 Telegram WebApp initDataUnsafe:', tg.initDataUnsafe);
           
           // Расширяем приложение на весь экран
           if (tg.expand) {
@@ -71,18 +79,22 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           // Получаем данные пользователя из Telegram
           if (tg.initDataUnsafe?.user) {
             const telegramUser = tg.initDataUnsafe.user;
-            console.log('Данные пользователя Telegram:', telegramUser);
+            console.log('👤 Данные пользователя Telegram:', telegramUser);
             
             await createOrUpdateUser(telegramUser);
             return;
+          } else {
+            console.log('❌ Нет данных пользователя в Telegram WebApp');
           }
+        } else {
+          console.log('❌ Telegram WebApp не обнаружен');
         }
 
         // Если нет данных Telegram и нет сохраненного пользователя, показываем TelegramAuth
-        console.log('Нет данных пользователя, переходим к экрану авторизации');
+        console.log('🚫 Нет данных пользователя, переходим к экрану авторизации');
 
       } catch (err: any) {
-        console.error('Ошибка инициализации пользователя:', err);
+        console.error('❌ Ошибка инициализации пользователя:', err);
       } finally {
         setLoading(false);
       }
@@ -91,6 +103,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     const createOrUpdateUser = async (telegramUser: any) => {
       try {
         const telegramId = telegramUser.id.toString();
+        console.log('🔍 Проверяем пользователя с Telegram ID:', telegramId);
         
         // Проверяем существует ли пользователь в базе
         const { data: existingProfile, error: profileError } = await supabase
@@ -99,11 +112,15 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           .eq('telegram_id', telegramId)
           .maybeSingle();
 
+        console.log('🔍 Результат поиска профиля:', { existingProfile, profileError });
+
         let profileId = existingProfile?.id;
 
         if (!existingProfile) {
           // Пользователь не найден, создаем новый профиль
           const newUserId = crypto.randomUUID();
+          
+          console.log('➕ Создаем новый профиль с ID:', newUserId);
           
           const { data: newProfile, error: insertProfileError } = await supabase
             .from('profiles')
@@ -122,6 +139,8 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
           if (insertProfileError) throw insertProfileError;
 
+          console.log('✅ Профиль создан:', newProfile);
+
           // Создаем запись в user_points
           const { error: pointsError } = await supabase
             .from('user_points')
@@ -132,15 +151,16 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             });
 
           if (pointsError) {
-            console.error('Ошибка создания points:', pointsError);
+            console.error('❌ Ошибка создания points:', pointsError);
           }
 
           profileId = newUserId;
-          console.log('Создан новый профиль пользователя:', newUserId);
         } else if (profileError) {
           throw profileError;
         } else {
           // Обновляем существующий профиль с актуальными данными из Telegram
+          console.log('🔄 Обновляем существующий профиль:', existingProfile.id);
+          
           const { error: updateError } = await supabase
             .from('profiles')
             .update({
@@ -153,8 +173,8 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             })
             .eq('id', existingProfile.id);
 
-          if (updateError) console.error('Ошибка обновления профиля:', updateError);
-          console.log('Профиль пользователя обновлен');
+          if (updateError) console.error('❌ Ошибка обновления профиля:', updateError);
+          console.log('✅ Профиль пользователя обновлен');
         }
 
         // Устанавливаем пользователя в контекст
@@ -168,12 +188,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           telegram_username: telegramUser.username,
         };
 
+        console.log('✅ Устанавливаем пользователя в контекст:', userData);
+        
         setUser(userData);
         localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
-        console.log('Пользователь установлен в контекст:', userData);
 
       } catch (err: any) {
-        console.error('Ошибка создания/обновления пользователя:', err);
+        console.error('❌ Ошибка создания/обновления пользователя:', err);
         throw err;
       }
     };
@@ -182,11 +203,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   }, []);
 
   const signIn = (userData: any) => {
+    console.log('🔐 Вход пользователя:', userData);
     setUser(userData);
     localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
   };
 
   const signOut = () => {
+    console.log('🚪 Выход пользователя');
     setUser(null);
     localStorage.removeItem('roller_tricks_user');
   };

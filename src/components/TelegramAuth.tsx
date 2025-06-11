@@ -20,12 +20,23 @@ const TelegramAuth: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { signIn } = useAuth();
 
+  useEffect(() => {
+    console.log('🔐 TelegramAuth компонент загружен');
+    console.log('🌐 Window.Telegram:', typeof window !== 'undefined' ? window.Telegram : 'undefined');
+    
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      console.log('📱 Telegram WebApp доступен в TelegramAuth');
+      console.log('📱 initData:', window.Telegram.WebApp.initData);
+      console.log('📱 initDataUnsafe:', window.Telegram.WebApp.initDataUnsafe);
+    }
+  }, []);
+
   const handleTelegramAuth = async (telegramUser: TelegramUser) => {
     setLoading(true);
     setError(null);
 
     try {
-      console.log('Обрабатываем Telegram пользователя:', telegramUser);
+      console.log('🔐 Обрабатываем Telegram пользователя:', telegramUser);
       
       // Проверяем существует ли пользователь в profiles
       const { data: existingProfile, error: profileError } = await supabase
@@ -40,7 +51,7 @@ const TelegramAuth: React.FC = () => {
         // Пользователь не найден, создаем новый профиль
         const newUserId = crypto.randomUUID();
         
-        console.log('Создаем новый профиль с ID:', newUserId);
+        console.log('➕ Создаем новый профиль с ID:', newUserId);
         
         const { data: newProfile, error: insertProfileError } = await supabase
           .from('profiles')
@@ -58,11 +69,11 @@ const TelegramAuth: React.FC = () => {
           .single();
 
         if (insertProfileError) {
-          console.error('Ошибка создания профиля:', insertProfileError);
+          console.error('❌ Ошибка создания профиля:', insertProfileError);
           throw insertProfileError;
         }
 
-        console.log('Профиль создан:', newProfile);
+        console.log('✅ Профиль создан:', newProfile);
 
         // Создаем запись в user_points
         const { error: pointsError } = await supabase
@@ -74,12 +85,12 @@ const TelegramAuth: React.FC = () => {
           });
 
         if (pointsError) {
-          console.error('Ошибка создания points:', pointsError);
+          console.error('❌ Ошибка создания points:', pointsError);
         }
 
         profileId = newUserId;
       } else if (profileError) {
-        console.error('Ошибка при поиске профиля:', profileError);
+        console.error('❌ Ошибка при поиске профиля:', profileError);
         throw profileError;
       } else if (existingProfile) {
         // Обновляем существующий профиль актуальными данными
@@ -96,7 +107,7 @@ const TelegramAuth: React.FC = () => {
           .eq('id', existingProfile.id);
 
         if (updateError) {
-          console.error('Ошибка обновления профиля:', updateError);
+          console.error('❌ Ошибка обновления профиля:', updateError);
         }
         
         profileId = existingProfile.id;
@@ -113,12 +124,12 @@ const TelegramAuth: React.FC = () => {
         telegram_username: telegramUser.username,
       };
 
-      console.log('Устанавливаем пользователя:', userData);
+      console.log('✅ Устанавливаем пользователя:', userData);
       
       signIn(userData);
 
     } catch (err: any) {
-      console.error('Telegram auth error:', err);
+      console.error('❌ Telegram auth error:', err);
       setError(err.message || 'Произошла ошибка при авторизации');
     } finally {
       setLoading(false);
@@ -126,6 +137,7 @@ const TelegramAuth: React.FC = () => {
   };
 
   const handleManualAuth = () => {
+    console.log('🔧 Используем тестовую авторизацию');
     // Для тестирования создаем тестового пользователя
     const testUser: TelegramUser = {
       id: Math.floor(Math.random() * 1000000),
