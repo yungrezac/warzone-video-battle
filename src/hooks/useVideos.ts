@@ -288,32 +288,53 @@ export const useUploadVideo = () => {
       onProgress?: (progress: number) => void;
     }) => {
       if (!user?.id) {
-        throw new Error('Необходима авторизация');
+        throw new Error('Необходима авторизация для загрузки видео');
       }
 
-      // Проверка размера файла (25MB)
-      if (videoFile.size > 25 * 1024 * 1024) {
-        throw new Error('Размер файла превышает 25MB. Сожмите видео.');
+      // Проверка размера файла (50MB)
+      if (videoFile.size > 50 * 1024 * 1024) {
+        throw new Error('Размер файла превышает 50MB. Сожмите видео.');
       }
 
-      console.log('🎬 Начинаем загрузку видео...');
-      onProgress?.(10);
+      console.log('🎬 Начинаем загрузку видео для пользователя:', {
+        userId: user.id,
+        username: user.username || user.first_name,
+        fileSize: `${(videoFile.size / 1024 / 1024).toFixed(2)}MB`,
+        fileName: videoFile.name
+      });
+      onProgress?.(5);
 
       try {
-        // Генерируем уникальное имя файла
+        // Проверяем авторизацию пользователя повторно
+        const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+        if (authError || !currentUser || currentUser.id !== user.id) {
+          throw new Error('Ошибка авторизации. Перезайдите в приложение');
+        }
+
+        onProgress?.(10);
+
+        // Генерируем уникальное имя файла с данными пользователя
         const timestamp = Date.now();
         const fileExtension = videoFile.name.split('.').pop() || 'mp4';
-        const videoFileName = `${user.id}/${timestamp}.${fileExtension}`;
+        const sanitizedTitle = title.trim().replace(/[^a-zA-Zа-яёА-ЯЁ0-9]/g, '_').substring(0, 20);
+        const videoFileName = `${user.id}/${timestamp}_${sanitizedTitle}.${fileExtension}`;
         
-        console.log('📤 Загружаем видеофайл:', videoFileName);
-        onProgress?.(20);
+        console.log('📤 Загружаем видеофайл:', videoFileName, 'для пользователя:', user.id);
+        onProgress?.(15);
 
-        // Загружаем видео
+        // Загружаем видео с явной привязкой к пользователю
         const { error: videoUploadError } = await supabase.storage
           .from('videos')
           .upload(videoFileName, videoFile, {
             cacheControl: '3600',
             upsert: false,
+            metadata: {
+              userId: user.id,
+              username: user.username || user.first_name || 'unknown',
+              uploadedAt: new Date().toISOString(),
+              originalFileName: videoFile.name,
+              category: category
+            }
           });
 
         if (videoUploadError) {
@@ -321,12 +342,16 @@ export const useUploadVideo = () => {
           if (videoUploadError.message.includes('exceeded') || 
               videoUploadError.message.includes('size') ||
               videoUploadError.message.includes('large')) {
-            throw new Error('Файл слишком большой. Максимум: 25MB');
+            throw new Error('Файл слишком большой. Максимум: 50MB');
+          }
+          if (videoUploadError.message.includes('policy') || 
+              videoUploadError.message.includes('RLS')) {
+            throw new Error('Ошибка доступа. Перезайдите в приложение');
           }
           throw new Error(`Ошибка загрузки: ${videoUploadError.message}`);
         }
 
-        onProgress?.(60);
+        onProgress?.(50);
 
         // Получаем URL видео
         const { data: videoUrlData } = supabase.storage
@@ -337,28 +362,37 @@ export const useUploadVideo = () => {
           throw new Error('Не удалось получить URL видео');
         }
 
+        console.log('✅ Видео загружено, URL:', videoUrlData.publicUrl);
+
         // Загружаем превью если есть
         let thumbnailUrl: string | undefined;
         if (thumbnailBlob) {
-          onProgress?.(70);
-          const thumbnailFileName = `${user.id}/${timestamp}_thumb.jpg`;
+          onProgress?.(60);
+          const thumbnailFileName = `${user.id}/${timestamp}_${sanitizedTitle}_thumb.jpg`;
           
           const { error: thumbnailError } = await supabase.storage
             .from('videos')
-            .upload(thumbnailFileName, thumbnailBlob);
+            .upload(thumbnailFileName, thumbnailBlob, {
+              metadata: {
+                userId: user.id,
+                parentVideo: videoFileName,
+                type: 'thumbnail'
+              }
+            });
 
           if (!thumbnailError) {
             const { data: thumbUrlData } = supabase.storage
               .from('videos')
               .getPublicUrl(thumbnailFileName);
             thumbnailUrl = thumbUrlData?.publicUrl;
+            console.log('✅ Превью загружено:', thumbnailUrl);
           }
         }
 
-        onProgress?.(80);
+        onProgress?.(70);
 
-        // Сохраняем в БД
-        console.log('💾 Сохраняем в базу данных...');
+        // Сохраняем в БД с явной привязкой к пользователю
+        console.log('💾 Сохраняем в базу данных для пользователя:', user.id);
         const { data: videoData, error: dbError } = await supabase
           .from('videos')
           .insert({
@@ -366,7 +400,7 @@ export const useUploadVideo = () => {
             description: description?.trim() || null,
             video_url: videoUrlData.publicUrl,
             thumbnail_url: thumbnailUrl || null,
-            user_id: user.id,
+            user_id: user.id, // Явно указываем ID пользователя
             category: category,
             views: 0,
             likes_count: 0,
@@ -377,15 +411,22 @@ export const useUploadVideo = () => {
 
         if (dbError) {
           console.error('❌ Ошибка сохранения в БД:', dbError);
+          
           // Удаляем загруженные файлы при ошибке
           await supabase.storage.from('videos').remove([videoFileName]);
           if (thumbnailUrl) {
-            await supabase.storage.from('videos').remove([`${user.id}/${timestamp}_thumb.jpg`]);
+            await supabase.storage.from('videos').remove([`${user.id}/${timestamp}_${sanitizedTitle}_thumb.jpg`]);
+          }
+          
+          if (dbError.message.includes('policy') || dbError.message.includes('RLS')) {
+            throw new Error('Ошибка доступа к базе данных. Перезайдите в приложение');
           }
           throw new Error(`Ошибка сохранения: ${dbError.message}`);
         }
 
-        onProgress?.(90);
+        onProgress?.(85);
+
+        console.log('✅ Видео сохранено в БД:', videoData.id);
 
         // Обновляем достижения
         try {
@@ -395,21 +436,34 @@ export const useUploadVideo = () => {
             p_new_value: null,
             p_increment: 1,
           });
+          console.log('🏆 Достижения обновлены для пользователя:', user.id);
         } catch (achievementError) {
           console.error('⚠️ Ошибка обновления достижений:', achievementError);
         }
 
+        // Начисляем баллы за загрузку
+        try {
+          await supabase.rpc('update_user_points', {
+            p_user_id: user.id,
+            p_points_change: 10,
+            p_description: `Загрузка видео: ${title.trim()}`
+          });
+          console.log('💰 Баллы начислены пользователю:', user.id);
+        } catch (pointsError) {
+          console.error('⚠️ Ошибка начисления баллов:', pointsError);
+        }
+
         onProgress?.(100);
-        console.log('🎉 Видео успешно загружено!');
+        console.log('🎉 Видео успешно загружено пользователем:', user.id);
         return videoData;
 
       } catch (error) {
-        console.error('❌ Ошибка загрузки:', error);
+        console.error('❌ Критическая ошибка загрузки для пользователя:', user.id, error);
         throw error;
       }
     },
-    onSuccess: () => {
-      console.log('🔄 Обновляем кэш после загрузки');
+    onSuccess: (data) => {
+      console.log('🔄 Обновляем кэш после загрузки пользователем:', user?.id, 'видео ID:', data?.id);
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });

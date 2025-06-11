@@ -32,11 +32,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
-      // Уменьшаем лимит до 25MB
-      if (file.size > 25 * 1024 * 1024) {
+      // Увеличиваем лимит до 50MB
+      if (file.size > 50 * 1024 * 1024) {
         toast({
           title: "Ошибка",
-          description: "Размер файла не должен превышать 25MB. Попробуйте сжать видео.",
+          description: "Размер файла не должен превышать 50MB. Попробуйте сжать видео.",
           variant: "destructive",
         });
         return;
@@ -146,7 +146,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
                   Выберите видео для загрузки
                 </h3>
                 <p className="text-gray-500 mb-2 text-xs">
-                  Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 25MB
+                  Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 50MB
                 </p>
                 <input
                   ref={fileInputRef}
@@ -254,6 +254,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2">
               <h4 className="font-semibold text-yellow-800 mb-1 text-xs">Правила конкурса:</h4>
               <ul className="text-xs text-yellow-700 space-y-0.5">
+                <li>• Максимальный размер файла: 50MB</li>
                 <li>• Видео проходит модерацию перед публикацией</li>
                 <li>• Победитель определяется каждый день в 00:00</li>
                 <li>• Баллы начисляются равно количеству полученных оценок</li>

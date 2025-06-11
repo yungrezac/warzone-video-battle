@@ -32,15 +32,22 @@ const UploadVideo: React.FC = () => {
       return;
     }
 
-    // Строгая проверка размера файла (25MB)
-    if (file.size > 25 * 1024 * 1024) {
+    // Обновленная проверка размера файла (50MB)
+    if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "Файл слишком большой",
-        description: "Размер файла не должен превышать 25MB. Сожмите видео в любом видеоредакторе.",
+        description: "Размер файла не должен превышать 50MB. Сожмите видео в любом видеоредакторе.",
         variant: "destructive",
       });
       return;
     }
+
+    console.log('📁 Файл выбран:', {
+      name: file.name,
+      size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      type: file.type,
+      userId: user?.id
+    });
 
     setSelectedFile(file);
   };
@@ -77,7 +84,13 @@ const UploadVideo: React.FC = () => {
     }
     
     try {
-      console.log('🎬 Начинаем загрузку видео для пользователя:', user.id);
+      console.log('🎬 Начинаем загрузку видео:', {
+        userId: user.id,
+        username: user.username || user.first_name,
+        title: title.trim(),
+        category: category,
+        fileSize: `${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`
+      });
       
       await uploadMutation.mutateAsync({
         title: title.trim(),
@@ -103,14 +116,14 @@ const UploadVideo: React.FC = () => {
         description: "Видео загружено и появится в ленте",
       });
     } catch (error) {
-      console.error('❌ Ошибка загрузки:', error);
+      console.error('❌ Ошибка загрузки для пользователя:', user.id, error);
       setUploadProgress(0);
       
       let errorMessage = 'Попробуйте еще раз';
       if (error instanceof Error) {
-        if (error.message.includes('25MB') || error.message.includes('size')) {
-          errorMessage = 'Файл слишком большой. Максимум: 25MB';
-        } else if (error.message.includes('RLS') || error.message.includes('policy')) {
+        if (error.message.includes('50MB') || error.message.includes('size')) {
+          errorMessage = 'Файл слишком большой. Максимум: 50MB';
+        } else if (error.message.includes('RLS') || error.message.includes('policy') || error.message.includes('авторизации')) {
           errorMessage = 'Ошибка авторизации. Перезайдите в приложение';
         } else {
           errorMessage = error.message;
@@ -157,7 +170,7 @@ const UploadVideo: React.FC = () => {
               Выберите видео для загрузки
             </h3>
             <p className="text-gray-500 mb-3 text-sm">
-              Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: <span className="font-semibold text-red-600">25MB</span>
+              Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: <span className="font-semibold text-red-600">50MB</span>
             </p>
             <input
               ref={fileInputRef}
@@ -243,7 +256,7 @@ const UploadVideo: React.FC = () => {
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Правила загрузки:</h4>
           <ul className="text-xs text-yellow-700 space-y-0.5">
-            <li>• Максимальный размер файла: 25MB</li>
+            <li>• Максимальный размер файла: 50MB</li>
             <li>• Видео проходит модерацию перед публикацией</li>
             <li>• Победитель определяется каждый день в 00:00</li>
             <li>• Запрещены опасные трюки без защитной экипировки</li>
