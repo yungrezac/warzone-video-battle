@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -26,7 +25,6 @@ export interface Video {
     last_name?: string;
     avatar_url?: string;
   };
-  // Добавляем правильные поля для пользовательских данных
   user_liked?: boolean;
   user_rating?: number;
   comments_count?: number;
@@ -56,7 +54,7 @@ export const useVideos = () => {
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(50); // Ограничиваем количество видео для ускорения
+          .limit(50);
 
         if (error) {
           console.error('❌ Ошибка загрузки видео:', error);
@@ -70,7 +68,6 @@ export const useVideos = () => {
 
         console.log(`📊 Загружено ${videos.length} видео, получаем статистику...`);
 
-        // Получаем все video_ids для batch запросов
         const videoIds = videos.map(v => v.id);
 
         // Batch запрос для всех лайков
@@ -132,8 +129,8 @@ export const useVideos = () => {
             likes_count: likes.count,
             comments_count: commentsCount,
             average_rating: ratings.avg,
-            user_liked: likes.userLiked, // Правильное поле для лайков пользователя
-            user_rating: ratings.userRating, // Правильное поле для рейтинга пользователя
+            user_liked: likes.userLiked,
+            user_rating: ratings.userRating,
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         });
@@ -146,8 +143,8 @@ export const useVideos = () => {
         throw error;
       }
     },
-    staleTime: 30000, // Кэшируем на 30 секунд
-    gcTime: 300000, // Храним в памяти 5 минут
+    staleTime: 30000,
+    gcTime: 300000,
   });
 };
 
@@ -169,8 +166,29 @@ export const useLikeVideo = () => {
       console.log('💖 Обрабатываем лайк:', videoId, 'убираем:', isLiked);
 
       try {
-        if (isLiked) {
-          console.log('🗑️ Удаляем лайк...');
+        // Проверяем актуальное состояние лайка в базе данных
+        const { data: existingLike, error: checkError } = await supabase
+          .from('video_likes')
+          .select('id')
+          .eq('video_id', videoId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('❌ Ошибка проверки существующего лайка:', checkError);
+          throw checkError;
+        }
+
+        console.log('🔍 Проверка лайка в БД:', { 
+          videoId, 
+          userId: user.id, 
+          существует: !!existingLike,
+          параметрIsLiked: isLiked 
+        });
+
+        if (existingLike) {
+          // Лайк существует в БД - удаляем его
+          console.log('🗑️ Удаляем существующий лайк...');
           const { error } = await supabase
             .from('video_likes')
             .delete()
@@ -189,7 +207,8 @@ export const useLikeVideo = () => {
             p_points_change: -2
           });
         } else {
-          console.log('➕ Добавляем лайк...');
+          // Лайка нет в БД - добавляем его
+          console.log('➕ Добавляем новый лайк...');
           const { error } = await supabase
             .from('video_likes')
             .insert({
