@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -17,6 +18,13 @@ interface Video {
   average_rating: number;
   user_liked: boolean;
   user_rating: number;
+  profiles?: {
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    telegram_username?: string;
+    avatar_url?: string;
+  };
 }
 
 interface LikeVideoParams {
@@ -41,19 +49,115 @@ interface UploadVideoParams {
 }
 
 export const useVideos = () => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['videos'],
+    queryKey: ['videos', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Загружаем видео для ленты с данными пользователей...');
+
+      // Основной запрос видео с профилями пользователей
+      const { data: videos, error } = await supabase
         .from('videos')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            first_name,
+            last_name,
+            telegram_username,
+            avatar_url
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Ошибка загрузки видео:', error);
         throw error;
       }
 
-      return data;
+      console.log('Загружено видео:', videos?.length);
+
+      if (!videos || videos.length === 0) {
+        return [];
+      }
+
+      // Для каждого видео получаем статистику и взаимодействия пользователя
+      const videosWithStats = await Promise.all(
+        videos.map(async (video) => {
+          try {
+            // Подсчитываем лайки
+            const { count: likesCount } = await supabase
+              .from('video_likes')
+              .select('*', { count: 'exact' })
+              .eq('video_id', video.id);
+
+            // Подсчитываем комментарии
+            const { count: commentsCount } = await supabase
+              .from('video_comments')
+              .select('*', { count: 'exact' })
+              .eq('video_id', video.id);
+
+            // Считаем средний рейтинг
+            const { data: ratings } = await supabase
+              .from('video_ratings')
+              .select('rating')
+              .eq('video_id', video.id);
+
+            const averageRating = ratings && ratings.length > 0
+              ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+              : 0;
+
+            // Проверяем взаимодействия текущего пользователя
+            let userLiked = false;
+            let userRating = 0;
+
+            if (user?.id) {
+              // Проверяем лайк пользователя
+              const { data: userLike } = await supabase
+                .from('video_likes')
+                .select('*')
+                .eq('video_id', video.id)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+              userLiked = !!userLike;
+
+              // Получаем рейтинг пользователя
+              const { data: userRatingData } = await supabase
+                .from('video_ratings')
+                .select('rating')
+                .eq('video_id', video.id)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+              userRating = userRatingData?.rating || 0;
+            }
+
+            return {
+              ...video,
+              likes_count: likesCount || 0,
+              comments_count: commentsCount || 0,
+              average_rating: Number(averageRating.toFixed(1)),
+              user_liked: userLiked,
+              user_rating: userRating,
+            };
+          } catch (error) {
+            console.warn(`Ошибка загрузки статистики для видео ${video.id}:`, error);
+            return {
+              ...video,
+              likes_count: 0,
+              comments_count: 0,
+              average_rating: 0,
+              user_liked: false,
+              user_rating: 0,
+            };
+          }
+        })
+      );
+
+      console.log('Видео с обновленной статистикой:', videosWithStats);
+      return videosWithStats;
     },
   });
 };
