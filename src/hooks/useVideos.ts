@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -47,6 +46,64 @@ interface UploadVideoParams {
   trimEnd?: number;
   onProgress?: (progress: number) => void;
 }
+
+// Функция для автоматической генерации превью из видео
+const generateThumbnailFromVideo = (videoFile: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      reject(new Error('Не удалось создать canvas context'));
+      return;
+    }
+
+    video.preload = 'metadata';
+    video.muted = true;
+    
+    video.onloadedmetadata = () => {
+      // Устанавливаем время на 1 секунду или середину видео, если оно короче
+      const time = Math.min(1, video.duration / 2);
+      video.currentTime = time;
+    };
+    
+    video.onseeked = () => {
+      try {
+        // Устанавливаем размер canvas
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Рисуем кадр из видео на canvas
+        ctx.drawImage(video, 0, 0);
+        
+        // Конвертируем canvas в blob
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Не удалось создать превью'));
+          }
+        }, 'image/jpeg', 0.8);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    video.onerror = () => {
+      reject(new Error('Ошибка загрузки видео для генерации превью'));
+    };
+    
+    // Создаем URL для видео и загружаем его
+    const videoUrl = URL.createObjectURL(videoFile);
+    video.src = videoUrl;
+    
+    // Очищаем URL после использования
+    video.onloadstart = () => {
+      URL.revokeObjectURL(videoUrl);
+    };
+  });
+};
 
 export const useVideos = () => {
   const { user } = useAuth();
@@ -167,10 +224,24 @@ export const useUploadVideo = () => {
 
       // Генерируем уникальные имена файлов
       const videoFileName = `${user.id}/${Date.now()}_${videoFile.name}`;
-      const thumbnailFileName = thumbnailBlob ? `${user.id}/${Date.now()}_thumbnail.jpg` : null;
+      let finalThumbnailBlob = thumbnailBlob;
 
       try {
         onProgress?.(10);
+
+        // Если превью не было выбрано пользователем, генерируем автоматически
+        if (!thumbnailBlob) {
+          console.log('🖼️ Генерируем превью автоматически...');
+          try {
+            finalThumbnailBlob = await generateThumbnailFromVideo(videoFile);
+            console.log('✅ Превью сгенерировано автоматически');
+          } catch (error) {
+            console.warn('⚠️ Не удалось сгенерировать превью автоматически:', error);
+            // Продолжаем без превью
+          }
+        }
+
+        onProgress?.(25);
 
         // Загружаем видео файл
         console.log('📹 Загружаем видео файл...');
@@ -196,11 +267,13 @@ export const useUploadVideo = () => {
         let thumbnailUrl = null;
 
         // Загружаем превью, если есть
-        if (thumbnailBlob && thumbnailFileName) {
+        if (finalThumbnailBlob) {
           console.log('🖼️ Загружаем превью...');
+          const thumbnailFileName = `${user.id}/${Date.now()}_thumbnail.jpg`;
+          
           const { data: thumbnailUpload, error: thumbnailError } = await supabase.storage
             .from('videos')
-            .upload(thumbnailFileName, thumbnailBlob, {
+            .upload(thumbnailFileName, finalThumbnailBlob, {
               cacheControl: '3600',
               upsert: false,
             });
@@ -263,9 +336,6 @@ export const useUploadVideo = () => {
         // Очищаем загруженные файлы в случае ошибки
         try {
           await supabase.storage.from('videos').remove([videoFileName]);
-          if (thumbnailFileName) {
-            await supabase.storage.from('videos').remove([thumbnailFileName]);
-          }
         } catch (cleanupError) {
           console.warn('Ошибка очистки файлов:', cleanupError);
         }

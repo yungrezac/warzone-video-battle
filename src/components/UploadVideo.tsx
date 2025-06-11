@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Upload, Video, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -97,6 +98,7 @@ const UploadVideo: React.FC = () => {
         description: description.trim() || undefined,
         videoFile: selectedFile,
         category: category,
+        // Убираем thumbnailBlob - он теперь генерируется автоматически
         onProgress: setUploadProgress,
       });
 
@@ -113,7 +115,7 @@ const UploadVideo: React.FC = () => {
       
       toast({
         title: "Успешно!",
-        description: "Видео загружено и появится в ленте",
+        description: "Видео загружено и появится в ленте. Превью создано автоматически.",
       });
     } catch (error) {
       console.error('❌ Ошибка загрузки для пользователя:', user.id, error);
@@ -172,6 +174,9 @@ const UploadVideo: React.FC = () => {
             <p className="text-gray-500 mb-3 text-sm">
               Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: <span className="font-semibold text-red-600">50MB</span>
             </p>
+            <p className="text-green-600 mb-3 text-xs font-medium">
+              ✨ Превью будет создано автоматически из первой секунды видео
+            </p>
             <input
               ref={fileInputRef}
               type="file"
@@ -197,6 +202,9 @@ const UploadVideo: React.FC = () => {
                   <p className="font-semibold text-sm">{selectedFile.name}</p>
                   <p className="text-xs text-gray-500">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <p className="text-xs text-green-600">
+                    ✨ Превью создается автоматически
                   </p>
                 </div>
               </div>
@@ -257,6 +265,7 @@ const UploadVideo: React.FC = () => {
           <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Правила загрузки:</h4>
           <ul className="text-xs text-yellow-700 space-y-0.5">
             <li>• Максимальный размер файла: 50MB</li>
+            <li>• Превью создается автоматически из первой секунды</li>
             <li>• Видео проходит модерацию перед публикацией</li>
             <li>• Победитель определяется каждый день в 00:00</li>
             <li>• Запрещены опасные трюки без защитной экипировки</li>
