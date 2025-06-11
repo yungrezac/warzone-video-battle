@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Star, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -35,9 +35,34 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   const [showRating, setShowRating] = useState(false);
+  const [localUserLiked, setLocalUserLiked] = useState(video.userLiked || false);
+  const [localUserRating, setLocalUserRating] = useState(video.userRating || 0);
   const location = useLocation();
 
+  // Обновляем локальное состояние при изменении props
+  useEffect(() => {
+    console.log('🔄 VideoCard обновление состояния для видео:', {
+      videoId: video.id,
+      userLiked: video.userLiked,
+      localUserLiked,
+      userRating: video.userRating
+    });
+    
+    setLocalUserLiked(video.userLiked || false);
+    setLocalUserRating(video.userRating || 0);
+  }, [video.userLiked, video.userRating, video.id]);
+
+  const handleLike = () => {
+    console.log('💖 VideoCard handleLike вызван для видео:', video.id);
+    // Мгновенно обновляем локальное состояние для лучшего UX
+    setLocalUserLiked(!localUserLiked);
+    onLike(video.id);
+  };
+
   const handleRate = (rating: number) => {
+    console.log('⭐ VideoCard handleRate вызван для видео:', video.id, 'рейтинг:', rating);
+    // Мгновенно обновляем локальное состояние
+    setLocalUserRating(rating);
     onRate(video.id, rating);
     setShowRating(false);
   };
@@ -124,10 +149,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onLike(video.id)}
-              className={`${video.userLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}
+              onClick={handleLike}
+              className={`${localUserLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}
             >
-              <Heart className={`w-3.5 h-3.5 mr-1 ${video.userLiked ? 'fill-current' : ''}`} />
+              <Heart className={`w-3.5 h-3.5 mr-1 ${localUserLiked ? 'fill-current' : ''}`} />
               <span className="text-xs">{video.likes}</span>
             </Button>
 
@@ -170,7 +195,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
                   className="p-1 h-auto"
                 >
                   <Star 
-                    className={`w-4 h-4 ${star <= (video.userRating || 0) ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+                    className={`w-4 h-4 ${star <= localUserRating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
                   />
                 </Button>
               ))}
