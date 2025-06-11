@@ -13,104 +13,134 @@ export const useUserProfile = () => {
 
       console.log('Загружаем профиль пользователя:', user.id);
 
-      // Получаем профиль пользователя
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      try {
+        // Получаем профиль пользователя
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (profileError) {
-        console.error('Ошибка загрузки профиля:', profileError);
-        throw profileError;
-      }
-
-      // Получаем баллы пользователя отдельным запросом
-      const { data: userPoints, error: pointsError } = await supabase
-        .from('user_points')
-        .select('total_points, wins_count')
-        .eq('user_id', user.id)
-        .single();
-
-      if (pointsError && pointsError.code !== 'PGRST116') {
-        console.error('Ошибка загрузки баллов:', pointsError);
-      }
-
-      // Если баллов нет, создаем запись
-      let finalPoints = userPoints;
-      if (!userPoints) {
-        console.log('Создаем запись user_points для пользователя:', user.id);
-        const { data: newPoints, error: createPointsError } = await supabase
-          .from('user_points')
-          .insert({
-            user_id: user.id,
-            total_points: 0,
-            wins_count: 0
-          })
-          .select('total_points, wins_count')
-          .single();
-
-        if (createPointsError) {
-          console.error('Ошибка создания user_points:', createPointsError);
-          finalPoints = { total_points: 0, wins_count: 0 };
-        } else {
-          finalPoints = newPoints;
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Ошибка загрузки профиля:', profileError);
+          throw profileError;
         }
-      }
 
-      // Получаем список видео пользователя
-      const { data: userVideos, error: videosError } = await supabase
-        .from('videos')
-        .select('id')
-        .eq('user_id', user.id);
+        // Если профиля нет, создаем его
+        if (!profile) {
+          console.log('Профиль не найден, создаем новый');
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              username: user.username,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              avatar_url: user.avatar_url,
+              telegram_id: user.telegram_id,
+              telegram_username: user.telegram_username,
+            })
+            .select()
+            .single();
 
-      if (videosError) {
-        console.error('Ошибка загрузки видео:', videosError);
-        throw videosError;
-      }
+          if (createError) {
+            console.error('Ошибка создания профиля:', createError);
+            // Возвращаем данные из контекста если не можем создать в базе
+            return {
+              ...user,
+              total_points: 0,
+              wins_count: 0,
+              total_videos: 0,
+              total_likes: 0,
+              total_views: 0,
+              videos: [],
+              created_at: new Date().toISOString(),
+            };
+          }
+          
+          // Создаем запись в user_points для нового профиля
+          await supabase
+            .from('user_points')
+            .insert({
+              user_id: user.id,
+              total_points: 0,
+              wins_count: 0
+            });
+        }
 
-      const videoIds = userVideos?.map(v => v.id) || [];
-      const totalVideos = videoIds.length;
+        // Получаем баллы пользователя
+        const { data: userPoints } = await supabase
+          .from('user_points')
+          .select('total_points, wins_count')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      let totalLikes = 0;
-      let totalViews = 0;
+        // Если баллов нет, создаем запись
+        let finalPoints = userPoints;
+        if (!userPoints) {
+          const { data: newPoints } = await supabase
+            .from('user_points')
+            .insert({
+              user_id: user.id,
+              total_points: 0,
+              wins_count: 0
+            })
+            .select('total_points, wins_count')
+            .maybeSingle();
+          
+          finalPoints = newPoints || { total_points: 0, wins_count: 0 };
+        }
 
-      if (videoIds.length > 0) {
-        // Подсчитываем общее количество лайков для всех видео пользователя
-        const { count: likesCount } = await supabase
-          .from('video_likes')
-          .select('*', { count: 'exact' })
-          .in('video_id', videoIds);
-
-        totalLikes = likesCount || 0;
-
-        // Подсчитываем общее количество просмотров
-        const { data: viewsData } = await supabase
+        // Получаем статистику видео
+        const { data: userVideos } = await supabase
           .from('videos')
-          .select('views')
+          .select('id, views')
           .eq('user_id', user.id);
 
-        totalViews = viewsData?.reduce((sum, video) => sum + (video.views || 0), 0) || 0;
+        const totalVideos = userVideos?.length || 0;
+        const totalViews = userVideos?.reduce((sum, video) => sum + (video.views || 0), 0) || 0;
+
+        // Получаем общее количество лайков
+        let totalLikes = 0;
+        if (userVideos && userVideos.length > 0) {
+          const videoIds = userVideos.map(v => v.id);
+          const { count: likesCount } = await supabase
+            .from('video_likes')
+            .select('*', { count: 'exact' })
+            .in('video_id', videoIds);
+          
+          totalLikes = likesCount || 0;
+        }
+
+        const finalProfile = profile || user;
+
+        return {
+          ...finalProfile,
+          total_points: finalPoints?.total_points || 0,
+          wins_count: finalPoints?.wins_count || 0,
+          total_videos: totalVideos,
+          total_likes: totalLikes,
+          total_views: totalViews,
+          videos: userVideos || [],
+        };
+
+      } catch (error) {
+        console.error('Ошибка в useUserProfile:', error);
+        // Возвращаем базовые данные из контекста при ошибке
+        return {
+          ...user,
+          total_points: 0,
+          wins_count: 0,
+          total_videos: 0,
+          total_likes: 0,
+          total_views: 0,
+          videos: [],
+          created_at: new Date().toISOString(),
+        };
       }
-
-      console.log('Статистика профиля:', { 
-        totalVideos, 
-        totalLikes, 
-        totalViews,
-        points: finalPoints?.total_points || 0,
-        wins: finalPoints?.wins_count || 0
-      });
-
-      return {
-        ...profile,
-        total_points: finalPoints?.total_points || 0,
-        wins_count: finalPoints?.wins_count || 0,
-        total_videos: totalVideos,
-        total_likes: totalLikes,
-        total_views: totalViews,
-        videos: userVideos || [],
-      };
     },
     enabled: !!user,
+    retry: 1, // Уменьшаем количество повторов для быстрой работы
+    staleTime: 30000, // Кэшируем на 30 секунд
   });
 };
