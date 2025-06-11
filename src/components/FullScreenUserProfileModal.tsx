@@ -1,15 +1,17 @@
+
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Trophy, Video, ArrowLeft } from 'lucide-react';
+import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
+import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
 import { Loader2 } from 'lucide-react';
 import VideoCard from '@/components/VideoCard';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface FullScreenUserProfileModalProps {
   isOpen: boolean;
@@ -26,68 +28,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   
-  const { data: userProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ['user-profile', userId],
-    queryFn: async () => {
-      if (!userId) throw new Error('User ID is required');
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_points (
-            total_points,
-            wins_count
-          )
-        `)
-        .eq('id', userId)
-        .single();
-
-      if (profileError) throw profileError;
-
-      const { data: userVideos, error: videosError } = await supabase
-        .from('videos')
-        .select('id')
-        .eq('user_id', userId);
-
-      if (videosError) throw videosError;
-
-      const videoIds = userVideos?.map(v => v.id) || [];
-      const totalVideos = videoIds.length;
-
-      let totalLikes = 0;
-      let totalViews = 0;
-
-      if (videoIds.length > 0) {
-        const { count: likesCount } = await supabase
-          .from('video_likes')
-          .select('*', { count: 'exact' })
-          .in('video_id', videoIds);
-
-        totalLikes = likesCount || 0;
-
-        const { data: viewsData } = await supabase
-          .from('videos')
-          .select('views')
-          .eq('user_id', userId);
-
-        totalViews = viewsData?.reduce((sum, video) => sum + (video.views || 0), 0) || 0;
-      }
-
-      const userPoints = profile.user_points?.[0];
-
-      return {
-        ...profile,
-        total_points: userPoints?.total_points || 0,
-        wins_count: userPoints?.wins_count || 0,
-        total_videos: totalVideos,
-        total_likes: totalLikes,
-        total_views: totalViews,
-        videos: userVideos || [],
-      };
-    },
-    enabled: !!userId && isOpen,
-  });
+  const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
 
   const { data: userVideos, isLoading: videosLoading } = useQuery({
     queryKey: ['user-videos', userId],
@@ -279,7 +220,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Stats and Videos */}
+            {/* Stats and Achievements */}
             <div className="p-3">
               <div className="bg-white rounded-lg shadow-md p-3 mb-3">
                 <h3 className="text-base font-semibold mb-2 flex items-center">
@@ -312,6 +253,42 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Achievements Section */}
+              <div className="bg-white rounded-lg shadow-md p-3 mb-3">
+                <h3 className="text-base font-semibold mb-2 flex items-center">
+                  <Award className="w-4 h-4 mr-2 text-purple-500" />
+                  Достижения
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-2 text-center mb-3">
+                  <div className="bg-purple-50 rounded-lg p-2">
+                    <div className="text-base font-bold text-purple-600">{userProfile?.total_achievements || 0}</div>
+                    <div className="text-xs text-purple-700">Получено</div>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-2">
+                    <div className="text-base font-bold text-blue-600">{userProfile?.total_points || 0}</div>
+                    <div className="text-xs text-blue-700">Очков за достижения</div>
+                  </div>
+                </div>
+
+                {userProfile.recent_achievements && userProfile.recent_achievements.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Последние достижения:</h4>
+                    <div className="space-y-1">
+                      {userProfile.recent_achievements.map((ua: any) => (
+                        <div key={ua.id} className="flex items-center text-xs bg-yellow-50 rounded p-1">
+                          <span className="mr-2">{ua.achievement.icon}</span>
+                          <span className="flex-1 text-gray-700">{ua.achievement.title}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            +{ua.achievement.reward_points}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {userProfile?.is_premium && (
