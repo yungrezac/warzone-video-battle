@@ -49,6 +49,9 @@ const Market: React.FC = () => {
       {/* Admin Market Panel */}
       <AdminMarketPanel />
 
+      {/* Banner Carousel */}
+      <BannerCarousel />
+
       {/* Header Section */}
       <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 mb-6">
         <CardHeader>
@@ -72,9 +75,6 @@ const Market: React.FC = () => {
           )}
         </CardHeader>
       </Card>
-
-      {/* Banner Carousel */}
-      <BannerCarousel />
 
       {/* Loading state */}
       {isLoading && (
