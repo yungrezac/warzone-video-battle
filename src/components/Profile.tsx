@@ -13,7 +13,7 @@ import VideoCard from './VideoCard';
 import DeleteVideoDialog from './DeleteVideoDialog';
 import AchievementCard from './AchievementCard';
 import NotificationSettings from './NotificationSettings';
-import ComingSoonModal from './ComingSoonModal';
+import WithdrawalModal from './WithdrawalModal';
 import SubscriptionModal from './SubscriptionModal';
 import PremiumBadge from './PremiumBadge';
 import { toast } from 'sonner';
@@ -422,7 +422,7 @@ const Profile: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)} 
       />
       
-      <ComingSoonModal 
+      <WithdrawalModal 
         isOpen={isWithdrawOpen} 
         onClose={() => setIsWithdrawOpen(false)} 
       />
@@ -431,3 +431,5 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
+
+}
