@@ -45,17 +45,17 @@ const serve_handler = async (req: Request): Promise<Response> => {
     // Создаем уникальный payload для счета
     const invoicePayload = `premium_subscription_${user_id}_${Date.now()}`;
     
-    // Данные для создания счета через Telegram Bot API
+    // Данные для создания инвойса через Telegram Bot API для Mini App
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
 
-    // Создаем счет через Telegram Bot API
+    // Создаем инвойсную ссылку для webApp.openInvoice
     const invoiceData = {
       chat_id: user.telegram_id,
-      title: 'Premium подписка',
-      description: 'Месячная премиум подписка на RollerTricks',
+      title: 'Premium подписка RollerTricks',
+      description: 'Месячная премиум подписка с эксклюзивными функциями',
       payload: invoicePayload,
       provider_token: '', // Для Telegram Stars оставляем пустым
       currency: 'XTR', // Telegram Stars
@@ -74,10 +74,14 @@ const serve_handler = async (req: Request): Promise<Response> => {
       need_shipping_address: false,
       send_phone_number_to_provider: false,
       send_email_to_provider: false,
-      is_flexible: false
+      is_flexible: false,
+      start_parameter: 'premium_subscription'
     };
 
-    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendInvoice`, {
+    console.log('Создаем инвойс для Mini App:', invoiceData);
+
+    // Создаем инвойсную ссылку через createInvoiceLink
+    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/createInvoiceLink`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,14 +92,13 @@ const serve_handler = async (req: Request): Promise<Response> => {
     const telegramResult = await telegramResponse.json();
 
     if (!telegramResult.ok) {
-      console.error('Ошибка создания счета в Telegram:', telegramResult);
-      throw new Error('Failed to create Telegram invoice');
+      console.error('Ошибка создания инвойса в Telegram:', telegramResult);
+      throw new Error(`Failed to create Telegram invoice: ${telegramResult.description}`);
     }
 
-    // Создаем invoice_url для openInvoice
-    const invoiceUrl = `https://t.me/invoice/${invoicePayload}`;
+    const invoiceUrl = telegramResult.result;
 
-    console.log('Счет создан успешно:', {
+    console.log('Инвойс создан успешно:', {
       payload: invoicePayload,
       telegram_id: user.telegram_id,
       invoice_url: invoiceUrl

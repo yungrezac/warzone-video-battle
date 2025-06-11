@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,16 +33,17 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
       
       // Создаем инвойс через нашу Edge Function
       const invoiceData = await createInvoice();
-      console.log('📄 Инвойс создан:', invoiceData);
+      console.log('📄 Данные инвойса:', invoiceData);
 
       if (!invoiceData?.invoice_url) {
         throw new Error('Не удалось получить URL инвойса');
       }
 
-      // Открываем инвойс в Telegram
+      console.log('💳 Открываем инвойс через webApp.openInvoice...');
+      console.log('🔗 URL инвойса:', invoiceData.invoice_url);
+
+      // Открываем инвойс напрямую в Mini App
       if (webApp.openInvoice) {
-        console.log('💳 Открываем инвойс через webApp.openInvoice...');
-        
         webApp.openInvoice(invoiceData.invoice_url, (status: string) => {
           console.log('💰 Статус платежа:', status);
           
@@ -53,6 +53,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
               description: "Подписка успешно оформлена",
             });
             setIsOpen(false);
+            // Обновляем данные подписки
+            window.location.reload();
           } else if (status === 'cancelled') {
             toast({
               title: "Платеж отменен",
@@ -61,19 +63,24 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
           } else if (status === 'failed') {
             toast({
               title: "Ошибка платежа",
-              description: "Попробуйте еще раз",
+              description: "Попробуйте еще раз или обратитесь в поддержку",
               variant: "destructive",
             });
           }
         });
       } else {
-        // Fallback: открываем ссылку
-        console.log('🔗 Открываем ссылку на инвойс...');
+        // Fallback: открываем ссылку в браузере
+        console.log('🔗 Fallback: открываем ссылку...');
         if (webApp.openLink) {
           webApp.openLink(invoiceData.invoice_url);
         } else {
           window.open(invoiceData.invoice_url, '_blank');
         }
+        
+        toast({
+          title: "Инвойс создан",
+          description: "Откройте ссылку для оплаты",
+        });
       }
       
     } catch (error) {
