@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Video, X } from 'lucide-react';
+import { Upload, Video, X, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useUploadVideo } from '@/hooks/useVideos';
 import { useToast } from '@/hooks/use-toast';
 import CategorySelector from './CategorySelector';
+import VideoEditor from './VideoEditor';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -19,6 +20,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<'Rollers' | 'BMX' | 'Skateboard'>('Rollers');
+  const [showEditor, setShowEditor] = useState(false);
+  const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
+  const [thumbnailTime, setThumbnailTime] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadVideo();
   const { toast } = useToast();
@@ -35,6 +41,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
         return;
       }
       setSelectedFile(file);
+      setShowEditor(false);
+      setThumbnailBlob(null);
+      setTrimStart(0);
+      setTrimEnd(0);
     } else {
       toast({
         title: "Ошибка",
@@ -46,6 +56,16 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleThumbnailSelect = (blob: Blob, time: number) => {
+    setThumbnailBlob(blob);
+    setThumbnailTime(time);
+  };
+
+  const handleVideoTrim = (startTime: number, endTime: number) => {
+    setTrimStart(startTime);
+    setTrimEnd(endTime);
   };
 
   const handleUpload = async () => {
@@ -65,6 +85,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
         description: description.trim() || undefined,
         videoFile: selectedFile,
         category: category,
+        thumbnailBlob: thumbnailBlob || undefined,
+        trimStart: trimStart > 0 ? trimStart : undefined,
+        trimEnd: trimEnd > 0 ? trimEnd : undefined,
       });
 
       // Очищаем форму после успешной загрузки
@@ -72,6 +95,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
       setTitle('');
       setDescription('');
       setCategory('Rollers');
+      setShowEditor(false);
+      setThumbnailBlob(null);
+      setTrimStart(0);
+      setTrimEnd(0);
       
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -95,6 +122,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
 
   const removeFile = () => {
     setSelectedFile(null);
+    setShowEditor(false);
+    setThumbnailBlob(null);
   };
 
   return (
@@ -134,21 +163,60 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
                 </Button>
               </div>
             ) : (
-              <div className="bg-gray-50 rounded-lg p-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Video className="w-5 h-5 text-blue-600 mr-2" />
-                    <div>
-                      <p className="font-semibold text-xs">{selectedFile.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
+              <div className="space-y-3">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Video className="w-5 h-5 text-blue-600 mr-2" />
+                      <div>
+                        <p className="font-semibold text-xs">{selectedFile.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowEditor(!showEditor)}
+                        className="text-blue-600"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={removeFile}>
+                        <X className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={removeFile}>
-                    <X className="w-3 h-3" />
-                  </Button>
                 </div>
+
+                {showEditor && (
+                  <div className="border border-gray-200 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold mb-2">Редактор видео</h4>
+                    <VideoEditor
+                      videoFile={selectedFile}
+                      onThumbnailSelect={handleThumbnailSelect}
+                      onVideoTrim={handleVideoTrim}
+                    />
+                  </div>
+                )}
+
+                {thumbnailBlob && (
+                  <div className="bg-green-50 border border-green-200 rounded p-2">
+                    <p className="text-xs text-green-700">
+                      ✓ Превью выбрано
+                    </p>
+                  </div>
+                )}
+
+                {trimStart > 0 || trimEnd > 0 ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                    <p className="text-xs text-blue-700">
+                      ✓ Обрезка настроена
+                    </p>
+                  </div>
+                ) : null}
               </div>
             )}
 
