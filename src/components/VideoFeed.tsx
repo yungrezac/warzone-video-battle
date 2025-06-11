@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
@@ -7,6 +6,9 @@ import VideoCard from './VideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
 import BannerRotation from './BannerRotation';
 import AdminWinnerControl from './AdminWinnerControl';
+import UploadModal from './UploadModal';
+import { Button } from '@/components/ui/button';
+import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 const VideoFeed: React.FC = () => {
@@ -17,6 +19,7 @@ const VideoFeed: React.FC = () => {
   const { markVideoAsViewed } = useVideoViews();
 
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -82,6 +85,14 @@ const VideoFeed: React.FC = () => {
     }
   };
 
+  const handleUploadClick = () => {
+    if (!user) {
+      toast.error('Войдите в систему для загрузки трюков');
+      return;
+    }
+    setIsUploadModalOpen(true);
+  };
+
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-[300px] pb-16">
@@ -98,6 +109,17 @@ const VideoFeed: React.FC = () => {
       <AdminWinnerControl />
       
       <BannerRotation />
+
+      {/* Кнопка загрузки трюка */}
+      <div className="px-3 mb-4">
+        <Button
+          onClick={handleUploadClick}
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-xl shadow-lg"
+        >
+          <Upload className="w-5 h-5 mr-2" />
+          Загрузить свой трюк
+        </Button>
+      </div>
 
       {isLoading ? (
         <div className="space-y-4 p-2">
@@ -144,6 +166,12 @@ const VideoFeed: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Модальное окно загрузки */}
+      <UploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+      />
     </div>
   );
 };
