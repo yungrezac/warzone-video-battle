@@ -4,10 +4,11 @@ import { Upload, Video, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useUploadVideo } from '@/hooks/useVideos';
+import { useOptimizedVideoUpload } from '@/hooks/useOptimizedVideoUpload';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthWrapper';
 import CategorySelector from './CategorySelector';
+import { shouldCompress } from '@/utils/videoOptimization';
 
 const UploadVideo: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -16,7 +17,7 @@ const UploadVideo: React.FC = () => {
   const [category, setCategory] = useState<'Rollers' | 'BMX' | 'Skateboard'>('Rollers');
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadMutation = useUploadVideo();
+  const uploadMutation = useOptimizedVideoUpload();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -33,7 +34,6 @@ const UploadVideo: React.FC = () => {
       return;
     }
 
-    // Обновленная проверка размера файла (50MB)
     if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "Файл слишком большой",
@@ -47,6 +47,7 @@ const UploadVideo: React.FC = () => {
       name: file.name,
       size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
       type: file.type,
+      willCompress: shouldCompress(file),
       userId: user?.id
     });
 
@@ -85,12 +86,13 @@ const UploadVideo: React.FC = () => {
     }
     
     try {
-      console.log('🎬 Начинаем загрузку видео:', {
+      console.log('🚀 Начинаем оптимизированную загрузку видео:', {
         userId: user.id,
         username: user.username || user.first_name,
         title: title.trim(),
         category: category,
-        fileSize: `${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`
+        fileSize: `${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`,
+        willCompress: shouldCompress(selectedFile)
       });
       
       await uploadMutation.mutateAsync({
@@ -98,7 +100,6 @@ const UploadVideo: React.FC = () => {
         description: description.trim() || undefined,
         videoFile: selectedFile,
         category: category,
-        // Убираем thumbnailBlob - он теперь генерируется автоматически
         onProgress: setUploadProgress,
       });
 
@@ -115,10 +116,10 @@ const UploadVideo: React.FC = () => {
       
       toast({
         title: "Успешно!",
-        description: "Видео загружено и появится в ленте. Превью создано автоматически.",
+        description: "Видео загружено быстро и появится в ленте. Превью создано автоматически.",
       });
     } catch (error) {
-      console.error('❌ Ошибка загрузки для пользователя:', user.id, error);
+      console.error('❌ Ошибка оптимизированной загрузки для пользователя:', user.id, error);
       setUploadProgress(0);
       
       let errorMessage = 'Попробуйте еще раз';
@@ -174,8 +175,11 @@ const UploadVideo: React.FC = () => {
             <p className="text-gray-500 mb-3 text-sm">
               Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: <span className="font-semibold text-red-600">50MB</span>
             </p>
-            <p className="text-green-600 mb-3 text-xs font-medium">
-              ✨ Превью будет создано автоматически из первой секунды видео
+            <p className="text-green-600 mb-2 text-xs font-medium">
+              ✨ Превью создается автоматически из первой секунды видео
+            </p>
+            <p className="text-blue-600 mb-3 text-xs font-medium">
+              🚀 Автоматическое сжатие для быстрой загрузки
             </p>
             <input
               ref={fileInputRef}
@@ -203,6 +207,11 @@ const UploadVideo: React.FC = () => {
                   <p className="text-xs text-gray-500">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
+                  {shouldCompress(selectedFile) && (
+                    <p className="text-xs text-blue-600">
+                      🗜️ Будет сжато для быстрой загрузки
+                    </p>
+                  )}
                   <p className="text-xs text-green-600">
                     ✨ Превью создается автоматически
                   </p>
@@ -261,6 +270,16 @@ const UploadVideo: React.FC = () => {
           </div>
         </div>
 
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <h4 className="font-semibold text-blue-800 mb-1 text-sm">🚀 Оптимизированная загрузка:</h4>
+          <ul className="text-xs text-blue-700 space-y-0.5">
+            <li>• Автоматическое сжатие больших файлов</li>
+            <li>• Загрузка оптимизированными чанками</li>
+            <li>• Автоматическое создание превью</li>
+            <li>• Параллельная обработка файлов</li>
+          </ul>
+        </div>
+
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Правила загрузки:</h4>
           <ul className="text-xs text-yellow-700 space-y-0.5">
@@ -280,10 +299,15 @@ const UploadVideo: React.FC = () => {
           {isUploading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Загрузка... {uploadProgress}%
+              {uploadProgress < 15 ? 'Подготовка...' :
+               uploadProgress < 25 ? 'Сжатие видео...' :
+               uploadProgress < 75 ? 'Загрузка...' :
+               uploadProgress < 85 ? 'Создание превью...' :
+               uploadProgress < 95 ? 'Сохранение...' :
+               'Завершение...'} {uploadProgress}%
             </>
           ) : (
-            'Загрузить трюк'
+            '🚀 Загрузить трюк (быстро)'
           )}
         </Button>
       </div>
