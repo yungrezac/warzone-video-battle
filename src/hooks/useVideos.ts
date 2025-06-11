@@ -34,16 +34,24 @@ export const useVideos = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['videos'],
+    queryKey: ['videos', user?.id],
     queryFn: async () => {
-      console.log('📺 Загружаем видео оптимизированным способом...');
+      console.log('📺 Быстрая загрузка видео...');
       
       try {
-        // Загружаем видео с профилями пользователей за один запрос
+        // Сначала загружаем только основные данные видео
         const { data: videos, error } = await supabase
           .from('videos')
           .select(`
-            *,
+            id,
+            title,
+            video_url,
+            thumbnail_url,
+            user_id,
+            category,
+            views,
+            created_at,
+            is_winner,
             user:profiles!user_id(
               id,
               username,
@@ -54,7 +62,7 @@ export const useVideos = () => {
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(20); // Ограничиваем первую загрузку
 
         if (error) {
           console.error('❌ Ошибка загрузки видео:', error);
@@ -70,72 +78,75 @@ export const useVideos = () => {
 
         const videoIds = videos.map(v => v.id);
 
-        // Batch запрос для всех лайков
-        const { data: allLikes } = await supabase
-          .from('video_likes')
-          .select('video_id, user_id')
-          .in('video_id', videoIds);
+        // Параллельно загружаем всю статистику одним запросом
+        const [likesResponse, commentsResponse, ratingsResponse] = await Promise.all([
+          // Лайки
+          supabase
+            .from('video_likes')
+            .select('video_id, user_id')
+            .in('video_id', videoIds),
+          
+          // Комментарии  
+          supabase
+            .from('video_comments')
+            .select('video_id')
+            .in('video_id', videoIds),
+          
+          // Рейтинги
+          supabase
+            .from('video_ratings')
+            .select('video_id, rating, user_id')
+            .in('video_id', videoIds)
+        ]);
 
-        // Batch запрос для всех комментариев
-        const { data: allComments } = await supabase
-          .from('video_comments')
-          .select('video_id')
-          .in('video_id', videoIds);
+        const allLikes = likesResponse.data || [];
+        const allComments = commentsResponse.data || [];
+        const allRatings = ratingsResponse.data || [];
 
-        // Batch запрос для всех рейтингов
-        const { data: allRatings } = await supabase
-          .from('video_ratings')
-          .select('video_id, rating, user_id')
-          .in('video_id', videoIds);
-
-        // Создаем маппинги для быстрого доступа
-        const likesMap = new Map<string, { count: number; userLiked: boolean }>();
-        const commentsMap = new Map<string, number>();
-        const ratingsMap = new Map<string, { avg: number; userRating: number }>();
-
-        // Обрабатываем лайки
+        // Быстро обрабатываем статистику через Map
+        const statsMap = new Map();
+        
         videoIds.forEach(videoId => {
-          const videoLikes = allLikes?.filter(like => like.video_id === videoId) || [];
-          const userLiked = user ? videoLikes.some(like => like.user_id === user.id) : false;
-          likesMap.set(videoId, { count: videoLikes.length, userLiked });
-        });
-
-        // Обрабатываем комментарии
-        videoIds.forEach(videoId => {
-          const videoComments = allComments?.filter(comment => comment.video_id === videoId) || [];
-          commentsMap.set(videoId, videoComments.length);
-        });
-
-        // Обрабатываем рейтинги
-        videoIds.forEach(videoId => {
-          const videoRatings = allRatings?.filter(rating => rating.video_id === videoId) || [];
+          const videoLikes = allLikes.filter(like => like.video_id === videoId);
+          const videoComments = allComments.filter(comment => comment.video_id === videoId);
+          const videoRatings = allRatings.filter(rating => rating.video_id === videoId);
+          
           const avgRating = videoRatings.length > 0
             ? videoRatings.reduce((sum, r) => sum + r.rating, 0) / videoRatings.length
             : 0;
+          
+          const userLiked = user ? videoLikes.some(like => like.user_id === user.id) : false;
           const userRating = user 
             ? videoRatings.find(r => r.user_id === user.id)?.rating || 0
             : 0;
-          ratingsMap.set(videoId, { avg: Number(avgRating.toFixed(1)), userRating });
+
+          statsMap.set(videoId, {
+            likes_count: videoLikes.length,
+            comments_count: videoComments.length,
+            average_rating: Number(avgRating.toFixed(1)),
+            user_liked: userLiked,
+            user_rating: userRating
+          });
         });
 
-        // Собираем финальные данные с правильными полями
+        // Собираем финальные данные
         const videosWithStats = videos.map(video => {
-          const likes = likesMap.get(video.id) || { count: 0, userLiked: false };
-          const commentsCount = commentsMap.get(video.id) || 0;
-          const ratings = ratingsMap.get(video.id) || { avg: 0, userRating: 0 };
+          const stats = statsMap.get(video.id) || {
+            likes_count: 0,
+            comments_count: 0,
+            average_rating: 0,
+            user_liked: false,
+            user_rating: 0
+          };
 
           return {
             ...video,
-            likes_count: likes.count,
-            comments_count: commentsCount,
-            average_rating: ratings.avg,
-            user_liked: likes.userLiked,
-            user_rating: ratings.userRating,
+            ...stats,
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         });
 
-        console.log(`✅ Обработано ${videosWithStats.length} видео с полной статистикой`);
+        console.log(`✅ Быстро обработано ${videosWithStats.length} видео`);
         return videosWithStats;
 
       } catch (error) {
@@ -143,8 +154,10 @@ export const useVideos = () => {
         throw error;
       }
     },
-    staleTime: 30000,
-    gcTime: 300000,
+    staleTime: 60000, // 1 минута - кэшируем дольше для скорости
+    gcTime: 300000,   // 5 минут в памяти
+    refetchOnWindowFocus: false, // Не перезагружаем при фокусе
+    refetchOnMount: false, // Не перезагружаем при монтировании если данные свежие
   });
 };
 

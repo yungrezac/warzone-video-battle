@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
 import VideoCard from '@/components/VideoCard';
+import VideoCardSkeleton from '@/components/VideoCardSkeleton';
 import WinnerAnnouncement from '@/components/WinnerAnnouncement';
 import AdminWinnerControl from '@/components/AdminWinnerControl';
 import FullScreenUploadModal from '@/components/FullScreenUploadModal';
@@ -29,7 +30,6 @@ const VideoFeed: React.FC = () => {
       userExists: !!user
     });
 
-    // Проверяем загрузку авторизации
     if (authLoading) {
       console.log('⏳ Авторизация еще загружается...');
       toast.error('Подождите, загружается авторизация...');
@@ -131,11 +131,51 @@ const VideoFeed: React.FC = () => {
     setIsUserProfileModalOpen(true);
   };
 
+  // Показываем скелетоны пока загружается авторизация
+  if (authLoading) {
+    return (
+      <div className="pb-16">
+        <div className="p-3">
+          <div className="w-full bg-gray-200 animate-pulse py-3 px-4 rounded-lg h-12"></div>
+        </div>
+        <div className="p-3 space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <VideoCardSkeleton key={index} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Показываем скелетоны пока загружаются видео
   if (isLoading) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-[300px] pb-16">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-        <p className="text-sm text-gray-600">Загружаем видео...</p>
+      <div className="pb-16">
+        {/* Winner Announcement Skeleton */}
+        <div className="p-3">
+          <div className="bg-gray-200 animate-pulse rounded-lg p-4 mb-4">
+            <div className="h-4 bg-gray-300 rounded mb-2"></div>
+            <div className="h-3 bg-gray-300 rounded w-3/4"></div>
+          </div>
+        </div>
+        
+        {/* Upload Button */}
+        <div className="p-3">
+          <Button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Загрузить трюк
+          </Button>
+        </div>
+        
+        {/* Video Skeletons */}
+        <div className="p-3 space-y-4">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <VideoCardSkeleton key={index} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -150,16 +190,6 @@ const VideoFeed: React.FC = () => {
             Попробовать снова
           </Button>
         </div>
-      </div>
-    );
-  }
-
-  // Показываем индикатор загрузки авторизации если нужно
-  if (authLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[300px] pb-16">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-        <p className="text-sm text-gray-600">Загружается авторизация...</p>
       </div>
     );
   }
