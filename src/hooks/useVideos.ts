@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -53,7 +54,8 @@ export const useVideos = () => {
             avatar_url,
             telegram_username
           ),
-          video_likes (user_id)
+          video_likes (user_id),
+          video_ratings (user_id, rating)
         `)
         .order('created_at', { ascending: false });
 
@@ -68,11 +70,13 @@ export const useVideos = () => {
 
       const videosWithLikes = data.map((video) => {
         const user_liked = video.video_likes.some((like) => like.user_id === user?.id);
+        const userRating = video.video_ratings.find((rating) => rating.user_id === user?.id);
 
-        // Преобразуем video_likes в boolean значение
         return {
           ...video,
           user_liked,
+          user_rating: userRating?.rating || 0,
+          comments_count: video.comments_count || 0,
         };
       });
 
@@ -234,12 +238,9 @@ export const useLikeVideo = () => {
         if (error) throw error;
         
         // Обновляем счетчик
-        const { error: updateError } = await supabase
-          .from('videos')
-          .update({ 
-            likes_count: supabase.raw('likes_count - 1')
-          })
-          .eq('id', videoId);
+        const { error: updateError } = await supabase.rpc('decrement_likes_count', {
+          video_id: videoId
+        });
         
         if (updateError) throw updateError;
       } else {
@@ -252,12 +253,9 @@ export const useLikeVideo = () => {
         if (error) throw error;
         
         // Обновляем счетчик
-        const { error: updateError } = await supabase
-          .from('videos')
-          .update({ 
-            likes_count: supabase.raw('likes_count + 1')
-          })
-          .eq('id', videoId);
+        const { error: updateError } = await supabase.rpc('increment_likes_count', {
+          video_id: videoId
+        });
         
         if (updateError) throw updateError;
       }
