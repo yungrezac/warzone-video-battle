@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -75,6 +76,12 @@ export const useVideos = () => {
       // Обрабатываем статистику для каждого видео
       const videosWithStats = await Promise.all(
         videos.map(async (video) => {
+          // Подсчитываем лайки для каждого видео
+          const { count: likesCount } = await supabase
+            .from('video_likes')
+            .select('*', { count: 'exact' })
+            .eq('video_id', video.id);
+
           // Подсчитываем комментарии для каждого видео
           const { count: commentsCount } = await supabase
             .from('video_comments')
@@ -115,7 +122,7 @@ export const useVideos = () => {
           }
 
           console.log(`📊 Статистика видео ${video.id}:`, {
-            likes: video.likes_count,
+            likes: likesCount,
             comments: commentsCount,
             avgRating: averageRating,
             userLiked: !!userLike,
@@ -124,6 +131,7 @@ export const useVideos = () => {
 
           return {
             ...video,
+            likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
             average_rating: Number(averageRating.toFixed(1)),
             user_liked: !!userLike,
