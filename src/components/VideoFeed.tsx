@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
@@ -109,7 +108,7 @@ const VideoFeed: React.FC = () => {
         <div className="space-y-4 p-2">
           {videos?.map((video) => {
             const videoUser = video.profiles;
-            const displayName = videoUser?.username || videoUser?.telegram_username || videoUser?.first_name || 'Роллер';
+            const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
             
             return (
               <div key={video.id} data-video-id={video.id}>
