@@ -55,7 +55,8 @@ export const useVideos = () => {
             telegram_username
           ),
           video_likes (user_id),
-          video_ratings (user_id, rating)
+          video_ratings (user_id, rating),
+          video_comments (id)
         `)
         .order('created_at', { ascending: false });
 
@@ -76,7 +77,7 @@ export const useVideos = () => {
           ...video,
           user_liked,
           user_rating: userRating?.rating || 0,
-          comments_count: video.comments_count || 0,
+          comments_count: video.video_comments?.length || 0,
         };
       });
 
@@ -237,12 +238,21 @@ export const useLikeVideo = () => {
         
         if (error) throw error;
         
-        // Обновляем счетчик
-        const { error: updateError } = await supabase.rpc('decrement_likes_count', {
-          video_id: videoId
-        });
+        // Обновляем счетчик вручную
+        const { data: currentVideo } = await supabase
+          .from('videos')
+          .select('likes_count')
+          .eq('id', videoId)
+          .single();
         
-        if (updateError) throw updateError;
+        if (currentVideo) {
+          const { error: updateError } = await supabase
+            .from('videos')
+            .update({ likes_count: Math.max(0, (currentVideo.likes_count || 0) - 1) })
+            .eq('id', videoId);
+          
+          if (updateError) throw updateError;
+        }
       } else {
         // Ставим лайк
         console.log('➕ Ставим лайк...');
@@ -252,12 +262,21 @@ export const useLikeVideo = () => {
         
         if (error) throw error;
         
-        // Обновляем счетчик
-        const { error: updateError } = await supabase.rpc('increment_likes_count', {
-          video_id: videoId
-        });
+        // Обновляем счетчик вручную
+        const { data: currentVideo } = await supabase
+          .from('videos')
+          .select('likes_count')
+          .eq('id', videoId)
+          .single();
         
-        if (updateError) throw updateError;
+        if (currentVideo) {
+          const { error: updateError } = await supabase
+            .from('videos')
+            .update({ likes_count: (currentVideo.likes_count || 0) + 1 })
+            .eq('id', videoId);
+          
+          if (updateError) throw updateError;
+        }
       }
     },
     onSuccess: () => {
