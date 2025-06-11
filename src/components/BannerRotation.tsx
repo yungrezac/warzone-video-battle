@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, MessageCircle, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -13,67 +14,82 @@ interface ChatBanner {
   sport: string;
 }
 
-// Улучшенные SVG иконки для каждого вида спорта
+// Векторные SVG иконки на основе загруженных изображений
 const RollerIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Роллер - силуэт человека на роликах */}
-    <circle cx="16" cy="6" r="3" fill="white"/>
-    {/* Тело */}
-    <path d="M16 9L16 18M13 12L19 12M16 18L12 26M16 18L20 26" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-    {/* Ролики на ногах */}
-    <ellipse cx="11" cy="26" rx="4" ry="2" fill="white"/>
-    <ellipse cx="21" cy="26" rx="4" ry="2" fill="white"/>
+    {/* Роллер - ботинок с колесами */}
+    <path d="M8 20h16c1.5 0 2.5 1 2.5 2.5v1c0 1.5-1 2.5-2.5 2.5H8c-1.5 0-2.5-1-2.5-2.5v-1C5.5 21 6.5 20 8 20z" fill="white" stroke="white" strokeWidth="2"/>
+    {/* Верхняя часть ботинка */}
+    <path d="M10 20V14c0-2 1.5-4 4-4h4c2 0 3 1.5 3 3v7" fill="white" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+    {/* Застежки */}
+    <circle cx="13" cy="15" r="1" fill="rgba(255,255,255,0.8)"/>
+    <circle cx="16" cy="13" r="1" fill="rgba(255,255,255,0.8)"/>
+    <circle cx="19" cy="15" r="1" fill="rgba(255,255,255,0.8)"/>
     {/* Колеса */}
-    <circle cx="8" cy="26" r="1.5" fill="#333"/>
-    <circle cx="11" cy="26" r="1.5" fill="#333"/>
-    <circle cx="14" cy="26" r="1.5" fill="#333"/>
-    <circle cx="18" cy="26" r="1.5" fill="#333"/>
-    <circle cx="21" cy="26" r="1.5" fill="#333"/>
-    <circle cx="24" cy="26" r="1.5" fill="#333"/>
+    <circle cx="9" cy="26" r="3" fill="white" stroke="rgba(255,255,255,0.6)" strokeWidth="1"/>
+    <circle cx="14" cy="26" r="3" fill="white" stroke="rgba(255,255,255,0.6)" strokeWidth="1"/>
+    <circle cx="18" cy="26" r="3" fill="white" stroke="rgba(255,255,255,0.6)" strokeWidth="1"/>
+    <circle cx="23" cy="26" r="3" fill="white" stroke="rgba(255,255,255,0.6)" strokeWidth="1"/>
+    {/* Центры колес */}
+    <circle cx="9" cy="26" r="1" fill="rgba(255,255,255,0.7)"/>
+    <circle cx="14" cy="26" r="1" fill="rgba(255,255,255,0.7)"/>
+    <circle cx="18" cy="26" r="1" fill="rgba(255,255,255,0.7)"/>
+    <circle cx="23" cy="26" r="1" fill="rgba(255,255,255,0.7)"/>
   </svg>
 );
 
 const BMXIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* BMX велосипед */}
-    {/* Переднее колесо */}
-    <circle cx="8" cy="22" r="6" fill="none" stroke="white" strokeWidth="2"/>
-    <circle cx="8" cy="22" r="1" fill="white"/>
+    {/* BMX байк с райдером */}
     {/* Заднее колесо */}
-    <circle cx="24" cy="22" r="6" fill="none" stroke="white" strokeWidth="2"/>
-    <circle cx="24" cy="22" r="1" fill="white"/>
+    <circle cx="7" cy="22" r="5" fill="none" stroke="white" strokeWidth="2.5"/>
+    <circle cx="7" cy="22" r="1.5" fill="white"/>
+    {/* Переднее колесо */}
+    <circle cx="25" cy="22" r="5" fill="none" stroke="white" strokeWidth="2.5"/>
+    <circle cx="25" cy="22" r="1.5" fill="white"/>
     {/* Рама */}
-    <path d="M8 22L16 10L24 22" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M16 10L16 16L20 20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M7 22L16 12L25 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M16 12L16 18" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+    <path d="M16 18L22 20" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
     {/* Руль */}
-    <path d="M14 8L18 8" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M16 8L16 10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M14 10L18 10" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+    <path d="M16 10L16 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
     {/* Седло */}
-    <path d="M18 14L22 14" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <ellipse cx="19" cy="15" rx="2.5" ry="1" fill="white"/>
     {/* Педали */}
-    <circle cx="16" cy="18" r="2" fill="none" stroke="white" strokeWidth="1.5"/>
-    <path d="M14 16L18 20M18 16L14 20" stroke="white" strokeWidth="1"/>
+    <circle cx="16" cy="18" r="1.5" fill="none" stroke="white" strokeWidth="2"/>
+    {/* Райдер (голова и шлем) */}
+    <circle cx="16" cy="6" r="2.5" fill="white"/>
+    <path d="M14 4h4c1 0 1.5 0.5 1.5 1.5v1c0 1-0.5 1.5-1.5 1.5h-4c-1 0-1.5-0.5-1.5-1.5v-1C12.5 4.5 13 4 14 4z" fill="rgba(255,255,255,0.8)"/>
+    {/* Тело */}
+    <path d="M16 8.5L16 12M14 9L18 9" stroke="white" strokeWidth="2" strokeLinecap="round"/>
   </svg>
 );
 
 const SkateboardIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Скейтборд */}
+    {/* Скейтборд с райдером */}
     {/* Доска */}
-    <ellipse cx="16" cy="16" rx="12" ry="3" fill="white"/>
+    <ellipse cx="16" cy="18" rx="10" ry="2.5" fill="white" stroke="rgba(255,255,255,0.8)" strokeWidth="1"/>
+    {/* Декоративные полосы на доске */}
+    <path d="M8 18L24 18M10 16.5L22 16.5M10 19.5L22 19.5" stroke="rgba(255,255,255,0.6)" strokeWidth="0.8"/>
     {/* Подвески */}
-    <rect x="7" y="14" width="4" height="4" rx="1" fill="#333"/>
-    <rect x="21" y="14" width="4" height="4" rx="1" fill="#333"/>
+    <rect x="9" y="16.5" width="3" height="3" rx="0.5" fill="rgba(255,255,255,0.9)"/>
+    <rect x="20" y="16.5" width="3" height="3" rx="0.5" fill="rgba(255,255,255,0.9)"/>
     {/* Колеса */}
-    <circle cx="6" cy="20" r="3" fill="white" stroke="#333" strokeWidth="1"/>
-    <circle cx="12" cy="20" r="3" fill="white" stroke="#333" strokeWidth="1"/>
-    <circle cx="20" cy="20" r="3" fill="white" stroke="#333" strokeWidth="1"/>
-    <circle cx="26" cy="20" r="3" fill="white" stroke="#333" strokeWidth="1"/>
-    {/* Декоративные линии на доске */}
-    <path d="M8 16L24 16M10 14L22 14M10 18L22 18" stroke="#333" strokeWidth="0.5" opacity="0.5"/>
-    {/* Силуэт райдера */}
+    <circle cx="7" cy="22" r="2.5" fill="white" stroke="rgba(255,255,255,0.7)" strokeWidth="1"/>
+    <circle cx="13" cy="22" r="2.5" fill="white" stroke="rgba(255,255,255,0.7)" strokeWidth="1"/>
+    <circle cx="19" cy="22" r="2.5" fill="white" stroke="rgba(255,255,255,0.7)" strokeWidth="1"/>
+    <circle cx="25" cy="22" r="2.5" fill="white" stroke="rgba(255,255,255,0.7)" strokeWidth="1"/>
+    {/* Райдер */}
     <circle cx="16" cy="8" r="2" fill="white"/>
-    <path d="M16 10L16 14M14 11L18 11" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+    {/* Тело в движении */}
+    <path d="M16 10L15 14L17 14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M15 14L13 16M17 14L19 16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    {/* Руки */}
+    <path d="M15 11L12 13M17 11L20 13" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+    {/* Линии движения */}
+    <path d="M4 12L6 12M5 14L7 14M26 10L28 10M27 12L29 12" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.7"/>
   </svg>
 );
 
