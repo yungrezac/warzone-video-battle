@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -31,131 +32,136 @@ export const useVideos = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['videos', user?.id],
+    queryKey: ['videos'],
     queryFn: async () => {
-      console.log('Загружаем видео для пользователя:', user?.id);
+      console.log('📺 Загружаем видео оптимизированным способом...');
       
-      // Получаем видео
-      const { data: videos, error } = await supabase
-        .from('videos')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        // Загружаем видео с профилями пользователей за один запрос
+        const { data: videos, error } = await supabase
+          .from('videos')
+          .select(`
+            *,
+            user:profiles!user_id(
+              id,
+              username,
+              telegram_username,
+              first_name,
+              last_name,
+              avatar_url
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(50); // Ограничиваем количество видео для ускорения
 
-      if (error) {
-        console.error('Ошибка загрузки видео:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('❌ Ошибка загрузки видео:', error);
+          throw error;
+        }
 
-      // Получаем дополнительную статистику для каждого видео
-      const videosWithStats = await Promise.all(
-        videos.map(async (video) => {
-          console.log('Статистика видео', video.id, ':');
-          
-          // Получаем информацию о пользователе
-          const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('username, avatar_url, telegram_username')
-            .eq('id', video.user_id)
-            .single();
+        if (!videos || videos.length === 0) {
+          console.log('📭 Видео не найдены');
+          return [];
+        }
 
-          // Количество лайков
-          const { count: likesCount } = await supabase
-            .from('video_likes')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id);
+        console.log(`📊 Загружено ${videos.length} видео, получаем статистику...`);
 
-          // Количество комментариев
-          const { count: commentsCount } = await supabase
-            .from('video_comments')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id);
+        // Получаем все video_ids для batch запросов
+        const videoIds = videos.map(v => v.id);
 
-          // Средний рейтинг
-          const { data: ratings } = await supabase
-            .from('video_ratings')
-            .select('rating')
-            .eq('video_id', video.id);
+        // Batch запрос для всех лайков
+        const { data: allLikes } = await supabase
+          .from('video_likes')
+          .select('video_id, user_id')
+          .in('video_id', videoIds);
 
-          const averageRating = ratings && ratings.length > 0
-            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+        // Batch запрос для всех комментариев
+        const { data: allComments } = await supabase
+          .from('video_comments')
+          .select('video_id')
+          .in('video_id', videoIds);
+
+        // Batch запрос для всех рейтингов
+        const { data: allRatings } = await supabase
+          .from('video_ratings')
+          .select('video_id, rating, user_id')
+          .in('video_id', videoIds);
+
+        // Создаем маппинги для быстрого доступа
+        const likesMap = new Map<string, { count: number; userLiked: boolean }>();
+        const commentsMap = new Map<string, number>();
+        const ratingsMap = new Map<string, { avg: number; userRating: number }>();
+
+        // Обрабатываем лайки
+        videoIds.forEach(videoId => {
+          const videoLikes = allLikes?.filter(like => like.video_id === videoId) || [];
+          const userLiked = user ? videoLikes.some(like => like.user_id === user.id) : false;
+          likesMap.set(videoId, { count: videoLikes.length, userLiked });
+        });
+
+        // Обрабатываем комментарии
+        videoIds.forEach(videoId => {
+          const videoComments = allComments?.filter(comment => comment.video_id === videoId) || [];
+          commentsMap.set(videoId, videoComments.length);
+        });
+
+        // Обрабатываем рейтинги
+        videoIds.forEach(videoId => {
+          const videoRatings = allRatings?.filter(rating => rating.video_id === videoId) || [];
+          const avgRating = videoRatings.length > 0
+            ? videoRatings.reduce((sum, r) => sum + r.rating, 0) / videoRatings.length
             : 0;
+          const userRating = user 
+            ? videoRatings.find(r => r.user_id === user.id)?.rating || 0
+            : 0;
+          ratingsMap.set(videoId, { avg: Number(avgRating.toFixed(1)), userRating });
+        });
 
-          // Лайкнул ли текущий пользователь и его рейтинг
-          let userLiked = false;
-          let userRating = 0;
-
-          if (user?.id) {
-            const { data: userLike } = await supabase
-              .from('video_likes')
-              .select('*')
-              .eq('video_id', video.id)
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-            userLiked = !!userLike;
-
-            const { data: userRatingData } = await supabase
-              .from('video_ratings')
-              .select('rating')
-              .eq('video_id', video.id)
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-            userRating = userRatingData?.rating || 0;
-          }
-
-          const videoStats = {
-            likes: likesCount || 0,
-            comments: commentsCount || 0,
-            avgRating: Number(averageRating.toFixed(1)),
-            userLiked,
-            userRating,
-          };
-          
-          console.log('Статистика видео', video.id, ':', videoStats);
+        // Собираем финальные данные
+        const videosWithStats = videos.map(video => {
+          const likes = likesMap.get(video.id) || { count: 0, userLiked: false };
+          const commentsCount = commentsMap.get(video.id) || 0;
+          const ratings = ratingsMap.get(video.id) || { avg: 0, userRating: 0 };
 
           return {
             ...video,
-            user: userProfile,
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            average_rating: Number(averageRating.toFixed(1)),
-            user_liked: userLiked,
-            user_rating: userRating,
+            likes_count: likes.count,
+            comments_count: commentsCount,
+            average_rating: ratings.avg,
+            user_liked: likes.userLiked,
+            user_rating: ratings.userRating,
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
-        })
-      );
+        });
 
-      console.log('Видео с обновленной статистикой:', videosWithStats);
-      return videosWithStats;
+        console.log(`✅ Обработано ${videosWithStats.length} видео с полной статистикой`);
+        return videosWithStats;
+
+      } catch (error) {
+        console.error('❌ Критическая ошибка загрузки видео:', error);
+        throw error;
+      }
     },
+    staleTime: 30000, // Кэшируем на 30 секунд
+    gcTime: 300000, // Храним в памяти 5 минут
   });
 };
 
 export const useLikeVideo = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { triggerSocialLike, triggerLikeReceived } = useAchievementTriggers();
+  const { triggerSocialLike } = useAchievementTriggers();
   const { sendLikeNotification } = useTelegramNotifications();
 
   return useMutation({
     mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
       if (!user?.id) {
-        throw new Error('User not authenticated');
+        throw new Error('Необходима авторизация');
       }
 
-      console.log('💖 Mutation - Like video:', videoId, 'isLiked:', isLiked);
-
-      // Получаем информацию о видео и его владельце
-      const { data: video } = await supabase
-        .from('videos')
-        .select('user_id, title')
-        .eq('id', videoId)
-        .single();
+      console.log('💖 Обрабатываем лайк:', videoId, 'убираем:', isLiked);
 
       if (isLiked) {
-        // Remove like
         const { error } = await supabase
           .from('video_likes')
           .delete()
@@ -164,51 +170,12 @@ export const useLikeVideo = () => {
 
         if (error) throw error;
 
-        // Убираем 2 балла за снятие лайка
-        console.log('💰 Убираем 2 балла за снятие лайка...');
-        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+        // Убираем баллы за снятие лайка
+        await supabase.rpc('update_user_points', {
           p_user_id: user.id,
           p_points_change: -2
         });
-
-        if (pointsError) {
-          console.error('❌ Ошибка при снятии баллов за убранный лайк:', pointsError);
-        } else {
-          console.log('✅ Баллы за убранный лайк сняты успешно:', pointsData);
-        }
-
-        // Обновляем достижения владельца видео за полученные лайки
-        if (video?.user_id) {
-          console.log('🏆 Обновляем достижения владельца видео за убранный лайк...');
-          
-          // Получаем новое количество лайков для владельца видео
-          const { data: ownerVideos } = await supabase
-            .from('videos')
-            .select('id')
-            .eq('user_id', video.user_id);
-
-          if (ownerVideos) {
-            const videoIds = ownerVideos.map(v => v.id);
-            const { count: totalLikes } = await supabase
-              .from('video_likes')
-              .select('*', { count: 'exact' })
-              .in('video_id', videoIds);
-
-            // Обновляем достижения за полученные лайки
-            const { error: achievementError } = await supabase.rpc('update_achievement_progress', {
-              p_user_id: video.user_id,
-              p_category: 'likes',
-              p_new_value: totalLikes || 0,
-              p_increment: 1
-            });
-
-            if (achievementError) {
-              console.error('❌ Ошибка обновления достижений владельца за лайки:', achievementError);
-            }
-          }
-        }
       } else {
-        // Add like
         const { error } = await supabase
           .from('video_likes')
           .insert({
@@ -218,57 +185,15 @@ export const useLikeVideo = () => {
 
         if (error) throw error;
         
-        // Начисляем 2 балла за лайк
-        console.log('💰 Начисляем 2 балла за лайк...');
-        const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+        // Начисляем баллы за лайк
+        await supabase.rpc('update_user_points', {
           p_user_id: user.id,
           p_points_change: 2
         });
-
-        if (pointsError) {
-          console.error('❌ Ошибка при начислении баллов за лайк:', pointsError);
-        } else {
-          console.log('✅ Баллы за лайк начислены успешно:', pointsData);
-        }
         
-        // Trigger achievement for liking other videos
-        console.log('🏆 Обновляем достижения за лайк...');
         triggerSocialLike();
 
-        // Обновляем достижения владельца видео за полученные лайки
-        if (video?.user_id && video.user_id !== user.id) {
-          console.log('🏆 Обновляем достижения владельца видео за полученный лайк...');
-          
-          // Получаем новое количество лайков для владельца видео
-          const { data: ownerVideos } = await supabase
-            .from('videos')
-            .select('id')
-            .eq('user_id', video.user_id);
-
-          if (ownerVideos) {
-            const videoIds = ownerVideos.map(v => v.id);
-            const { count: totalLikes } = await supabase
-              .from('video_likes')
-              .select('*', { count: 'exact' })
-              .in('video_id', videoIds);
-
-            // Обновляем достижения за полученные лайки
-            const { error: achievementError } = await supabase.rpc('update_achievement_progress', {
-              p_user_id: video.user_id,
-              p_category: 'likes',
-              p_new_value: totalLikes || 0,
-              p_increment: 1
-            });
-
-            if (achievementError) {
-              console.error('❌ Ошибка обновления достижений владельца за лайки:', achievementError);
-            } else {
-              console.log('✅ Достижения владельца за лайки обновлены');
-            }
-          }
-        }
-
-        // Отправляем уведомление владельцу видео
+        // Отправляем уведомление
         try {
           const { data: videoWithUser } = await supabase
             .from('videos')
@@ -285,16 +210,15 @@ export const useLikeVideo = () => {
             await sendLikeNotification(videoWithUser.user.telegram_id, likerName, videoWithUser.title);
           }
         } catch (notificationError) {
-          console.error('Ошибка отправки уведомления о лайке:', notificationError);
+          console.error('Ошибка отправки уведомления:', notificationError);
         }
       }
     },
     onSuccess: () => {
-      console.log('🔄 Лайк обработан успешно, обновляем кэш');
+      console.log('🔄 Лайк обработан, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
   });
 };
@@ -307,17 +231,10 @@ export const useRateVideo = () => {
   return useMutation({
     mutationFn: async ({ videoId, rating }: { videoId: string; rating: number }) => {
       if (!user?.id) {
-        throw new Error('User not authenticated');
+        throw new Error('Необходима авторизация');
       }
 
-      console.log('⭐ Mutation - Rate video:', videoId, 'rating:', rating);
-
-      // Получаем информацию о видео и его владельце
-      const { data: video } = await supabase
-        .from('videos')
-        .select('user_id')
-        .eq('id', videoId)
-        .single();
+      console.log('⭐ Ставим оценку:', videoId, 'рейтинг:', rating);
 
       const { error } = await supabase
         .from('video_ratings')
@@ -329,83 +246,19 @@ export const useRateVideo = () => {
 
       if (error) throw error;
       
-      // Начисляем 1 балл за оценку
-      console.log('💰 Начисляем 1 балл за оценку...');
-      const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
+      // Начисляем балл за оценку
+      await supabase.rpc('update_user_points', {
         p_user_id: user.id,
         p_points_change: 1
       });
-
-      if (pointsError) {
-        console.error('❌ Ошибка при начислении баллов за оценку:', pointsError);
-      } else {
-        console.log('✅ Баллы за оценку начислены успешно:', pointsData);
-      }
       
-      // Trigger achievement for rating other videos
-      console.log('🏆 Обновляем достижения за оценку...');
       triggerSocialRating();
-
-      // Обновляем достижения владельца видео за полученные рейтинги
-      if (video?.user_id && video.user_id !== user.id) {
-        console.log('🏆 Обновляем достижения владельца видео за полученный рейтинг...');
-        
-        // Получаем новую статистику рейтингов для владельца видео
-        const { data: ownerVideos } = await supabase
-          .from('videos')
-          .select('id')
-          .eq('user_id', video.user_id);
-
-        if (ownerVideos) {
-          const videoIds = ownerVideos.map(v => v.id);
-          
-          // Получаем все рейтинги для видео владельца
-          const { data: allRatings } = await supabase
-            .from('video_ratings')
-            .select('rating')
-            .in('video_id', videoIds);
-
-          if (allRatings && allRatings.length > 0) {
-            const totalRatings = allRatings.length;
-            const averageRating = allRatings.reduce((sum, r) => sum + r.rating, 0) / totalRatings;
-
-            // Обновляем достижения за количество рейтингов
-            const { error: ratingsError } = await supabase.rpc('update_achievement_progress', {
-              p_user_id: video.user_id,
-              p_category: 'ratings',
-              p_new_value: totalRatings,
-              p_increment: 1
-            });
-
-            if (ratingsError) {
-              console.error('❌ Ошибка обновления достижений владельца за рейтинги:', ratingsError);
-            } else {
-              console.log('✅ Достижения владельца за рейтинги обновлены');
-            }
-
-            // Обновляем достижения за средний рейтинг
-            if (averageRating >= 4.5) {
-              const { error: avgRatingError } = await supabase.rpc('update_achievement_progress', {
-                p_user_id: video.user_id,
-                p_category: 'rating_avg',
-                p_new_value: Math.round(averageRating * 10),
-                p_increment: 1
-              });
-
-              if (avgRatingError) {
-                console.error('❌ Ошибка обновления достижений владельца за средний рейтинг:', avgRatingError);
-              }
-            }
-          }
-        }
-      }
     },
     onSuccess: () => {
-      console.log('🔄 Оценка выставлена успешно, обновляем кэш');
+      console.log('🔄 Оценка поставлена, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
     },
   });
 };
@@ -421,8 +274,6 @@ export const useUploadVideo = () => {
       videoFile,
       category,
       thumbnailBlob,
-      trimStart,
-      trimEnd,
       onProgress,
     }: {
       title: string;
@@ -430,74 +281,50 @@ export const useUploadVideo = () => {
       videoFile: File;
       category: 'Rollers' | 'BMX' | 'Skateboard';
       thumbnailBlob?: Blob;
-      trimStart?: number;
-      trimEnd?: number;
       onProgress?: (progress: number) => void;
     }) => {
       if (!user?.id) {
-        throw new Error('User not authenticated');
+        throw new Error('Необходима авторизация');
       }
 
-      // Дополнительная проверка размера файла
+      // Проверка размера файла (25MB)
       if (videoFile.size > 25 * 1024 * 1024) {
-        throw new Error('Размер файла превышает 25MB. Пожалуйста, сожмите видео.');
+        throw new Error('Размер файла превышает 25MB. Сожмите видео.');
       }
 
       console.log('🎬 Начинаем загрузку видео...');
       onProgress?.(10);
 
       try {
-        // Проверяем существование bucket'а videos
-        const { data: buckets } = await supabase.storage.listBuckets();
-        const videoBucket = buckets?.find(bucket => bucket.name === 'videos');
-        
-        if (!videoBucket) {
-          console.log('📦 Создаем bucket videos...');
-          const { error: bucketError } = await supabase.storage.createBucket('videos', {
-            public: true,
-            fileSizeLimit: 26214400, // 25MB в байтах
-            allowedMimeTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm']
-          });
-          
-          if (bucketError && !bucketError.message.includes('already exists')) {
-            console.error('❌ Ошибка создания bucket:', bucketError);
-            throw new Error(`Ошибка настройки хранилища: ${bucketError.message}`);
-          }
-        }
-
-        onProgress?.(20);
-
-        // Генерируем уникальные имена файлов
+        // Генерируем уникальное имя файла
         const timestamp = Date.now();
-        const videoFileName = `${user.id}/${timestamp}_${videoFile.name}`;
+        const fileExtension = videoFile.name.split('.').pop() || 'mp4';
+        const videoFileName = `${user.id}/${timestamp}.${fileExtension}`;
         
         console.log('📤 Загружаем видеофайл:', videoFileName);
+        onProgress?.(20);
 
-        // Загружаем видео с дополнительными опциями
+        // Загружаем видео
         const { error: videoUploadError } = await supabase.storage
           .from('videos')
           .upload(videoFileName, videoFile, {
             cacheControl: '3600',
             upsert: false,
-            duplex: 'half'
           });
 
         if (videoUploadError) {
           console.error('❌ Ошибка загрузки видео:', videoUploadError);
-          
-          // Специальная обработка ошибки размера
           if (videoUploadError.message.includes('exceeded') || 
               videoUploadError.message.includes('size') ||
               videoUploadError.message.includes('large')) {
-            throw new Error('Файл слишком большой. Максимальный размер: 25MB. Сожмите видео в видеоредакторе.');
+            throw new Error('Файл слишком большой. Максимум: 25MB');
           }
-          
-          throw new Error(`Ошибка загрузки видео: ${videoUploadError.message}`);
+          throw new Error(`Ошибка загрузки: ${videoUploadError.message}`);
         }
 
         onProgress?.(60);
 
-        // Получаем публичный URL видео
+        // Получаем URL видео
         const { data: videoUrlData } = supabase.storage
           .from('videos')
           .getPublicUrl(videoFileName);
@@ -506,38 +333,28 @@ export const useUploadVideo = () => {
           throw new Error('Не удалось получить URL видео');
         }
 
-        console.log('✅ Видео загружено, URL:', videoUrlData.publicUrl);
-
         // Загружаем превью если есть
         let thumbnailUrl: string | undefined;
         if (thumbnailBlob) {
           onProgress?.(70);
-          const thumbnailFileName = `${user.id}/${timestamp}_thumbnail.jpg`;
+          const thumbnailFileName = `${user.id}/${timestamp}_thumb.jpg`;
           
-          console.log('📤 Загружаем превью:', thumbnailFileName);
-          
-          const { error: thumbnailUploadError } = await supabase.storage
+          const { error: thumbnailError } = await supabase.storage
             .from('videos')
-            .upload(thumbnailFileName, thumbnailBlob, {
-              cacheControl: '3600',
-              upsert: false
-            });
+            .upload(thumbnailFileName, thumbnailBlob);
 
-          if (!thumbnailUploadError) {
-            const { data: thumbnailUrlData } = supabase.storage
+          if (!thumbnailError) {
+            const { data: thumbUrlData } = supabase.storage
               .from('videos')
               .getPublicUrl(thumbnailFileName);
-            thumbnailUrl = thumbnailUrlData?.publicUrl;
-            console.log('✅ Превью загружено:', thumbnailUrl);
-          } else {
-            console.warn('⚠️ Ошибка загрузки превью:', thumbnailUploadError);
+            thumbnailUrl = thumbUrlData?.publicUrl;
           }
         }
 
         onProgress?.(80);
 
-        // Создаем запись в БД
-        console.log('💾 Сохраняем запись в БД...');
+        // Сохраняем в БД
+        console.log('💾 Сохраняем в базу данных...');
         const { data: videoData, error: dbError } = await supabase
           .from('videos')
           .insert({
@@ -559,15 +376,14 @@ export const useUploadVideo = () => {
           // Удаляем загруженные файлы при ошибке
           await supabase.storage.from('videos').remove([videoFileName]);
           if (thumbnailUrl) {
-            await supabase.storage.from('videos').remove([`${user.id}/${timestamp}_thumbnail.jpg`]);
+            await supabase.storage.from('videos').remove([`${user.id}/${timestamp}_thumb.jpg`]);
           }
           throw new Error(`Ошибка сохранения: ${dbError.message}`);
         }
 
         onProgress?.(90);
 
-        // Обновляем достижения за загрузку видео
-        console.log('🏆 Обновляем достижения за загрузку видео...');
+        // Обновляем достижения
         try {
           await supabase.rpc('update_achievement_progress', {
             p_user_id: user.id,
@@ -575,40 +391,24 @@ export const useUploadVideo = () => {
             p_new_value: null,
             p_increment: 1,
           });
-          console.log('✅ Достижения обновлены');
         } catch (achievementError) {
           console.error('⚠️ Ошибка обновления достижений:', achievementError);
-          // Не блокируем загрузку видео из-за ошибки достижений
         }
 
         onProgress?.(100);
-
         console.log('🎉 Видео успешно загружено!');
         return videoData;
 
       } catch (error) {
-        console.error('❌ Общая ошибка загрузки:', error);
-        
-        // Улучшенная обработка ошибок
-        if (error instanceof Error) {
-          if (error.message.includes('exceeded') || error.message.includes('size')) {
-            throw new Error('Размер файла слишком большой. Максимум: 25MB');
-          }
-          throw error;
-        }
-        
-        throw new Error('Неизвестная ошибка при загрузке видео');
+        console.error('❌ Ошибка загрузки:', error);
+        throw error;
       }
     },
     onSuccess: () => {
-      console.log('🔄 Обновляем кэш видео...');
+      console.log('🔄 Обновляем кэш после загрузки');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-    },
-    onError: (error) => {
-      console.error('❌ Ошибка в мутации:', error);
     },
   });
 };

@@ -5,13 +5,13 @@ import { useAuth } from '@/components/AuthWrapper';
 import VideoCard from '@/components/VideoCard';
 import WinnerAnnouncement from '@/components/WinnerAnnouncement';
 import AdminWinnerControl from '@/components/AdminWinnerControl';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const VideoFeed: React.FC = () => {
-  const { data: videos, isLoading, error } = useVideos();
+  const { data: videos, isLoading, error, refetch } = useVideos();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
@@ -52,19 +52,24 @@ const VideoFeed: React.FC = () => {
   };
 
   const handleViewWinner = (videoId: string) => {
-    // Скроллим к видео и выделяем его
     setSelectedVideoId(videoId);
     const videoElement = document.getElementById(`video-${videoId}`);
     if (videoElement) {
       videoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => setSelectedVideoId(null), 3000); // Убираем выделение через 3 секунды
+      setTimeout(() => setSelectedVideoId(null), 3000);
     }
+  };
+
+  const handleRefresh = () => {
+    refetch();
+    toast.success('Обновляем ленту...');
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[300px] pb-16">
-        <Loader2 className="w-6 h-6 animate-spin" />
+      <div className="flex flex-col justify-center items-center min-h-[300px] pb-16">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+        <p className="text-sm text-gray-600">Загружаем видео...</p>
       </div>
     );
   }
@@ -72,8 +77,12 @@ const VideoFeed: React.FC = () => {
   if (error) {
     return (
       <div className="p-3 pb-16">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-          Ошибка загрузки видео
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center">
+          <p className="font-semibold mb-2">Ошибка загрузки видео</p>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Попробовать снова
+          </Button>
         </div>
       </div>
     );
@@ -128,6 +137,8 @@ const VideoFeed: React.FC = () => {
                   }),
                   userLiked: video.user_liked || false,
                   userRating: video.user_rating || 0,
+                  userId: video.user_id,
+                  category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
                 }}
                 onLike={handleLike}
                 onRate={handleRate}
@@ -135,8 +146,16 @@ const VideoFeed: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            <p>Пока нет загруженных видео</p>
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Plus className="w-16 h-16 mx-auto mb-4" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Пока нет видео</h3>
+            <p className="text-gray-500 mb-4">Станьте первым, кто поделится своим трюком!</p>
+            <Button onClick={() => navigate('/upload')} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Загрузить первое видео
+            </Button>
           </div>
         )}
       </div>
