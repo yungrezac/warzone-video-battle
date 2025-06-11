@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { UploadIcon, Video, X, Edit, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,18 @@ const Upload: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Функция для генерации плейсхолдера на основе категории
+  const generatePlaceholder = (category: 'Rollers' | 'BMX' | 'Skateboard') => {
+    const placeholders = {
+      'Rollers': ['360 Spin', 'Backflip', 'Frontflip', 'Grind', 'Jump', 'Speed Slalom', 'Freestyle'],
+      'BMX': ['Barspin', 'Tailwhip', 'Backflip', '360', 'Manual', 'Bunny Hop', 'Flair'],
+      'Skateboard': ['Kickflip', 'Heelflip', 'Ollie', '360 Flip', 'Grind', 'Manual', 'Shuvit']
+    };
+    
+    const categoryPlaceholders = placeholders[category];
+    return categoryPlaceholders[Math.floor(Math.random() * categoryPlaceholders.length)];
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
@@ -40,7 +53,14 @@ const Upload: React.FC = () => {
         return;
       }
       setSelectedFile(file);
-      setShowEditor(false);
+      
+      // Автоматически открываем редактор
+      setShowEditor(true);
+      
+      // Добавляем плейсхолдер для названия
+      const placeholder = generatePlaceholder(category);
+      setTitle(placeholder);
+      
       setThumbnailBlob(null);
       setTrimStart(0);
       setTrimEnd(0);
@@ -66,6 +86,19 @@ const Upload: React.FC = () => {
   const handleVideoTrim = (startTime: number, endTime: number) => {
     setTrimStart(startTime);
     setTrimEnd(endTime);
+  };
+
+  // Обновляем плейсхолдер при смене категории (только если поле пустое или содержит старый плейсхолдер)
+  const handleCategoryChange = (newCategory: 'Rollers' | 'BMX' | 'Skateboard') => {
+    const oldPlaceholder = generatePlaceholder(category);
+    const newPlaceholder = generatePlaceholder(newCategory);
+    
+    // Если поле пустое или содержит старый плейсхолдер, обновляем его
+    if (!title.trim() || title === oldPlaceholder) {
+      setTitle(newPlaceholder);
+    }
+    
+    setCategory(newCategory);
   };
 
   const handleUpload = async () => {
@@ -128,6 +161,7 @@ const Upload: React.FC = () => {
     setShowEditor(false);
     setThumbnailBlob(null);
     setUploadProgress(0);
+    setTitle('');
   };
 
   return (
@@ -243,7 +277,7 @@ const Upload: React.FC = () => {
 
           <CategorySelector 
             selectedCategory={category}
-            onCategoryChange={setCategory}
+            onCategoryChange={handleCategoryChange}
             disabled={isUploading}
           />
 
@@ -258,6 +292,9 @@ const Upload: React.FC = () => {
               className="w-full"
               disabled={isUploading}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Название автоматически заполнено, но вы можете его изменить
+            </p>
           </div>
 
           <div>
