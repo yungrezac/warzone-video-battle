@@ -428,7 +428,8 @@ export const useUploadVideo = () => {
       category,
       thumbnailBlob,
       trimStart,
-      trimEnd
+      trimEnd,
+      onProgress
     }: { 
       title: string; 
       description?: string; 
@@ -437,6 +438,7 @@ export const useUploadVideo = () => {
       thumbnailBlob?: Blob;
       trimStart?: number;
       trimEnd?: number;
+      onProgress?: (progress: number) => void;
     }) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
@@ -444,131 +446,192 @@ export const useUploadVideo = () => {
 
       console.log('🎬 Начинаем загрузку видео для пользователя:', user.id);
 
-      // Generate a unique filename
-      const fileExt = videoFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      // Проверяем размер файла (максимум 100MB)
+      const maxSize = 100 * 1024 * 1024; // 100MB
+      if (videoFile.size > maxSize) {
+        throw new Error('Размер файла не должен превышать 100MB');
+      }
+
+      // Generate a unique filename with timestamp
+      const fileExt = videoFile.name.split('.').pop()?.toLowerCase();
+      const allowedFormats = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
+      
+      if (!fileExt || !allowedFormats.includes(fileExt)) {
+        throw new Error('Поддерживаются только форматы: MP4, MOV, AVI, MKV, WEBM');
+      }
+
+      const timestamp = Date.now();
+      const fileName = `video_${timestamp}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
       console.log('📁 Загружаем файл в хранилище...', filePath);
 
-      // Upload video file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('videos')
-        .upload(filePath, videoFile);
-
-      if (uploadError) {
-        console.error('❌ Ошибка загрузки в хранилище:', uploadError);
-        throw uploadError;
-      }
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(filePath);
-
-      console.log('✅ Файл загружен, создаем запись в БД...', publicUrl);
-
-      // Upload thumbnail if provided
-      let thumbnailUrl = null;
-      if (thumbnailBlob) {
-        const thumbnailFileName = `thumbnail_${Date.now()}.jpg`;
-        const thumbnailPath = `${user.id}/thumbnails/${thumbnailFileName}`;
+      try {
+        // Создаем хранилище если его нет
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const videoBucket = buckets?.find(bucket => bucket.name === 'videos');
         
-        const { error: thumbnailError } = await supabase.storage
+        if (!videoBucket) {
+          console.log('📦 Создаем хранилище videos...');
+          const { error: bucketError } = await supabase.storage.createBucket('videos', {
+            public: true,
+            fileSizeLimit: maxSize,
+            allowedMimeTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm']
+          });
+          
+          if (bucketError && !bucketError.message.includes('already exists')) {
+            console.error('❌ Ошибка создания хранилища:', bucketError);
+            throw new Error('Не удалось создать хранилище для видео');
+          }
+        }
+
+        // Upload video file with progress tracking
+        const { error: uploadError } = await supabase.storage
           .from('videos')
-          .upload(thumbnailPath, thumbnailBlob);
+          .upload(filePath, videoFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-        if (!thumbnailError) {
-          const { data: { publicUrl: thumbnailPublicUrl } } = supabase.storage
-            .from('videos')
-            .getPublicUrl(thumbnailPath);
-          thumbnailUrl = thumbnailPublicUrl;
+        if (uploadError) {
+          console.error('❌ Ошибка загрузки в хранилище:', uploadError);
+          if (uploadError.message.includes('already exists')) {
+            throw new Error('Файл с таким именем уже существует. Попробуйте еще раз.');
+          }
+          throw new Error(`Ошибка загрузки: ${uploadError.message}`);
         }
-      }
 
-      // Create video record in database
-      const { data: videoData, error: dbError } = await supabase
-        .from('videos')
-        .insert({
-          title,
-          description,
-          video_url: publicUrl,
-          thumbnail_url: thumbnailUrl,
-          user_id: user.id,
-          category,
-        })
-        .select()
-        .single();
+        if (onProgress) onProgress(50); // 50% after video upload
 
-      if (dbError) {
-        console.error('❌ Ошибка создания записи в БД:', dbError);
-        throw dbError;
-      }
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('videos')
+          .getPublicUrl(filePath);
 
-      console.log('✅ Видео создано успешно:', videoData);
-      
-      // Начисляем баллы за загрузку видео
-      console.log('💰 Начисляем 10 баллов за загрузку видео...');
-      const { data: pointsData, error: pointsError } = await supabase.rpc('update_user_points', {
-        p_user_id: user.id,
-        p_points_change: 10
-      });
+        console.log('✅ Файл загружен, создаем запись в БД...', publicUrl);
 
-      if (pointsError) {
-        console.error('❌ Ошибка при начислении баллов:', pointsError);
-      } else {
-        console.log('✅ Баллы начислены успешно:', pointsData);
-      }
+        // Upload thumbnail if provided
+        let thumbnailUrl = null;
+        if (thumbnailBlob) {
+          try {
+            const thumbnailFileName = `thumbnail_${timestamp}.jpg`;
+            const thumbnailPath = `${user.id}/thumbnails/${thumbnailFileName}`;
+            
+            const { error: thumbnailError } = await supabase.storage
+              .from('videos')
+              .upload(thumbnailPath, thumbnailBlob, {
+                cacheControl: '3600',
+                upsert: false
+              });
 
-      // Обновляем достижения за загрузку видео
-      console.log('🏆 Запускаем обновление достижений за загрузку видео...');
-      
-      // Сначала обновляем достижения за количество видео
-      console.log('📊 Обновляем достижения категории "videos"...');
-      const { error: videoAchievementError } = await supabase.rpc('update_achievement_progress', {
-        p_user_id: user.id,
-        p_category: 'videos',
-        p_new_value: null,
-        p_increment: 1
-      });
+            if (!thumbnailError) {
+              const { data: { publicUrl: thumbnailPublicUrl } } = supabase.storage
+                .from('videos')
+                .getPublicUrl(thumbnailPath);
+              thumbnailUrl = thumbnailPublicUrl;
+              console.log('📷 Превью загружено:', thumbnailUrl);
+            } else {
+              console.warn('⚠️ Не удалось загрузить превью:', thumbnailError);
+            }
+          } catch (thumbnailError) {
+            console.warn('⚠️ Ошибка загрузки превью:', thumbnailError);
+            // Продолжаем без превью
+          }
+        }
 
-      if (videoAchievementError) {
-        console.error('❌ Ошибка обновления достижений за видео:', videoAchievementError);
-      } else {
-        console.log('✅ Достижения за видео обновлены');
-      }
+        if (onProgress) onProgress(75); // 75% after thumbnail upload
 
-      // Проверяем временные достижения
-      const now = new Date();
-      const hour = now.getHours();
-      
-      if (hour < 8) {
-        console.log('🌅 Раннее утро - обновляем временные достижения...');
-        const { error: timeAchievementError } = await supabase.rpc('update_achievement_progress', {
-          p_user_id: user.id,
-          p_category: 'time',
-          p_new_value: null,
-          p_increment: 1
-        });
+        // Create video record in database
+        const { data: videoData, error: dbError } = await supabase
+          .from('videos')
+          .insert({
+            title: title.trim(),
+            description: description?.trim() || null,
+            video_url: publicUrl,
+            thumbnail_url: thumbnailUrl,
+            user_id: user.id,
+            category,
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error('❌ Ошибка создания записи в БД:', dbError);
+          // Удаляем загруженный файл если не удалось создать запись
+          await supabase.storage.from('videos').remove([filePath]);
+          if (thumbnailUrl) {
+            const thumbnailPath = `${user.id}/thumbnails/thumbnail_${timestamp}.jpg`;
+            await supabase.storage.from('videos').remove([thumbnailPath]);
+          }
+          throw new Error(`Ошибка сохранения видео: ${dbError.message}`);
+        }
+
+        if (onProgress) onProgress(90); // 90% after database record
+
+        console.log('✅ Видео создано успешно:', videoData);
         
-        if (timeAchievementError) {
-          console.error('❌ Ошибка обновления временных достижений:', timeAchievementError);
-        }
-      } else if (hour >= 22) {
-        console.log('🌙 Поздний вечер - обновляем временные достижения...');
-        const { error: timeAchievementError } = await supabase.rpc('update_achievement_progress', {
-          p_user_id: user.id,
-          p_category: 'time',
-          p_new_value: null,
-          p_increment: 1
-        });
-        
-        if (timeAchievementError) {
-          console.error('❌ Ошибка обновления временных достижений:', timeAchievementError);
-        }
-      }
+        // Начисляем баллы за загрузку видео
+        console.log('💰 Начисляем 10 баллов за загрузку видео...');
+        try {
+          const { error: pointsError } = await supabase.rpc('update_user_points', {
+            p_user_id: user.id,
+            p_points_change: 10,
+            p_description: 'Загрузка видео'
+          });
 
-      return videoData;
+          if (pointsError) {
+            console.error('❌ Ошибка при начислении баллов:', pointsError);
+          } else {
+            console.log('✅ Баллы начислены успешно');
+          }
+        } catch (pointsError) {
+          console.error('❌ Ошибка начисления баллов:', pointsError);
+        }
+
+        // Обновляем достижения за загрузку видео
+        console.log('🏆 Запускаем обновление достижений за загрузку видео...');
+        try {
+          const { error: videoAchievementError } = await supabase.rpc('update_achievement_progress', {
+            p_user_id: user.id,
+            p_category: 'videos',
+            p_new_value: null,
+            p_increment: 1
+          });
+
+          if (videoAchievementError) {
+            console.error('❌ Ошибка обновления достижений за видео:', videoAchievementError);
+          } else {
+            console.log('✅ Достижения за видео обновлены');
+          }
+
+          // Проверяем временные достижения
+          const now = new Date();
+          const hour = now.getHours();
+          
+          if (hour < 8 || hour >= 22) {
+            console.log('🌅🌙 Обновляем временные достижения...');
+            const { error: timeAchievementError } = await supabase.rpc('update_achievement_progress', {
+              p_user_id: user.id,
+              p_category: 'time',
+              p_new_value: null,
+              p_increment: 1
+            });
+            
+            if (timeAchievementError) {
+              console.error('❌ Ошибка обновления временных достижений:', timeAchievementError);
+            }
+          }
+        } catch (achievementError) {
+          console.error('❌ Ошибка обновления достижений:', achievementError);
+        }
+
+        if (onProgress) onProgress(100); // 100% complete
+
+        return videoData;
+      } catch (error) {
+        console.error('❌ Общая ошибка загрузки:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       console.log('🔄 Видео загружено успешно, обновляем кэш...');
@@ -577,11 +640,11 @@ export const useUploadVideo = () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
       
-      toast.success('Видео загружено! Достижения обновлены.');
+      toast.success('Видео успешно загружено!');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('❌ Ошибка загрузки видео:', error);
-      toast.error('Ошибка загрузки видео');
+      toast.error(error.message || 'Ошибка загрузки видео');
     },
   });
 };

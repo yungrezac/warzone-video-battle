@@ -1,9 +1,10 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload as UploadIcon, Video, X, Edit, ArrowLeft } from 'lucide-react';
+import { UploadIcon, Video, X, Edit, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import { useUploadVideo } from '@/hooks/useVideos';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,8 @@ const Upload: React.FC = () => {
   const [thumbnailTime, setThumbnailTime] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadVideo();
   const { toast } = useToast();
@@ -28,10 +31,10 @@ const Upload: React.FC = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
-      if (file.size > 50 * 1024 * 1024) {
+      if (file.size > 100 * 1024 * 1024) {
         toast({
           title: "Ошибка",
-          description: "Размер файла не должен превышать 50MB",
+          description: "Размер файла не должен превышать 100MB",
           variant: "destructive",
         });
         return;
@@ -41,6 +44,7 @@ const Upload: React.FC = () => {
       setThumbnailBlob(null);
       setTrimStart(0);
       setTrimEnd(0);
+      setUploadProgress(0);
     } else {
       toast({
         title: "Ошибка",
@@ -74,6 +78,9 @@ const Upload: React.FC = () => {
       return;
     }
     
+    setIsUploading(true);
+    setUploadProgress(0);
+    
     try {
       console.log('Начинаем загрузку видео...');
       await uploadMutation.mutateAsync({
@@ -84,6 +91,7 @@ const Upload: React.FC = () => {
         thumbnailBlob: thumbnailBlob || undefined,
         trimStart: trimStart > 0 ? trimStart : undefined,
         trimEnd: trimEnd > 0 ? trimEnd : undefined,
+        onProgress: setUploadProgress,
       });
 
       toast({
@@ -91,14 +99,27 @@ const Upload: React.FC = () => {
         description: "Видео успешно загружено и появится в ленте после модерации.",
       });
       
-      navigate('/');
-    } catch (error) {
+      // Сбрасываем форму
+      setSelectedFile(null);
+      setTitle('');
+      setDescription('');
+      setShowEditor(false);
+      setThumbnailBlob(null);
+      setUploadProgress(0);
+      
+      // Возвращаемся на главную через 2 секунды
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+    } catch (error: any) {
       console.error('Ошибка загрузки:', error);
       toast({
         title: "Ошибка",
-        description: `Не удалось загрузить видео: ${error.message || 'Попробуйте еще раз'}`,
+        description: error.message || 'Не удалось загрузить видео. Попробуйте еще раз',
         variant: "destructive",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -106,6 +127,7 @@ const Upload: React.FC = () => {
     setSelectedFile(null);
     setShowEditor(false);
     setThumbnailBlob(null);
+    setUploadProgress(0);
   };
 
   return (
@@ -113,7 +135,7 @@ const Upload: React.FC = () => {
       <div className="bg-white border-b border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')} disabled={isUploading}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <h1 className="text-lg font-bold text-gray-800">Загрузить трюк</h1>
@@ -130,18 +152,20 @@ const Upload: React.FC = () => {
                 Выберите видео для загрузки
               </h3>
               <p className="text-gray-500 mb-3 text-sm">
-                Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 50MB
+                Поддерживаются форматы: MP4, MOV, AVI, MKV, WEBM. Максимальный размер: 100MB
               </p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="video/*"
+                accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm"
                 onChange={handleFileSelect}
                 className="hidden"
+                disabled={isUploading}
               />
               <Button 
                 onClick={handleButtonClick}
                 className="bg-blue-600 hover:bg-blue-700"
+                disabled={isUploading}
               >
                 Выбрать файл
               </Button>
@@ -165,17 +189,23 @@ const Upload: React.FC = () => {
                       size="sm" 
                       onClick={() => setShowEditor(!showEditor)}
                       className="text-blue-600"
+                      disabled={isUploading}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={removeFile}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={removeFile}
+                      disabled={isUploading}
+                    >
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
               </div>
 
-              {showEditor && (
+              {showEditor && !isUploading && (
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h4 className="text-sm font-semibold mb-2">Редактор видео</h4>
                   <VideoEditor
@@ -188,25 +218,28 @@ const Upload: React.FC = () => {
 
               {thumbnailBlob && (
                 <div className="bg-green-50 border border-green-200 rounded p-2">
-                  <p className="text-xs text-green-700">
-                    ✓ Превью выбрано
+                  <p className="text-xs text-green-700 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Превью выбрано
                   </p>
                 </div>
               )}
 
-              {trimStart > 0 || trimEnd > 0 ? (
+              {(trimStart > 0 || trimEnd > 0) && (
                 <div className="bg-blue-50 border border-blue-200 rounded p-2">
-                  <p className="text-xs text-blue-700">
-                    ✓ Обрезка настроена
+                  <p className="text-xs text-blue-700 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Обрезка настроена
                   </p>
                 </div>
-              ) : null}
+              )}
             </div>
           )}
 
           <CategorySelector 
             selectedCategory={category}
             onCategoryChange={setCategory}
+            disabled={isUploading}
           />
 
           <div>
@@ -218,6 +251,7 @@ const Upload: React.FC = () => {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Например: 360 Spin, Backflip, Grind..."
               className="w-full"
+              disabled={isUploading}
             />
           </div>
 
@@ -231,8 +265,25 @@ const Upload: React.FC = () => {
               placeholder="Расскажите о своем трюке..."
               className="w-full"
               rows={3}
+              disabled={isUploading}
             />
           </div>
+
+          {isUploading && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-700">Загрузка видео...</span>
+                <span className="text-sm text-blue-600">{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="w-full" />
+              <p className="text-xs text-blue-600 mt-1">
+                {uploadProgress < 50 ? 'Загружаем видео...' :
+                 uploadProgress < 75 ? 'Загружаем превью...' :
+                 uploadProgress < 90 ? 'Сохраняем в базу данных...' :
+                 uploadProgress < 100 ? 'Обновляем достижения...' : 'Готово!'}
+              </p>
+            </div>
+          )}
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Правила конкурса:</h4>
@@ -246,10 +297,10 @@ const Upload: React.FC = () => {
 
           <Button
             onClick={handleUpload}
-            disabled={!selectedFile || !title.trim() || uploadMutation.isPending}
-            className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+            disabled={!selectedFile || !title.trim() || isUploading}
+            className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 disabled:opacity-50"
           >
-            {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить трюк'}
+            {isUploading ? `Загрузка... ${uploadProgress}%` : 'Загрузить трюк'}
           </Button>
         </div>
       </div>
