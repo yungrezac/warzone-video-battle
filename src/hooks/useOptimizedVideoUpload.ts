@@ -186,8 +186,11 @@ export const useOptimizedVideoUpload = () => {
       }
     },
     onSuccess: () => {
+      // Инвалидируем все связанные кэши для мгновенного обновления
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['video-feed'] });
     },
     onError: (error) => {
       console.error('❌ Ошибка мутации экстремальной загрузки:', error);

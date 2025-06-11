@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Award, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -424,7 +425,8 @@ const Profile: React.FC = () => {
       
       <WithdrawalModal 
         isOpen={isWithdrawOpen} 
-        onClose={() => setIsWithdrawOpen(false)} 
+        onClose={() => setIsWithdrawOpen(false)}
+        userPoints={userProfile?.total_points || 0}
       />
     </div>
   );

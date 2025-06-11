@@ -1,38 +1,31 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
-import { useTelegramNotifications } from './useTelegramNotifications';
+import { compressVideo, shouldCompress, generateQuickThumbnail } from '@/utils/videoOptimization';
 
 interface Video {
   id: string;
-  created_at: string;
   title: string;
   video_url: string;
-  thumbnail_url: string;
+  thumbnail_url?: string;
   user_id: string;
+  category: 'Rollers' | 'BMX' | 'Skateboard';
+  views: number;
   likes_count: number;
   comments_count: number;
+  created_at: string;
   average_rating: number;
-  views: number;
-  is_winner: boolean;
   user_liked: boolean;
   user_rating: number;
-  category: 'Rollers' | 'BMX' | 'Skateboard';
-  profiles?: {
-    username?: string;
-    telegram_username?: string;
-    avatar_url?: string;
-  };
 }
 
-interface VideoLike {
-  video_id: string;
-  user_id: string;
+interface LikeVideoParams {
+  videoId: string;
+  isLiked: boolean;
 }
 
-interface VideoRating {
-  video_id: string;
-  user_id: string;
+interface RateVideoParams {
+  videoId: string;
   rating: number;
 }
 
@@ -47,158 +40,114 @@ interface UploadVideoParams {
   onProgress?: (progress: number) => void;
 }
 
-// Функция для автоматической генерации превью из видео
-const generateThumbnailFromVideo = (videoFile: File): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) {
-      reject(new Error('Не удалось создать canvas context'));
-      return;
-    }
+export const useVideos = () => {
+  return useQuery({
+    queryKey: ['videos'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    video.preload = 'metadata';
-    video.muted = true;
-    
-    video.onloadedmetadata = () => {
-      // Устанавливаем время на 1 секунду или середину видео, если оно короче
-      const time = Math.min(1, video.duration / 2);
-      video.currentTime = time;
-    };
-    
-    video.onseeked = () => {
-      try {
-        // Устанавливаем размер canvas
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        // Рисуем кадр из видео на canvas
-        ctx.drawImage(video, 0, 0);
-        
-        // Конвертируем canvas в blob
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Не удалось создать превью'));
-          }
-        }, 'image/jpeg', 0.8);
-      } catch (error) {
-        reject(error);
+      if (error) {
+        throw error;
       }
-    };
-    
-    video.onerror = () => {
-      reject(new Error('Ошибка загрузки видео для генерации превью'));
-    };
-    
-    // Создаем URL для видео и загружаем его
-    const videoUrl = URL.createObjectURL(videoFile);
-    video.src = videoUrl;
-    
-    // Очищаем URL после использования
-    video.onloadstart = () => {
-      URL.revokeObjectURL(videoUrl);
-    };
+
+      return data;
+    },
   });
 };
 
-export const useVideos = () => {
+export const useVideo = (id: string) => {
+  return useQuery({
+    queryKey: ['videos', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+  });
+};
+
+export const useLikeVideo = () => {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  return useQuery({
-    queryKey: ['videos', user?.id],
-    queryFn: async () => {
-      console.log('🎬 Загружаем видео для пользователя:', user?.id);
+  return useMutation({
+    mutationFn: async ({ videoId, isLiked }: LikeVideoParams) => {
+      if (!user?.id) {
+        throw new Error('Необходима авторизация');
+      }
 
-      const { data: videos, error } = await supabase
-        .from('videos')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            username,
-            telegram_username,
-            avatar_url
-          )
-        `)
-        .order('created_at', { ascending: false });
+      if (isLiked) {
+        // Unlike the video
+        const { error } = await supabase
+          .from('video_likes')
+          .delete()
+          .eq('video_id', videoId)
+          .eq('user_id', user.id);
 
-      if (error) throw error;
+        if (error) {
+          throw new Error(error.message);
+        }
+      } else {
+        // Like the video
+        const { error } = await supabase
+          .from('video_likes')
+          .insert({ video_id: videoId, user_id: user.id });
 
-      if (!videos) return [];
+        if (error) {
+          throw new Error(error.message);
+        }
+      }
+    },
+    onSuccess: (_, { videoId }) => {
+      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['video-feed'] });
+    },
+    onError: (error) => {
+      console.error('Ошибка мутации лайка:', error);
+    },
+  });
+};
 
-      // Обрабатываем статистику для каждого видео
-      const videosWithStats = await Promise.all(
-        videos.map(async (video) => {
-          // Подсчитываем лайки для каждого видео
-          const { count: likesCount } = await supabase
-            .from('video_likes')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id);
+export const useRateVideo = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-          // Подсчитываем комментарии для каждого видео
-          const { count: commentsCount } = await supabase
-            .from('video_comments')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id);
+  return useMutation({
+    mutationFn: async ({ videoId, rating }: RateVideoParams) => {
+      if (!user?.id) {
+        throw new Error('Необходима авторизация');
+      }
 
-          // Подсчитываем средний рейтинг
-          const { data: ratings } = await supabase
-            .from('video_ratings')
-            .select('rating')
-            .eq('video_id', video.id);
+      // Upsert the rating
+      const { error } = await supabase
+        .from('video_ratings')
+        .upsert({ video_id: videoId, user_id: user.id, rating: rating }, { onConflict: 'video_id,user_id' });
 
-          const averageRating = ratings && ratings.length > 0
-            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-            : 0;
-
-          // Проверяем, лайкнул ли текущий пользователь это видео и его рейтинг (только если пользователь авторизован)
-          let userLike = null;
-          let userRatingData = null;
-
-          if (user?.id) {
-            const { data: likeData } = await supabase
-              .from('video_likes')
-              .select('*')
-              .eq('video_id', video.id)
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-            const { data: ratingData } = await supabase
-              .from('video_ratings')
-              .select('rating')
-              .eq('video_id', video.id)
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-            userLike = likeData;
-            userRatingData = ratingData;
-          }
-
-          console.log(`📊 Статистика видео ${video.id}:`, {
-            likes: likesCount,
-            comments: commentsCount,
-            avgRating: averageRating,
-            userLiked: !!userLike,
-            userRating: userRatingData?.rating || 0
-          });
-
-          return {
-            ...video,
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            average_rating: Number(averageRating.toFixed(1)),
-            user_liked: !!userLike,
-            user_rating: userRatingData?.rating || 0,
-          };
-        })
-      );
-
-      console.log('✅ Видео с обновленной статистикой загружены:', videosWithStats.length);
-      return videosWithStats;
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: (_, { videoId }) => {
+      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['video-feed'] });
+    },
+    onError: (error) => {
+      console.error('Ошибка мутации рейтинга:', error);
     },
   });
 };
@@ -215,62 +164,69 @@ export const useUploadVideo = () => {
 
       const { title, description, videoFile, category, thumbnailBlob, trimStart, trimEnd, onProgress } = params;
       
-      console.log('🎬 Начинаем загрузку видео:', {
+      console.log('Начинаем загрузку видео:', {
         userId: user.id,
         title,
         category,
-        fileSize: `${(videoFile.size / 1024 / 1024).toFixed(2)}MB`
+        originalSize: `${(videoFile.size / 1024 / 1024).toFixed(2)}MB`
       });
 
-      // Генерируем уникальные имена файлов
-      const videoFileName = `${user.id}/${Date.now()}_${videoFile.name}`;
+      onProgress?.(5);
+
+      let finalVideoFile = videoFile;
       let finalThumbnailBlob = thumbnailBlob;
-
-      try {
-        onProgress?.(10);
-
-        // Если превью не было выбрано пользователем, генерируем автоматически
-        if (!thumbnailBlob) {
-          console.log('🖼️ Генерируем превью автоматически...');
-          try {
-            finalThumbnailBlob = await generateThumbnailFromVideo(videoFile);
-            console.log('✅ Превью сгенерировано автоматически');
-          } catch (error) {
-            console.warn('⚠️ Не удалось сгенерировать превью автоматически:', error);
-            // Продолжаем без превью
-          }
+      
+      // Автоматически создаем превью если не предоставлено
+      if (!finalThumbnailBlob) {
+        try {
+          console.log('Генерируем превью автоматически...');
+          finalThumbnailBlob = await generateQuickThumbnail(videoFile);
+        } catch (error) {
+          console.warn('Не удалось создать превью:', error);
         }
+      }
 
-        onProgress?.(25);
+      // Сжимаем видео если нужно
+      if (shouldCompress(videoFile)) {
+        console.log('Сжимаем видео...');
+        try {
+          finalVideoFile = await compressVideo(videoFile, 0.7);
+          console.log(`Сжатие завершено: ${(finalVideoFile.size / 1024 / 1024).toFixed(2)}MB`);
+        } catch (error) {
+          console.warn('Сжатие не удалось, загружаем оригинал:', error);
+        }
+      }
 
-        // Загружаем видео файл
-        console.log('📹 Загружаем видео файл...');
+      onProgress?.(20);
+
+      const videoFileName = `${user.id}/${Date.now()}_${finalVideoFile.name}`;
+      
+      try {
+        console.log('Загружаем видео в хранилище...');
         const { data: videoUpload, error: videoError } = await supabase.storage
           .from('videos')
-          .upload(videoFileName, videoFile, {
+          .upload(videoFileName, finalVideoFile, {
             cacheControl: '3600',
             upsert: false,
           });
 
         if (videoError) {
-          console.error('Ошибка загрузки видео:', videoError);
           throw new Error(`Ошибка загрузки видео: ${videoError.message}`);
         }
 
-        onProgress?.(50);
+        onProgress?.(60);
 
-        // Получаем публичный URL для видео
         const { data: videoUrlData } = supabase.storage
           .from('videos')
           .getPublicUrl(videoFileName);
-
-        let thumbnailUrl = null;
-
-        // Загружаем превью, если есть
-        if (finalThumbnailBlob) {
-          console.log('🖼️ Загружаем превью...');
-          const thumbnailFileName = `${user.id}/${Date.now()}_thumbnail.jpg`;
           
+        const videoUrl = videoUrlData.publicUrl;
+
+        // Загружаем превью если есть
+        let thumbnailUrl = null;
+        if (finalThumbnailBlob) {
+          console.log('Загружаем превью...');
+          const thumbnailFileName = `${user.id}/${Date.now()}_thumb.jpg`;
           const { data: thumbnailUpload, error: thumbnailError } = await supabase.storage
             .from('videos')
             .upload(thumbnailFileName, finalThumbnailBlob, {
@@ -278,9 +234,7 @@ export const useUploadVideo = () => {
               upsert: false,
             });
 
-          if (thumbnailError) {
-            console.warn('Ошибка загрузки превью:', thumbnailError);
-          } else {
+          if (!thumbnailError) {
             const { data: thumbnailUrlData } = supabase.storage
               .from('videos')
               .getPublicUrl(thumbnailFileName);
@@ -288,16 +242,15 @@ export const useUploadVideo = () => {
           }
         }
 
-        onProgress?.(75);
+        onProgress?.(80);
 
-        // Сохраняем запись в базе данных
-        console.log('💾 Сохраняем в базу данных...');
+        console.log('Сохраняем в базу данных...');
         const { data: videoRecord, error: dbError } = await supabase
           .from('videos')
           .insert({
             title,
             description,
-            video_url: videoUrlData.publicUrl,
+            video_url: videoUrl,
             thumbnail_url: thumbnailUrl,
             user_id: user.id,
             category,
@@ -309,13 +262,12 @@ export const useUploadVideo = () => {
           .single();
 
         if (dbError) {
-          console.error('Ошибка сохранения в БД:', dbError);
           throw new Error(`Ошибка сохранения: ${dbError.message}`);
         }
 
         onProgress?.(90);
 
-        // Обновляем достижения пользователя
+        // Обновляем достижения
         try {
           await supabase.rpc('update_achievement_progress', { 
             p_user_id: user.id,
@@ -323,17 +275,17 @@ export const useUploadVideo = () => {
             p_increment: 1
           });
         } catch (error) {
-          console.warn('Ошибка обновления счетчика видео:', error);
+          console.warn('Ошибка обновления достижений:', error);
         }
 
         onProgress?.(100);
 
-        console.log('✅ Видео успешно загружено:', videoRecord);
+        console.log('Загрузка видео завершена успешно');
         return videoRecord;
       } catch (error) {
-        console.error('❌ Ошибка загрузки видео:', error);
+        console.error('Ошибка загрузки видео:', error);
         
-        // Очищаем загруженные файлы в случае ошибки
+        // Очищаем файлы при ошибке
         try {
           await supabase.storage.from('videos').remove([videoFileName]);
         } catch (cleanupError) {
@@ -344,155 +296,14 @@ export const useUploadVideo = () => {
       }
     },
     onSuccess: () => {
+      // Инвалидируем все связанные кэши для мгновенного обновления
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['video-feed'] });
     },
     onError: (error) => {
-      console.error('Ошибка мутации загрузки видео:', error);
-    },
-  });
-};
-
-export const useLikeVideo = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const { sendLikeNotification } = useTelegramNotifications();
-
-  return useMutation({
-    mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
-      if (!user?.id) {
-        throw new Error('Необходима авторизация');
-      }
-
-      console.log('🔄 Обрабатываем лайк:', { videoId, isLiked, userId: user.id });
-
-      if (isLiked) {
-        // Убираем лайк
-        console.log('❌ Убираем лайк...');
-        const { error } = await supabase
-          .from('video_likes')
-          .delete()
-          .eq('video_id', videoId)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-
-        // Уменьшаем счетчик
-        await supabase.rpc('decrement_likes_count', { video_id: videoId });
-        console.log('✅ Лайк убран, счетчик уменьшен');
-      } else {
-        // Ставим лайк
-        console.log('❤️ Ставим лайк...');
-        const { error } = await supabase
-          .from('video_likes')
-          .insert({
-            video_id: videoId,
-            user_id: user.id,
-          });
-
-        if (error) throw error;
-
-        // Увеличиваем счетчик
-        await supabase.rpc('increment_likes_count', { video_id: videoId });
-        console.log('✅ Лайк поставлен, счетчик увеличен');
-
-        // Отправляем уведомление владельцу видео
-        try {
-          const { data: videoData } = await supabase
-            .from('videos')
-            .select(`
-              title,
-              user_id,
-              profiles!inner(telegram_id, username, telegram_username)
-            `)
-            .eq('id', videoId)
-            .single();
-
-          if (videoData && videoData.profiles && videoData.user_id !== user.id) {
-            const ownerTelegramId = videoData.profiles.telegram_id;
-            const likerName = user.username || user.telegram_username || 'Пользователь';
-            
-            if (ownerTelegramId) {
-              await sendLikeNotification(
-                videoData.user_id,
-                ownerTelegramId,
-                likerName,
-                videoData.title
-              );
-            }
-          }
-        } catch (error) {
-          console.error('Ошибка отправки уведомления о лайке:', error);
-        }
-      }
-
-      const newIsLiked = !isLiked;
-      console.log('🏁 Завершили обработку лайка. Новое состояние:', newIsLiked);
-      return { videoId, isLiked: newIsLiked };
-    },
-    onSuccess: (data) => {
-      console.log('✅ Мутация лайка успешна, обновляем кэш запросов...');
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-    },
-    onError: (error) => {
-      console.error('❌ Ошибка при обработке лайка:', error);
-    },
-  });
-};
-
-export const useRateVideo = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ videoId, rating }: { videoId: string; rating: number }) => {
-      if (!user?.id) {
-        throw new Error('Необходима авторизация');
-      }
-
-      console.log('⭐ Ставим рейтинг:', { videoId, rating, userId: user.id });
-
-      // Проверяем, есть ли уже рейтинг от этого пользователя
-      const { data: existingRating } = await supabase
-        .from('video_ratings')
-        .select('*')
-        .eq('video_id', videoId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingRating) {
-        // Обновляем существующий рейтинг
-        const { error } = await supabase
-          .from('video_ratings')
-          .update({ rating, updated_at: new Date().toISOString() })
-          .eq('id', existingRating.id);
-
-        if (error) throw error;
-        console.log('✅ Рейтинг обновлен');
-      } else {
-        // Создаем новый рейтинг
-        const { error } = await supabase
-          .from('video_ratings')
-          .insert({
-            video_id: videoId,
-            user_id: user.id,
-            rating,
-          });
-
-        if (error) throw error;
-        console.log('✅ Рейтинг создан');
-      }
-
-      return { videoId, rating };
-    },
-    onSuccess: () => {
-      console.log('✅ Мутация рейтинга успешна, обновляем кэш запросов...');
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-    },
-    onError: (error) => {
-      console.error('❌ Ошибка при выставлении рейтинга:', error);
+      console.error('Ошибка мутации загрузки:', error);
     },
   });
 };
