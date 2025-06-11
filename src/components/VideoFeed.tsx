@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
@@ -96,7 +97,7 @@ const VideoFeed: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-16">
       <AdminWinnerControl />
       
-      <BannerRotation onViewWinner={handleViewWinner} />
+      <BannerRotation />
 
       {isLoading ? (
         <div className="space-y-4 p-2">

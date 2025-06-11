@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, MessageCircle, Users } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import WinnerAnnouncement from './WinnerAnnouncement';
 
 interface ChatBanner {
   id: string;
@@ -45,52 +44,26 @@ const chatBanners: ChatBanner[] = [
   }
 ];
 
-interface BannerRotationProps {
-  onViewWinner?: (videoId: string) => void;
-}
-
-const BannerRotation: React.FC<BannerRotationProps> = ({ onViewWinner }) => {
+const BannerRotation: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showWinner, setShowWinner] = useState(true);
 
   // Ротация каждые 5 секунд
   useEffect(() => {
     const interval = setInterval(() => {
-      if (showWinner) {
-        setShowWinner(false);
-        setCurrentIndex(0);
-      } else {
-        const nextIndex = (currentIndex + 1) % chatBanners.length;
-        if (nextIndex === 0) {
-          setShowWinner(true);
-        } else {
-          setCurrentIndex(nextIndex);
-        }
-      }
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % chatBanners.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [currentIndex, showWinner]);
+  }, []);
 
   const handleBannerClick = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  // Фиксированная высота контейнера
-  const containerHeight = "h-[120px]";
-
-  if (showWinner) {
-    return (
-      <div className={`transition-all duration-500 ease-in-out ${containerHeight}`}>
-        <WinnerAnnouncement onViewWinner={onViewWinner} />
-      </div>
-    );
-  }
-
   const currentBanner = chatBanners[currentIndex];
 
   return (
-    <div className={`p-2 mb-2 transition-all duration-500 ease-in-out ${containerHeight}`}>
+    <div className="p-2 mb-2 h-[120px]">
       <Card className={`bg-gradient-to-r ${currentBanner.gradient} text-white border-0 shadow-lg transform transition-all duration-300 hover:scale-[1.02] h-full`}>
         <div className="flex items-center h-full p-3">
           <div className="text-2xl mr-3">{currentBanner.icon}</div>
@@ -123,7 +96,6 @@ const BannerRotation: React.FC<BannerRotationProps> = ({ onViewWinner }) => {
         
         {/* Индикаторы ротации */}
         <div className="absolute bottom-1 right-2 flex gap-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-white opacity-60"></div>
           {chatBanners.map((_, index) => (
             <div 
               key={index}
