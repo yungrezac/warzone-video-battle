@@ -154,9 +154,9 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col justify-end px-3 pb-3">
-        {/* Цена и остаток */}
+        {/* Цена */}
         <div className="mb-3">
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-center mb-1.5">
             <div className="flex items-center gap-0.5">
               <div className="text-sm font-bold text-green-600 flex items-center gap-0.5">
                 <Star className="w-3 h-3 text-amber-500" />
@@ -164,14 +164,6 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
               </div>
               <span className="text-xs text-gray-500">баллов</span>
             </div>
-            {item.stock_quantity !== null && (
-              <div className="text-right">
-                <div className="text-xs text-gray-500">Осталось</div>
-                <div className="text-xs font-semibold text-gray-700">
-                  {item.stock_quantity} шт.
-                </div>
-              </div>
-            )}
           </div>
           
           {/* Индикатор доступности покупки */}
