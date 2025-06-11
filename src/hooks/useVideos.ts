@@ -78,6 +78,8 @@ export const useVideos = () => {
           user_liked,
           user_rating: userRating?.rating || 0,
           comments_count: video.video_comments?.length || 0,
+          // Используем likes_count из базы данных, а не подсчитываем связанные записи
+          likes_count: video.likes_count || 0,
         };
       });
 
