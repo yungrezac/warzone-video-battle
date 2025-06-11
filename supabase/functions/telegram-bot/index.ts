@@ -13,6 +13,14 @@ const serve_handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const url = new URL(req.url);
+    
+    // Обработка запросов на создание сообщений для шеринга
+    if (url.pathname === '/api/telegram-share') {
+      return await handleTelegramShare(req);
+    }
+    
+    // Обработка обычных обновлений от Telegram
     const update = await req.json();
     console.log('Получено обновление от Telegram:', JSON.stringify(update, null, 2));
 
@@ -136,6 +144,64 @@ const serve_handler = async (req: Request): Promise<Response> => {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+};
+
+const handleTelegramShare = async (req: Request): Promise<Response> => {
+  try {
+    const { telegramUserId, image, text, initData } = await req.json();
+    
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    if (!botToken) {
+      throw new Error('TELEGRAM_BOT_TOKEN not set');
+    }
+    
+    // Валидируем initData (для безопасности)
+    // В продакшене здесь должна быть проверка подписи initData
+    
+    // Декодируем base64 изображение
+    const base64Data = image.split(',')[1]; // Убираем префикс data:image/png;base64,
+    const imageData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    // Создаем FormData для отправки изображения
+    const formData = new FormData();
+    formData.append('chat_id', telegramUserId.toString());
+    formData.append('photo', new Blob([imageData], { type: 'image/png' }), 'trick_share.png');
+    formData.append('caption', text);
+    formData.append('parse_mode', 'HTML');
+    
+    // Отправляем изображение через Telegram Bot API
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('Ошибка отправки изображения:', result);
+      throw new Error(`Telegram API error: ${result.description || 'Unknown error'}`);
+    }
+    
+    console.log('Изображение успешно отправлено пользователю:', telegramUserId);
+    
+    return new Response(
+      JSON.stringify({ success: true, message: 'Изображение отправлено' }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+    
+  } catch (error) {
+    console.error('Ошибка в handleTelegramShare:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 };
 

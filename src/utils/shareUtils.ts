@@ -31,34 +31,37 @@ export const shareToTelegram = async (imageBlob: Blob, text: string) => {
         tg.HapticFeedback.impactOccurred('medium');
       }
       
-      // Создаем временную ссылку для скачивания изображения
-      const url = URL.createObjectURL(imageBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'trick_share.png';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Получаем данные пользователя из Telegram WebApp
+      const user = tg.initDataUnsafe?.user;
+      if (!user) {
+        throw new Error('Не удалось получить данные пользователя');
+      }
       
-      // Копируем текст в буфер обмена
-      try {
-        await navigator.clipboard.writeText(text);
-        
-        // Показываем уведомление пользователю
-        if (tg.showAlert) {
-          tg.showAlert('Изображение скачано, текст скопирован! Теперь вы можете поделиться в любом чате Telegram.');
-        } else {
-          alert('Изображение скачано, текст скопирован! Теперь вы можете поделиться в любом чате Telegram.');
-        }
-      } catch (clipboardError) {
-        console.log('Ошибка копирования в буфер:', clipboardError);
-        if (tg.showAlert) {
-          tg.showAlert('Изображение скачано! Скопируйте текст вручную: ' + text);
-        } else {
-          alert('Изображение скачано! Скопируйте текст вручную: ' + text);
-        }
+      // Отправляем данные на нашу Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          telegramUserId: user.id,
+          image: imageBase64,
+          text: text,
+          initData: tg.initData
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Ошибка отправки: ${errorData.error || 'Unknown error'}`);
+      }
+      
+      // Показываем уведомление об успешной отправке
+      if (tg.showAlert) {
+        tg.showAlert('Сообщение создано в Telegram! Теперь вы можете переслать его любому пользователю.');
+      } else {
+        alert('Сообщение создано в Telegram! Теперь вы можете переслать его любому пользователю.');
       }
       
       return true;
