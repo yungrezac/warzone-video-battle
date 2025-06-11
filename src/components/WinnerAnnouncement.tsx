@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Crown, Trophy, Heart, Star, Eye } from 'lucide-react';
-import { useYesterdayWinner, useTopUsers } from '@/hooks/useWinnerSystem';
+import { Crown, Heart, Star, Eye } from 'lucide-react';
+import { useYesterdayWinner } from '@/hooks/useWinnerSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,6 @@ interface WinnerAnnouncementProps {
 
 const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner }) => {
   const { data: winner, isLoading: winnerLoading } = useYesterdayWinner();
-  const { data: topUsers, isLoading: topUsersLoading } = useTopUsers();
 
   if (winnerLoading) {
     return (
@@ -112,42 +111,6 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ onViewWinner })
           </Button>
         </CardContent>
       </Card>
-
-      {/* Топ пользователей недели */}
-      {!topUsersLoading && topUsers && topUsers.length > 0 && (
-        <Card className="mt-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Trophy className="w-5 h-5" />
-              🌟 Топ роллеров
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {topUsers.slice(0, 3).map((userPoint, index) => {
-                const user = userPoint.user;
-                const userDisplayName = user?.username || user?.telegram_username || user?.first_name || 'Роллер';
-                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
-                
-                return (
-                  <div key={userPoint.id} className="flex items-center gap-2 text-sm">
-                    <span className="text-lg">{medal}</span>
-                    <img 
-                      src={user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=30&h=30&fit=crop&crop=face'} 
-                      alt={userDisplayName}
-                      className="w-6 h-6 rounded-full"
-                    />
-                    <span className="flex-1 truncate">{userDisplayName}</span>
-                    <Badge variant="secondary" className="bg-white/20 text-white border-white/30 text-xs">
-                      {userPoint.total_points || 0} баллов
-                    </Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
