@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Video, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, Video, X, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,12 +16,66 @@ const UploadVideo: React.FC = () => {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<'Rollers' | 'BMX' | 'Skateboard'>('Rollers');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [thumbnailGenerated, setThumbnailGenerated] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useOptimizedVideoUpload();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Функция для генерации превью локально для отображения
+  const generatePreviewFromVideo = (videoFile: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Не удалось создать canvas context'));
+        return;
+      }
+
+      video.preload = 'metadata';
+      video.muted = true;
+      
+      video.onloadedmetadata = () => {
+        const time = Math.min(1, video.duration / 2);
+        video.currentTime = time;
+      };
+      
+      video.onseeked = () => {
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              resolve(url);
+            } else {
+              reject(new Error('Не удалось создать превью'));
+            }
+          }, 'image/jpeg', 0.8);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      video.onerror = () => {
+        reject(new Error('Ошибка загрузки видео для генерации превью'));
+      };
+      
+      const videoUrl = URL.createObjectURL(videoFile);
+      video.src = videoUrl;
+      
+      video.onloadstart = () => {
+        URL.revokeObjectURL(videoUrl);
+      };
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -52,6 +106,18 @@ const UploadVideo: React.FC = () => {
     });
 
     setSelectedFile(file);
+    setThumbnailGenerated(false);
+    
+    // Генерируем превью для отображения
+    try {
+      const preview = await generatePreviewFromVideo(file);
+      setPreviewUrl(preview);
+      setThumbnailGenerated(true);
+      console.log('✅ Превью для отображения создано');
+    } catch (error) {
+      console.warn('⚠️ Не удалось создать превью для отображения:', error);
+      setPreviewUrl(null);
+    }
   };
 
   const handleButtonClick = () => {
@@ -109,6 +175,8 @@ const UploadVideo: React.FC = () => {
       setDescription('');
       setCategory('Rollers');
       setUploadProgress(0);
+      setPreviewUrl(null);
+      setThumbnailGenerated(false);
       
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -144,6 +212,11 @@ const UploadVideo: React.FC = () => {
   const removeFile = () => {
     setSelectedFile(null);
     setUploadProgress(0);
+    setPreviewUrl(null);
+    setThumbnailGenerated(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
   const isUploading = uploadMutation.isPending;
@@ -212,15 +285,33 @@ const UploadVideo: React.FC = () => {
                       🗜️ Будет сжато для быстрой загрузки
                     </p>
                   )}
-                  <p className="text-xs text-green-600">
-                    ✨ Превью создается автоматически
-                  </p>
+                  {thumbnailGenerated && (
+                    <p className="text-xs text-green-600 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Превью создано автоматически
+                    </p>
+                  )}
                 </div>
               </div>
               <Button variant="ghost" size="sm" onClick={removeFile} disabled={isUploading}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
+            
+            {/* Отображение сгенерированного превью */}
+            {previewUrl && (
+              <div className="mb-3">
+                <p className="text-xs text-gray-600 mb-2">Автоматически созданное превью:</p>
+                <div className="w-full max-w-xs mx-auto">
+                  <img 
+                    src={previewUrl} 
+                    alt="Превью видео" 
+                    className="w-full h-auto rounded border border-gray-200"
+                    style={{ maxHeight: '150px', objectFit: 'cover' }}
+                  />
+                </div>
+              </div>
+            )}
             
             {isUploading && uploadProgress > 0 && (
               <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
