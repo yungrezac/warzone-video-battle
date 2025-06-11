@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Heart, Star, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,6 @@ import { Link, useLocation } from 'react-router-dom';
 import VideoPlayer from './VideoPlayer';
 import VideoComments from './VideoComments';
 import CategoryBadge from './CategoryBadge';
-import ShareButton from './ShareButton';
 
 interface Video {
   id: string;
@@ -89,10 +89,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   const isOnUserProfile = location.pathname === `/user/${video.userId}`;
 
   return (
-    <div 
-      className={`bg-white rounded-lg shadow-md overflow-hidden ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}
-      data-video-id={video.id}
-    >
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}>
       {video.isWinner && (
         <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-1 font-bold text-sm">
           🏆 ПОБЕДИТЕЛЬ ДНЯ 🏆
@@ -200,12 +197,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
               <Eye className="w-3.5 h-3.5 mr-1" />
               <span className="text-xs">{video.views}</span>
             </Button>
-
-            <ShareButton
-              videoId={video.id}
-              videoOwnerName={video.author}
-              videoOwnerId={video.userId || ''}
-            />
           </div>
         </div>
 
