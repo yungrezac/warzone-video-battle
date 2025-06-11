@@ -107,3 +107,83 @@ export const useVideoComments = (videoId: string) => {
     isAddingComment: addCommentMutation.isPending,
   };
 };
+
+export const useAddComment = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { sendCommentNotification } = useTelegramNotifications();
+
+  return useMutation({
+    mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
+      if (!user?.id) {
+        throw new Error('Необходима авторизация');
+      }
+
+      console.log('Добавляем комментарий:', { videoId, content, userId: user.id });
+
+      const { data, error } = await supabase
+        .from('video_comments')
+        .insert({
+          video_id: videoId,
+          user_id: user.id,
+          content,
+        })
+        .select(`
+          *,
+          profiles (
+            username,
+            telegram_username,
+            avatar_url
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('Ошибка вставки комментария:', error);
+        throw error;
+      }
+
+      console.log('Комментарий добавлен в БД:', data);
+
+      // Отправляем уведомление владельцу видео
+      try {
+        const { data: videoData } = await supabase
+          .from('videos')
+          .select(`
+            title,
+            user_id,
+            profiles!inner(telegram_id, username, telegram_username)
+          `)
+          .eq('id', videoId)
+          .single();
+
+        if (videoData && videoData.profiles && videoData.user_id !== user.id) {
+          const ownerTelegramId = videoData.profiles.telegram_id;
+          const commenterName = user.username || user.telegram_username || 'Пользователь';
+          
+          if (ownerTelegramId) {
+            console.log('Отправляем уведомление владельцу видео');
+            await sendCommentNotification(
+              videoData.user_id,
+              ownerTelegramId,
+              commenterName,
+              videoData.title,
+              content
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка отправки уведомления о комментарии:', error);
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Комментарий успешно добавлен:', data);
+      queryClient.invalidateQueries({ queryKey: ['video-comments'] });
+    },
+    onError: (error) => {
+      console.error('Ошибка добавления комментария:', error);
+    },
+  });
+};

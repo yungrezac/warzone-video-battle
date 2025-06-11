@@ -121,6 +121,7 @@ export type Database = {
       }
       notification_settings: {
         Row: {
+          achievements_notifications: boolean | null
           comments_notifications: boolean
           created_at: string
           id: string
@@ -131,6 +132,7 @@ export type Database = {
           winners_notifications: boolean
         }
         Insert: {
+          achievements_notifications?: boolean | null
           comments_notifications?: boolean
           created_at?: string
           id?: string
@@ -141,6 +143,7 @@ export type Database = {
           winners_notifications?: boolean
         }
         Update: {
+          achievements_notifications?: boolean | null
           comments_notifications?: boolean
           created_at?: string
           id?: string
@@ -150,7 +153,15 @@ export type Database = {
           user_id?: string
           winners_notifications?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_notification_settings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       points_history: {
         Row: {
