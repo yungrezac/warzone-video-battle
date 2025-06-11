@@ -30,11 +30,12 @@ const Market: React.FC = () => {
     setSelectedItem(null);
   };
 
-  // Приводим изображения к правильному типу
+  // Правильно преобразуем изображения к типу string[]
   const processedItems = marketItems?.map(item => ({
     ...item,
-    images: Array.isArray(item.images) ? item.images : 
-            (typeof item.images === 'string' ? [item.images] : [])
+    images: Array.isArray(item.images) 
+      ? item.images.filter((img): img is string => typeof img === 'string')
+      : []
   })) || [];
 
   return (
