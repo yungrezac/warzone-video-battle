@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,6 @@ const TelegramAuth: React.FC = () => {
     
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       console.log('📱 Telegram WebApp доступен в TelegramAuth');
-      console.log('📱 initData:', window.Telegram.WebApp.initData);
       console.log('📱 initDataUnsafe:', window.Telegram.WebApp.initDataUnsafe);
     }
   }, []);

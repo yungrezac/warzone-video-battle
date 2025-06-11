@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -68,7 +67,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           const tg = window.Telegram.WebApp;
           tg.ready();
           
-          console.log('📱 Telegram WebApp initData:', tg.initData);
           console.log('📱 Telegram WebApp initDataUnsafe:', tg.initDataUnsafe);
           
           // Расширяем приложение на весь экран
