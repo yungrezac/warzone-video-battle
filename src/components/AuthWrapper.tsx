@@ -42,16 +42,20 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔄 AuthWrapper useEffect запускается...');
+    
     const initializeUser = async () => {
       try {
-        console.log('🔄 Инициализируем пользователя...');
+        console.log('⚡ Начинаем инициализацию пользователя...');
         
-        // Сначала проверяем сохраненного пользователя в localStorage для быстрой загрузки
+        // Проверяем сохраненного пользователя
         const savedUser = localStorage.getItem('roller_tricks_user');
+        console.log('💾 Сохраненный пользователь:', savedUser ? 'найден' : 'не найден');
+        
         if (savedUser) {
           try {
             const userData = JSON.parse(savedUser);
-            console.log('⚡ Быстрая загрузка сохраненного пользователя:', userData);
+            console.log('⚡ Быстрая загрузка пользователя:', userData.username || userData.first_name);
             setUser(userData);
             setLoading(false);
             return;
@@ -61,39 +65,62 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           }
         }
 
-        // Проверяем, запущено ли приложение в Telegram WebApp
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-          console.log('📱 Telegram WebApp обнаружен');
-          const tg = window.Telegram.WebApp;
-          tg.ready();
+        // Проверяем Telegram WebApp
+        console.log('🔍 Проверяем среду выполнения...');
+        console.log('📱 Window доступен:', typeof window !== 'undefined');
+        
+        if (typeof window !== 'undefined') {
+          console.log('📱 Telegram объект:', !!window.Telegram);
+          console.log('📱 WebApp объект:', !!window.Telegram?.WebApp);
           
-          console.log('📱 Telegram WebApp initDataUnsafe:', tg.initDataUnsafe);
-          
-          // Расширяем приложение на весь экран
-          if (tg.expand) {
-            tg.expand();
-          }
-          
-          // Получаем данные пользователя из Telegram
-          if (tg.initDataUnsafe?.user) {
-            const telegramUser = tg.initDataUnsafe.user;
-            console.log('👤 Данные пользователя Telegram:', telegramUser);
+          if (window.Telegram?.WebApp) {
+            console.log('✅ Telegram WebApp обнаружен');
+            const tg = window.Telegram.WebApp;
             
-            await createOrUpdateUser(telegramUser);
-            return;
+            console.log('🚀 Вызываем tg.ready()...');
+            tg.ready();
+            
+            console.log('📊 initDataUnsafe:', JSON.stringify(tg.initDataUnsafe, null, 2));
+            
+            // Расширяем приложение
+            if (tg.expand) {
+              console.log('📱 Расширяем приложение...');
+              tg.expand();
+            }
+            
+            // Проверяем данные пользователя
+            if (tg.initDataUnsafe?.user) {
+              const telegramUser = tg.initDataUnsafe.user;
+              console.log('👤 Данные пользователя Telegram:', {
+                id: telegramUser.id,
+                first_name: telegramUser.first_name,
+                username: telegramUser.username
+              });
+              
+              console.log('🔄 Создаем/обновляем пользователя...');
+              await createOrUpdateUser(telegramUser);
+              return;
+            } else {
+              console.log('❌ Нет данных пользователя в initDataUnsafe');
+              console.log('🔍 Полный объект initDataUnsafe:', tg.initDataUnsafe);
+            }
           } else {
-            console.log('❌ Нет данных пользователя в Telegram WebApp');
+            console.log('❌ Telegram WebApp не найден');
+            console.log('🔍 Доступные свойства window.Telegram:', 
+              window.Telegram ? Object.keys(window.Telegram) : 'Telegram объект отсутствует'
+            );
           }
         } else {
-          console.log('❌ Telegram WebApp не обнаружен');
+          console.log('❌ Window объект недоступен');
         }
 
-        // Если нет данных Telegram и нет сохраненного пользователя, показываем TelegramAuth
-        console.log('🚫 Нет данных пользователя, переходим к экрану авторизации');
+        console.log('🚫 Переходим к экрану авторизации');
 
       } catch (err: any) {
-        console.error('❌ Ошибка инициализации пользователя:', err);
+        console.error('❌ Критическая ошибка инициализации:', err);
+        console.error('📋 Stack trace:', err.stack);
       } finally {
+        console.log('✅ Завершаем инициализацию, убираем loading');
         setLoading(false);
       }
     };
@@ -101,7 +128,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     const createOrUpdateUser = async (telegramUser: any) => {
       try {
         const telegramId = telegramUser.id.toString();
-        console.log('🔍 Проверяем пользователя с Telegram ID:', telegramId);
+        console.log('🔍 Ищем пользователя с Telegram ID:', telegramId);
         
         // Проверяем существует ли пользователь в базе
         const { data: existingProfile, error: profileError } = await supabase
@@ -110,7 +137,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           .eq('telegram_id', telegramId)
           .maybeSingle();
 
-        console.log('🔍 Результат поиска профиля:', { existingProfile, profileError });
+        console.log('🔍 Результат поиска:', { найден: !!existingProfile, ошибка: !!profileError });
 
         let profileId = existingProfile?.id;
 
@@ -118,7 +145,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           // Пользователь не найден, создаем новый профиль
           const newUserId = crypto.randomUUID();
           
-          console.log('➕ Создаем новый профиль с ID:', newUserId);
+          console.log('➕ Создаем профиль с ID:', newUserId);
           
           const { data: newProfile, error: insertProfileError } = await supabase
             .from('profiles')
@@ -137,7 +164,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
           if (insertProfileError) throw insertProfileError;
 
-          console.log('✅ Профиль создан:', newProfile);
+          console.log('✅ Профиль создан');
 
           // Создаем запись в user_points
           const { error: pointsError } = await supabase
@@ -186,13 +213,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           telegram_username: telegramUser.username,
         };
 
-        console.log('✅ Устанавливаем пользователя в контекст:', userData);
+        console.log('✅ Устанавливаем пользователя:', userData.username || userData.first_name);
         
         setUser(userData);
         localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
 
       } catch (err: any) {
-        console.error('❌ Ошибка создания/обновления пользователя:', err);
+        console.error('❌ Ошибка работы с пользователем:', err);
         throw err;
       }
     };
@@ -201,7 +228,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   }, []);
 
   const signIn = (userData: any) => {
-    console.log('🔐 Вход пользователя:', userData);
+    console.log('🔐 Вход пользователя:', userData.username || userData.first_name);
     setUser(userData);
     localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
   };

@@ -21,11 +21,35 @@ const TelegramAuth: React.FC = () => {
 
   useEffect(() => {
     console.log('🔐 TelegramAuth компонент загружен');
-    console.log('🌐 Window.Telegram:', typeof window !== 'undefined' ? window.Telegram : 'undefined');
+    console.log('🌐 Проверяем Telegram в TelegramAuth...');
     
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      console.log('📱 Telegram WebApp доступен в TelegramAuth');
-      console.log('📱 initDataUnsafe:', window.Telegram.WebApp.initDataUnsafe);
+    if (typeof window !== 'undefined') {
+      console.log('📱 Window доступен в TelegramAuth');
+      console.log('📱 Telegram объект:', !!window.Telegram);
+      console.log('📱 WebApp объект:', !!window.Telegram?.WebApp);
+      
+      if (window.Telegram?.WebApp) {
+        console.log('✅ Telegram WebApp доступен в TelegramAuth');
+        const tg = window.Telegram.WebApp;
+        console.log('📊 initDataUnsafe в TelegramAuth:', JSON.stringify(tg.initDataUnsafe, null, 2));
+        console.log('👤 Пользователь в initDataUnsafe:', tg.initDataUnsafe?.user);
+        
+        // Пытаемся повторно вызвать ready
+        console.log('🔄 Повторно вызываем tg.ready()...');
+        tg.ready();
+        
+        // Проверяем через небольшую задержку
+        setTimeout(() => {
+          console.log('⏰ Повторная проверка через 1 секунду:', {
+            initDataUnsafe: tg.initDataUnsafe,
+            user: tg.initDataUnsafe?.user
+          });
+        }, 1000);
+      } else {
+        console.log('❌ Telegram WebApp НЕ доступен в TelegramAuth');
+      }
+    } else {
+      console.log('❌ Window НЕ доступен в TelegramAuth');
     }
   }, []);
 
@@ -34,7 +58,7 @@ const TelegramAuth: React.FC = () => {
     setError(null);
 
     try {
-      console.log('🔐 Обрабатываем Telegram пользователя:', telegramUser);
+      console.log('🔐 Обрабатываем пользователя:', telegramUser.first_name);
       
       // Проверяем существует ли пользователь в profiles
       const { data: existingProfile, error: profileError } = await supabase
@@ -139,9 +163,9 @@ const TelegramAuth: React.FC = () => {
     // Для тестирования создаем тестового пользователя
     const testUser: TelegramUser = {
       id: Math.floor(Math.random() * 1000000),
-      first_name: 'ProGamer',
-      last_name: '123',
-      username: 'ProGamer123',
+      first_name: 'TestUser',
+      last_name: 'TG',
+      username: 'testuser_tg',
       photo_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
       auth_date: Date.now(),
       hash: 'test_hash'
@@ -174,17 +198,31 @@ const TelegramAuth: React.FC = () => {
           </div>
         )}
 
-        <Button 
-          onClick={handleManualAuth}
-          className="w-full bg-blue-500 hover:bg-blue-600"
-          disabled={loading}
-        >
-          Войти как тестовый пользователь
-        </Button>
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+            <h4 className="font-semibold text-blue-800 mb-2">Информация о загрузке:</h4>
+            <div className="text-blue-700 space-y-1">
+              <p>• Window: {typeof window !== 'undefined' ? '✅' : '❌'}</p>
+              <p>• Telegram: {typeof window !== 'undefined' && window.Telegram ? '✅' : '❌'}</p>
+              <p>• WebApp: {typeof window !== 'undefined' && window.Telegram?.WebApp ? '✅' : '❌'}</p>
+              {typeof window !== 'undefined' && window.Telegram?.WebApp && (
+                <p>• Пользователь: {window.Telegram.WebApp.initDataUnsafe?.user ? '✅' : '❌'}</p>
+              )}
+            </div>
+          </div>
 
-        <p className="text-xs text-gray-500 mt-4">
-          В реальном приложении авторизация произойдет автоматически через Telegram WebApp
-        </p>
+          <Button 
+            onClick={handleManualAuth}
+            className="w-full bg-blue-500 hover:bg-blue-600"
+            disabled={loading}
+          >
+            Войти как тестовый пользователь
+          </Button>
+
+          <p className="text-xs text-gray-500">
+            В реальном Telegram WebApp авторизация произойдет автоматически
+          </p>
+        </div>
       </div>
     </div>
   );
