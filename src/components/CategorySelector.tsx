@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 interface CategorySelectorProps {
   selectedCategory: 'Rollers' | 'BMX' | 'Skateboard';
   onCategoryChange: (category: 'Rollers' | 'BMX' | 'Skateboard') => void;
+  disabled?: boolean;
 }
 
 const CategorySelector: React.FC<CategorySelectorProps> = ({
   selectedCategory,
   onCategoryChange,
+  disabled = false,
 }) => {
   const categories = [
     { value: 'Rollers' as const, label: 'Роллеры', emoji: '⛸️' },
@@ -29,6 +31,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             type="button"
             variant={selectedCategory === category.value ? "default" : "outline"}
             onClick={() => onCategoryChange(category.value)}
+            disabled={disabled}
             className="flex flex-col items-center p-3 h-auto"
           >
             <span className="text-lg mb-1">{category.emoji}</span>
