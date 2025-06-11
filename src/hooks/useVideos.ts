@@ -241,7 +241,11 @@ export const useUploadVideo = () => {
 
         // Обновляем достижения пользователя
         try {
-          await supabase.rpc('increment_videos_uploaded', { user_uuid: user.id });
+          await supabase.rpc('update_achievement_progress', { 
+            p_user_id: user.id,
+            p_category: 'videos_uploaded',
+            p_increment: 1
+          });
         } catch (error) {
           console.warn('Ошибка обновления счетчика видео:', error);
         }
