@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 
 const AdminBannerPanel: React.FC = () => {
   const { user } = useAuth();
-  const { data: userProfile } = useUserProfile();
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: banners } = useMarketBanners();
   const createBannerMutation = useCreateMarketBanner();
   
@@ -24,14 +24,32 @@ const AdminBannerPanel: React.FC = () => {
                  userProfile?.username === 'TrickMaster' || 
                  userProfile?.telegram_username === 'TrickMaster';
 
-  console.log('Проверка админа:', {
-    userId: user?.id,
-    userProfileTelegramUsername: userProfile?.telegram_username,
-    userProfileUsername: userProfile?.username,
-    isAdmin
-  });
+  // Детальное логирование для отладки
+  useEffect(() => {
+    console.log('=== Детальная отладка AdminBannerPanel ===');
+    console.log('user:', user);
+    console.log('userProfile:', userProfile);
+    console.log('profileLoading:', profileLoading);
+    console.log('isAdmin:', isAdmin);
+    console.log('Auth user ID:', user?.id);
+    console.log('Profile ID:', userProfile?.id);
+    console.log('Profile telegram_username:', userProfile?.telegram_username);
+    console.log('Profile username:', userProfile?.username);
+    console.log('=== Конец отладки ===');
+  }, [user, userProfile, profileLoading, isAdmin]);
 
+  // Если профиль еще загружается, показываем загрузку
+  if (profileLoading) {
+    return (
+      <div className="mb-6 p-4 text-center text-gray-600">
+        Загрузка профиля...
+      </div>
+    );
+  }
+
+  // Если пользователь не админ, не показываем панель
   if (!isAdmin) {
+    console.log('Пользователь не является админом, скрываем панель');
     return null;
   }
 
@@ -39,8 +57,18 @@ const AdminBannerPanel: React.FC = () => {
     e.preventDefault();
     
     if (!title || !imageUrl) {
+      console.log('Отсутствуют обязательные поля:', { title, imageUrl });
       return;
     }
+
+    console.log('Попытка создать банер с данными:', {
+      title,
+      imageUrl,
+      linkUrl,
+      orderIndex: (banners?.length || 0) + 1,
+      userId: user?.id,
+      adminCheck: isAdmin
+    });
 
     try {
       await createBannerMutation.mutateAsync({
@@ -54,8 +82,10 @@ const AdminBannerPanel: React.FC = () => {
       setTitle('');
       setImageUrl('');
       setLinkUrl('');
+      console.log('Банер успешно создан');
     } catch (error) {
       console.error('Ошибка создания банера:', error);
+      console.error('Детали ошибки:', JSON.stringify(error, null, 2));
     }
   };
 
@@ -69,6 +99,11 @@ const AdminBannerPanel: React.FC = () => {
         <CardDescription className="text-blue-600">
           Создание и управление банерами для маркета
         </CardDescription>
+        {/* Показываем отладочную информацию */}
+        <div className="text-xs text-gray-500 mt-2">
+          Админ: {isAdmin ? 'Да' : 'Нет'} | 
+          Пользователь: {userProfile?.telegram_username || userProfile?.username || 'Не определен'}
+        </div>
       </CardHeader>
       
       <CardContent>
