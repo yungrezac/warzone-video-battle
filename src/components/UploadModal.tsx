@@ -32,10 +32,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
-      if (file.size > 50 * 1024 * 1024) {
+      // Уменьшаем лимит до 25MB
+      if (file.size > 25 * 1024 * 1024) {
         toast({
           title: "Ошибка",
-          description: "Размер файла не должен превышать 50MB",
+          description: "Размер файла не должен превышать 25MB. Попробуйте сжать видео.",
           variant: "destructive",
         });
         return;
@@ -145,7 +146,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
                   Выберите видео для загрузки
                 </h3>
                 <p className="text-gray-500 mb-2 text-xs">
-                  Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 50MB
+                  Поддерживаются форматы: MP4, MOV, AVI. Максимальный размер: 25MB
                 </p>
                 <input
                   ref={fileInputRef}

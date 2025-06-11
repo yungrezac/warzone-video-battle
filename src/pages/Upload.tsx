@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { UploadIcon, Video, X, Edit, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,10 +30,11 @@ const Upload: React.FC = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
-      if (file.size > 100 * 1024 * 1024) {
+      // Строгий лимит 25MB
+      if (file.size > 25 * 1024 * 1024) {
         toast({
           title: "Ошибка",
-          description: "Размер файла не должен превышать 100MB",
+          description: "Размер файла не должен превышать 25MB. Сожмите видео в любом видеоредакторе.",
           variant: "destructive",
         });
         return;
@@ -152,8 +152,13 @@ const Upload: React.FC = () => {
                 Выберите видео для загрузки
               </h3>
               <p className="text-gray-500 mb-3 text-sm">
-                Поддерживаются форматы: MP4, MOV, AVI, MKV, WEBM. Максимальный размер: 100MB
+                Поддерживаются форматы: MP4, MOV, AVI, MKV, WEBM. Максимальный размер: 25MB
               </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mb-3">
+                <p className="text-xs text-yellow-700">
+                  💡 Для сжатия видео используйте любой видеоредактор или онлайн-сервисы
+                </p>
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"

@@ -438,6 +438,11 @@ export const useUploadVideo = () => {
         throw new Error('User not authenticated');
       }
 
+      // Дополнительная проверка размера файла
+      if (videoFile.size > 25 * 1024 * 1024) {
+        throw new Error('Размер файла превышает 25MB. Пожалуйста, сожмите видео.');
+      }
+
       console.log('🎬 Начинаем загрузку видео...');
       onProgress?.(10);
 
@@ -450,13 +455,13 @@ export const useUploadVideo = () => {
           console.log('📦 Создаем bucket videos...');
           const { error: bucketError } = await supabase.storage.createBucket('videos', {
             public: true,
-            fileSizeLimit: 104857600, // 100MB
+            fileSizeLimit: 26214400, // 25MB в байтах
             allowedMimeTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm']
           });
           
           if (bucketError && !bucketError.message.includes('already exists')) {
             console.error('❌ Ошибка создания bucket:', bucketError);
-            throw bucketError;
+            throw new Error(`Ошибка настройки хранилища: ${bucketError.message}`);
           }
         }
 
@@ -468,16 +473,25 @@ export const useUploadVideo = () => {
         
         console.log('📤 Загружаем видеофайл:', videoFileName);
 
-        // Загружаем видео
+        // Загружаем видео с дополнительными опциями
         const { error: videoUploadError } = await supabase.storage
           .from('videos')
           .upload(videoFileName, videoFile, {
             cacheControl: '3600',
-            upsert: false
+            upsert: false,
+            duplex: 'half'
           });
 
         if (videoUploadError) {
           console.error('❌ Ошибка загрузки видео:', videoUploadError);
+          
+          // Специальная обработка ошибки размера
+          if (videoUploadError.message.includes('exceeded') || 
+              videoUploadError.message.includes('size') ||
+              videoUploadError.message.includes('large')) {
+            throw new Error('Файл слишком большой. Максимальный размер: 25MB. Сожмите видео в видеоредакторе.');
+          }
+          
           throw new Error(`Ошибка загрузки видео: ${videoUploadError.message}`);
         }
 
@@ -574,7 +588,16 @@ export const useUploadVideo = () => {
 
       } catch (error) {
         console.error('❌ Общая ошибка загрузки:', error);
-        throw error;
+        
+        // Улучшенная обработка ошибок
+        if (error instanceof Error) {
+          if (error.message.includes('exceeded') || error.message.includes('size')) {
+            throw new Error('Размер файла слишком большой. Максимум: 25MB');
+          }
+          throw error;
+        }
+        
+        throw new Error('Неизвестная ошибка при загрузке видео');
       }
     },
     onSuccess: () => {
