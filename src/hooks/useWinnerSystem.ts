@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -54,12 +55,16 @@ export const useYesterdayWinner = () => {
           ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
           : 0;
 
-        // Обновляем статистику в объекте winner
-        winner.likes_count = likesCount || 0;
-        winner.comments_count = commentsCount || 0;
-        winner.average_rating = Number(averageRating.toFixed(1));
+        // Создаем новый объект с обновленной статистикой
+        const updatedWinner = {
+          ...winner,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          average_rating: Number(averageRating.toFixed(1))
+        };
 
-        console.log('Победитель найден с обновленной статистикой:', winner);
+        console.log('Победитель найден с обновленной статистикой:', updatedWinner);
+        return updatedWinner;
       }
 
       return winner;
