@@ -111,7 +111,7 @@ const Market: React.FC = () => {
                       key={item.id}
                       item={{
                         ...item,
-                        images: Array.isArray(item.images) ? item.images : []
+                        images: Array.isArray(item.images) ? (item.images as string[]) : []
                       }}
                       onItemClick={handleItemClick}
                     />

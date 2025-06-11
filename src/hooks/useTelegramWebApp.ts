@@ -60,6 +60,7 @@ interface TelegramWebApp {
   openLink?: (url: string) => void;
   openTelegramLink?: (url: string) => void;
   openInvoice?: (url: string, callback?: (status: string) => void) => void;
+  sendInvoice?: (params: any, callback?: (status: string) => void) => void;
 }
 
 export const useTelegramWebApp = () => {
@@ -68,26 +69,26 @@ export const useTelegramWebApp = () => {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
+      const tg = window.Telegram.WebApp as any;
       
       // Инициализируем WebApp
       tg.ready();
       tg.expand();
       
       // Настраиваем тему (если методы доступны)
-      if (tg.setHeaderColor) {
+      if (typeof tg.setHeaderColor === 'function') {
         tg.setHeaderColor('#1f2937');
       }
-      if (tg.setBackgroundColor) {
+      if (typeof tg.setBackgroundColor === 'function') {
         tg.setBackgroundColor('#ffffff');
       }
       
       // Включаем подтверждение закрытия (если метод доступен)
-      if (tg.enableClosingConfirmation) {
+      if (typeof tg.enableClosingConfirmation === 'function') {
         tg.enableClosingConfirmation();
       }
       
-      setWebApp(tg);
+      setWebApp(tg as TelegramWebApp);
       setIsReady(true);
       
       console.log('🚀 Telegram WebApp инициализирован:', {

@@ -30,17 +30,52 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
     }
 
     try {
-      createPayment();
-      
-      // Показываем загрузку в главной кнопке Telegram
-      webApp.MainButton.setText('Создаем счет...');
-      webApp.MainButton.showProgress();
-      webApp.MainButton.show();
+      // Создаем прямой инвойс через Telegram WebApp API
+      if (webApp.sendInvoice) {
+        webApp.sendInvoice({
+          title: 'Premium подписка',
+          description: 'Месячная премиум подписка на RollerTricks',
+          payload: `premium_subscription_${Date.now()}`,
+          provider_token: '', // Для Telegram Stars оставляем пустым
+          currency: 'XTR', // Telegram Stars
+          prices: [
+            {
+              label: 'Premium подписка',
+              amount: 300 // 300 Telegram Stars
+            }
+          ],
+          photo_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+          photo_width: 400,
+          photo_height: 300,
+          need_name: false,
+          need_phone_number: false,
+          need_email: false,
+          need_shipping_address: false,
+          send_phone_number_to_provider: false,
+          send_email_to_provider: false,
+          is_flexible: false
+        }, (status: string) => {
+          console.log('Статус платежа:', status);
+          if (status === 'paid') {
+            toast({
+              title: "Успех!",
+              description: "Подписка успешно оформлена",
+            });
+            setIsOpen(false);
+          }
+        });
+      } else {
+        // Fallback - создаем счет через нашу функцию
+        createPayment();
+        
+        toast({
+          title: "Счет создан",
+          description: "Проверьте личные сообщения бота",
+        });
+      }
       
     } catch (error) {
       console.error('Ошибка создания платежа:', error);
-      webApp.MainButton.hideProgress();
-      webApp.MainButton.hide();
       
       toast({
         title: "Ошибка",
