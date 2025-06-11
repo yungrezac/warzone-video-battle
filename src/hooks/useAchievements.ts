@@ -28,11 +28,11 @@ export interface UserAchievement {
 }
 
 export const useAchievements = () => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
-      console.log('🏆 Загружаем все активные достижения...');
-      
       const { data, error } = await supabase
         .from('achievements')
         .select('*')
@@ -40,12 +40,7 @@ export const useAchievements = () => {
         .order('category', { ascending: true })
         .order('target_value', { ascending: true });
 
-      if (error) {
-        console.error('❌ Ошибка загрузки достижений:', error);
-        throw error;
-      }
-      
-      console.log('✅ Загружено достижений:', data?.length || 0);
+      if (error) throw error;
       return data as Achievement[];
     },
   });
@@ -57,125 +52,107 @@ export const useUserAchievements = () => {
   return useQuery({
     queryKey: ['user-achievements', user?.id],
     queryFn: async () => {
-      if (!user?.id) {
-        console.log('❌ Пользователь не авторизован для загрузки достижений');
-        throw new Error('User not authenticated');
-      }
+      if (!user?.id) throw new Error('User not authenticated');
 
       console.log('🏆 Загружаем достижения пользователя:', user.id);
 
-      try {
-        // Получаем все активные достижения
-        const { data: allAchievements, error: achievementsError } = await supabase
-          .from('achievements')
-          .select('*')
-          .eq('is_active', true)
-          .order('category', { ascending: true })
-          .order('target_value', { ascending: true });
+      // Получаем все активные достижения
+      const { data: allAchievements, error: achievementsError } = await supabase
+        .from('achievements')
+        .select('*')
+        .eq('is_active', true);
 
-        if (achievementsError) {
-          console.error('❌ Ошибка загрузки достижений:', achievementsError);
-          throw achievementsError;
-        }
+      if (achievementsError) {
+        console.error('❌ Ошибка загрузки достижений:', achievementsError);
+        throw achievementsError;
+      }
 
-        console.log('📊 Всего активных достижений:', allAchievements?.length || 0);
+      console.log('📊 Всего активных достижений:', allAchievements?.length);
 
-        if (!allAchievements || allAchievements.length === 0) {
-          console.log('⚠️ Нет активных достижений в системе');
-          return [];
-        }
+      // Получаем прогресс пользователя по достижениям
+      const { data: userProgress, error: progressError } = await supabase
+        .from('user_achievements')
+        .select('*')
+        .eq('user_id', user.id);
 
-        // Получаем прогресс пользователя по достижениям
-        const { data: userProgress, error: progressError } = await supabase
+      if (progressError) {
+        console.error('❌ Ошибка загрузки прогресса:', progressError);
+        throw progressError;
+      }
+
+      console.log('📈 Записей прогресса пользователя:', userProgress?.length || 0);
+
+      // Создаем карту прогресса пользователя
+      const progressMap = new Map();
+      userProgress?.forEach(up => {
+        progressMap.set(up.achievement_id, up);
+      });
+
+      // Для каждого достижения проверяем, есть ли у пользователя запись о прогрессе
+      // Если нет - создаем её автоматически
+      const missingProgressAchievements = allAchievements?.filter(achievement => 
+        !progressMap.has(achievement.id)
+      ) || [];
+
+      // Создаем записи для отсутствующих достижений
+      if (missingProgressAchievements.length > 0) {
+        console.log('➕ Создаем записи для отсутствующих достижений:', missingProgressAchievements.length);
+        
+        const newProgressRecords = missingProgressAchievements.map(achievement => ({
+          user_id: user.id,
+          achievement_id: achievement.id,
+          current_progress: 0,
+          is_completed: false,
+        }));
+
+        const { data: createdProgress, error: createError } = await supabase
           .from('user_achievements')
-          .select('*')
-          .eq('user_id', user.id);
+          .insert(newProgressRecords)
+          .select('*');
 
-        if (progressError) {
-          console.error('❌ Ошибка загрузки прогресса:', progressError);
-          throw progressError;
+        if (createError) {
+          console.error('❌ Ошибка создания записей прогресса:', createError);
+        } else {
+          console.log('✅ Создано записей прогресса:', createdProgress?.length);
+          // Добавляем созданные записи к прогрессу
+          createdProgress?.forEach(cp => {
+            progressMap.set(cp.achievement_id, cp);
+          });
         }
+      }
 
-        console.log('📈 Записей прогресса пользователя:', userProgress?.length || 0);
-
-        // Создаем карту прогресса пользователя для быстрого доступа
-        const progressMap = new Map();
-        userProgress?.forEach(up => {
-          progressMap.set(up.achievement_id, up);
-        });
-
-        // Находим достижения, для которых у пользователя нет записей прогресса
-        const missingProgressAchievements = allAchievements.filter(achievement => 
-          !progressMap.has(achievement.id)
-        );
-
-        // Создаем записи для отсутствующих достижений
-        if (missingProgressAchievements.length > 0) {
-          console.log('➕ Создаем записи для отсутствующих достижений:', missingProgressAchievements.length);
-          
-          const newProgressRecords = missingProgressAchievements.map(achievement => ({
+      // Объединяем данные - для каждого достижения показываем прогресс
+      const result = allAchievements?.map(achievement => {
+        const userProgress = progressMap.get(achievement.id);
+        
+        if (!userProgress) {
+          // Если записи всё ещё нет (ошибка создания), создаем виртуальную
+          console.warn('⚠️ Нет записи прогресса для достижения:', achievement.title);
+          return {
+            id: `virtual-${achievement.id}`,
             user_id: user.id,
             achievement_id: achievement.id,
             current_progress: 0,
             is_completed: false,
-          }));
-
-          const { data: createdProgress, error: createError } = await supabase
-            .from('user_achievements')
-            .insert(newProgressRecords)
-            .select('*');
-
-          if (createError) {
-            console.error('❌ Ошибка создания записей прогресса:', createError);
-            // Не блокируем загрузку, продолжаем с существующими данными
-          } else {
-            console.log('✅ Создано записей прогресса:', createdProgress?.length || 0);
-            // Добавляем созданные записи к карте прогресса
-            createdProgress?.forEach(cp => {
-              progressMap.set(cp.achievement_id, cp);
-            });
-          }
-        }
-
-        // Объединяем данные - для каждого достижения создаем запись с прогрессом
-        const result: UserAchievement[] = allAchievements.map(achievement => {
-          const userProgress = progressMap.get(achievement.id);
-          
-          if (!userProgress) {
-            // Если записи всё ещё нет, создаем виртуальную запись
-            console.warn('⚠️ Создаем виртуальную запись для достижения:', achievement.title);
-            return {
-              id: `virtual-${achievement.id}`,
-              user_id: user.id,
-              achievement_id: achievement.id,
-              current_progress: 0,
-              is_completed: false,
-              completed_at: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              achievement: achievement,
-            };
-          }
-
-          return {
-            ...userProgress,
+            completed_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
             achievement: achievement,
           };
-        });
+        }
 
-        console.log('🎯 Финальный результат достижений:', result.length, 'записей');
-        console.log('✅ Выполненных достижений:', result.filter(r => r.is_completed).length);
-        
-        return result;
+        return {
+          ...userProgress,
+          achievement: achievement,
+        };
+      }) || [];
 
-      } catch (error) {
-        console.error('❌ Общая ошибка загрузки достижений пользователя:', error);
-        throw error;
-      }
+      console.log('🎯 Финальный результат достижений:', result.length, 'записей');
+      console.log('✅ Выполненных достижений:', result.filter(r => r.is_completed).length);
+      
+      return result as UserAchievement[];
     },
     enabled: !!user?.id,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
 
@@ -201,41 +178,27 @@ export const useUpdateAchievementProgress = () => {
       const { data: user } = await supabase.auth.getUser();
       
       if (!user.user?.id) {
-        console.error('❌ Пользователь не авторизован для обновления достижений');
         throw new Error('User not authenticated');
       }
 
-      try {
-        const { error } = await supabase.rpc('update_achievement_progress', {
-          p_user_id: user.user.id,
-          p_category: category,
-          p_new_value: newValue || null,
-          p_increment: increment,
-        });
+      const { error } = await supabase.rpc('update_achievement_progress', {
+        p_user_id: user.user.id,
+        p_category: category,
+        p_new_value: newValue || null,
+        p_increment: increment,
+      });
 
-        if (error) {
-          console.error('❌ Ошибка обновления достижений:', error);
-          throw error;
-        }
-
-        console.log('✅ Достижения обновлены успешно для категории:', category);
-        return { success: true };
-
-      } catch (error) {
-        console.error('❌ Общая ошибка обновления достижений:', error);
+      if (error) {
+        console.error('❌ Ошибка обновления достижений:', error);
         throw error;
       }
+
+      console.log('✅ Достижения обновлены успешно');
     },
-    onSuccess: (data, variables) => {
-      console.log('🔄 Обновляем кэш после изменения достижений категории:', variables.category);
-      
-      // Обновляем кэш достижений
+    onSuccess: () => {
+      console.log('🔄 Обновляем кэш после изменения достижений...');
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      queryClient.invalidateQueries({ queryKey: ['achievement-stats'] });
-    },
-    onError: (error, variables) => {
-      console.error('❌ Ошибка в мутации обновления достижений для категории:', variables.category, error);
     },
   });
 };
@@ -246,59 +209,36 @@ export const useAchievementStats = () => {
   return useQuery({
     queryKey: ['achievement-stats', user?.id],
     queryFn: async () => {
-      if (!user?.id) {
-        console.log('❌ Пользователь не авторизован для загрузки статистики достижений');
-        throw new Error('User not authenticated');
-      }
+      if (!user?.id) throw new Error('User not authenticated');
 
-      console.log('📊 Загружаем статистику достижений для пользователя:', user.id);
+      // Получаем все активные достижения
+      const { data: allAchievements, error: achievementsError } = await supabase
+        .from('achievements')
+        .select('id')
+        .eq('is_active', true);
 
-      try {
-        // Получаем все активные достижения
-        const { data: allAchievements, error: achievementsError } = await supabase
-          .from('achievements')
-          .select('id')
-          .eq('is_active', true);
+      if (achievementsError) throw achievementsError;
 
-        if (achievementsError) {
-          console.error('❌ Ошибка загрузки всех достижений:', achievementsError);
-          throw achievementsError;
-        }
+      // Получаем завершенные достижения пользователя
+      const { data: completedAchievements, error: completedError } = await supabase
+        .from('user_achievements')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true);
 
-        // Получаем завершенные достижения пользователя
-        const { data: completedAchievements, error: completedError } = await supabase
-          .from('user_achievements')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('is_completed', true);
+      if (completedError) throw completedError;
 
-        if (completedError) {
-          console.error('❌ Ошибка загрузки завершенных достижений:', completedError);
-          throw completedError;
-        }
+      const total = allAchievements?.length || 0;
+      const completed = completedAchievements?.length || 0;
+      const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-        const total = allAchievements?.length || 0;
-        const completed = completedAchievements?.length || 0;
-        const remaining = total - completed;
-        const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-        const stats = {
-          total,
-          completed,
-          remaining,
-          completionRate,
-        };
-
-        console.log('📈 Статистика достижений:', stats);
-        return stats;
-
-      } catch (error) {
-        console.error('❌ Общая ошибка загрузки статистики достижений:', error);
-        throw error;
-      }
+      return {
+        total,
+        completed,
+        remaining: total - completed,
+        completionRate,
+      };
     },
     enabled: !!user?.id,
-    retry: 2,
-    retryDelay: 1000,
   });
 };

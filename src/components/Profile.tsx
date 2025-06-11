@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Award } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -10,7 +11,6 @@ import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
 import { Loader2 } from 'lucide-react';
 import VideoCard from './VideoCard';
 import DeleteVideoDialog from './DeleteVideoDialog';
-import TasksSection from './TasksSection';
 import AchievementCard from './AchievementCard';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -203,9 +203,6 @@ const Profile: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Tasks Section */}
-        <TasksSection />
 
         {/* Achievement Section */}
         {achievementStats && (
