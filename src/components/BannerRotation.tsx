@@ -1,12 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, MessageCircle, Users } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 interface ChatBanner {
   id: string;
   title: string;
-  description: string;
   url: string;
   gradient: string;
   sport: string;
@@ -22,7 +22,6 @@ const chatBanners: ChatBanner[] = [
   {
     id: 'roller',
     title: 'Чат для роллеров',
-    description: 'Присоединяйся к сообществу роллеров!',
     url: 'https://t.me/tricksroller',
     gradient: 'from-blue-500 to-cyan-500',
     sport: 'Роллеры'
@@ -30,7 +29,6 @@ const chatBanners: ChatBanner[] = [
   {
     id: 'bmx',
     title: 'Чат для BMX',
-    description: 'Все о BMX трюках и общении!',
     url: 'https://t.me/tricksbmx',
     gradient: 'from-orange-500 to-red-500',
     sport: 'BMX'
@@ -38,7 +36,6 @@ const chatBanners: ChatBanner[] = [
   {
     id: 'skateboard',
     title: 'Чат для скейтеров',
-    description: 'Скейтбординг сообщество!',
     url: 'https://t.me/tricksSKATEBOARD',
     gradient: 'from-purple-500 to-pink-500',
     sport: 'Скейтеры'
@@ -71,16 +68,11 @@ const BannerRotation: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full translate-y-8 -translate-x-8"></div>
         
         <div className="flex items-center h-full p-4 relative z-10">
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex-1 min-w-0">
             {/* Заголовок */}
             <h3 className="font-bold text-lg leading-tight text-white drop-shadow-sm">
               {currentBanner.title}
             </h3>
-            
-            {/* Описание */}
-            <p className="text-sm opacity-90 leading-relaxed text-white/90 max-w-[200px]">
-              {currentBanner.description}
-            </p>
           </div>
 
           {/* Кнопка присоединения */}
