@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
+import { useAchievementTriggers } from './useAchievementTriggers';
+import { useTelegramNotifications } from './useTelegramNotifications';
 
 export interface Video {
   id: string;
