@@ -7,6 +7,7 @@ import VideoFeed from "@/components/VideoFeed";
 import Profile from "@/components/Profile";
 import Market from "@/components/Market";
 import Achievements from "@/components/Achievements";
+import TopUsers from "@/components/TopUsers";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Index = () => {
@@ -27,6 +28,8 @@ const Index = () => {
     switch (activeTab) {
       case 'home':
         return <VideoFeed />;
+      case 'top':
+        return <TopUsers />;
       case 'achievements':
         return <Achievements />;
       case 'market':
