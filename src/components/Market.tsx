@@ -1,22 +1,26 @@
 
 import React, { useState } from 'react';
-import { ShoppingBag, Package } from 'lucide-react';
+import { ShoppingBag, Package, Crown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMarketItems } from '@/hooks/useMarketItems';
 import { useAuth } from '@/components/AuthWrapper';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useSubscription } from '@/hooks/useSubscription';
 import AdminWinnerControl from './AdminWinnerControl';
 import AdminMarketPanel from './AdminMarketPanel';
 import AdminBannerPanel from './AdminBannerPanel';
 import BannerCarousel from './BannerCarousel';
 import MarketItemCard from './MarketItemCard';
 import MarketItemModal from './MarketItemModal';
+import SubscriptionModal from './SubscriptionModal';
+import PremiumBadge from './PremiumBadge';
 import { Loader2 } from 'lucide-react';
 
 const Market: React.FC = () => {
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
   const { data: marketItems, isLoading, error } = useMarketItems();
+  const { isPremium, subscription } = useSubscription();
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -40,13 +44,9 @@ const Market: React.FC = () => {
 
   return (
     <div className="p-4 pb-20 max-w-6xl mx-auto">
-      {/* Admin Winner Control */}
+      {/* Admin Panels */}
       <AdminWinnerControl />
-
-      {/* Admin Banner Panel */}
       <AdminBannerPanel />
-
-      {/* Admin Market Panel */}
       <AdminMarketPanel />
 
       {/* Banner Carousel */}
@@ -59,20 +59,49 @@ const Market: React.FC = () => {
             <div className="p-2 bg-white/20 rounded-lg">
               <ShoppingBag className="w-8 h-8" />
             </div>
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-2xl text-white">Маркет</CardTitle>
               <CardDescription className="text-purple-100">
                 Тратьте заработанные баллы на крутые награды!
               </CardDescription>
             </div>
+            {/* Premium Status */}
+            {isPremium && (
+              <div className="text-right">
+                <PremiumBadge size="md" />
+                {subscription && (
+                  <div className="text-xs text-purple-100 mt-1">
+                    до {new Date(subscription.expires_at).toLocaleDateString('ru-RU')}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {user && (
-            <div className="mt-3 p-3 bg-white/10 rounded-lg">
-              <p className="text-white">
-                Ваши баллы: <span className="font-bold text-yellow-300">{userProfile?.total_points || 0}</span>
-              </p>
-            </div>
-          )}
+
+          {/* User Points and Premium CTA */}
+          <div className="mt-4 flex items-center justify-between">
+            {user && (
+              <div className="p-3 bg-white/10 rounded-lg">
+                <p className="text-white">
+                  Ваши баллы: <span className="font-bold text-yellow-300">{userProfile?.total_points || 0}</span>
+                </p>
+              </div>
+            )}
+
+            {!isPremium && (
+              <SubscriptionModal>
+                <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg cursor-pointer hover:from-yellow-500 hover:to-orange-600 transition-all">
+                  <div className="flex items-center gap-2 text-white">
+                    <Crown className="w-5 h-5" />
+                    <div>
+                      <div className="text-sm font-medium">Получить Premium</div>
+                      <div className="text-xs opacity-90">300 Stars/месяц</div>
+                    </div>
+                  </div>
+                </div>
+              </SubscriptionModal>
+            )}
+          </div>
         </CardHeader>
       </Card>
 
@@ -102,6 +131,7 @@ const Market: React.FC = () => {
                   key={item.id} 
                   item={item} 
                   onItemClick={handleItemClick}
+                  isPremium={isPremium}
                 />
               ))}
             </div>

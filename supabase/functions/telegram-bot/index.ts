@@ -1,129 +1,142 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-
-const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-const WEBAPP_URL = 'https://cibytresc-wntdgxqjpfm.lovableproject.com'; // URL вашего мини-приложения
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface TelegramUpdate {
-  message?: {
-    chat: {
-      id: number;
-    };
-    from: {
-      id: number;
-      first_name: string;
-      username?: string;
-    };
-    text: string;
-  };
-}
-
-const handler = async (req: Request): Promise<Response> => {
+const serve_handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Получен запрос от Telegram бота');
-    
-    if (!TELEGRAM_BOT_TOKEN) {
-      throw new Error('TELEGRAM_BOT_TOKEN не настроен');
+    const update = await req.json();
+    console.log('Получено обновление от Telegram:', JSON.stringify(update, null, 2));
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    if (!botToken) {
+      throw new Error('TELEGRAM_BOT_TOKEN not set');
     }
 
-    const update: TelegramUpdate = await req.json();
-    console.log('Telegram update:', update);
+    // Обработка успешного платежа
+    if (update.message?.successful_payment) {
+      const payment = update.message.successful_payment;
+      const user = update.message.from;
+      
+      console.log('Обработка успешного платежа:', {
+        telegram_payment_charge_id: payment.telegram_payment_charge_id,
+        invoice_payload: payment.invoice_payload,
+        user_id: user.id
+      });
 
-    if (!update.message) {
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // Находим пользователя в базе данных
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('telegram_id', user.id.toString())
+        .single();
+
+      if (userProfile) {
+        // Обрабатываем платеж через нашу функцию
+        const { data, error } = await supabase.functions.invoke('process-payment', {
+          body: {
+            user_id: userProfile.id,
+            telegram_payment_charge_id: payment.telegram_payment_charge_id,
+            telegram_invoice_payload: payment.invoice_payload
+          }
+        });
+
+        if (error) {
+          console.error('Ошибка обработки платежа:', error);
+        } else {
+          console.log('Платеж обработан успешно:', data);
+        }
+      }
+    }
+
+    // Обработка команд
+    if (update.message?.text) {
+      const chatId = update.message.chat.id;
+      const text = update.message.text;
+      const user = update.message.from;
+
+      let response = '';
+
+      switch (text) {
+        case '/start':
+          response = `🏄‍♂️ Добро пожаловать в RollerTricks, ${user.first_name}!\n\nЗдесь вы можете:\n• Загружать видео с трюками\n• Участвовать в конкурсах\n• Получать баллы и призы\n• Общаться с единомышленниками\n\n🎮 Открыть приложение: /app\n💎 Premium подписка: /premium\n❓ Помощь: /help`;
+          break;
+
+        case '/app':
+          response = '🎮 Откройте приложение RollerTricks через кнопку меню или по ссылке в описании бота!';
+          break;
+
+        case '/premium':
+          response = '💎 Premium подписка дает вам:\n\n✨ Неограниченную загрузку видео\n🚀 Приоритетное размещение в ленте\n🎯 Эксклюзивные стикеры и значки\n🏆 Доступ к премиум контестам\n📞 Персональную поддержку\n📊 Расширенную статистику\n\n💰 Стоимость: 300 Telegram Stars в месяц\n\nДля оформления подписки используйте приложение!';
+          break;
+
+        case '/help':
+          response = '❓ Помощь по RollerTricks:\n\n🎮 /app - Открыть приложение\n💎 /premium - Информация о Premium\n📞 /support - Связаться с поддержкой\n\n📱 Основные функции доступны в веб-приложении.\n\nЕсли у вас есть вопросы, обращайтесь к администрации: @rollertricksby';
+          break;
+
+        case '/support':
+          response = '📞 Поддержка RollerTricks\n\nПо всем вопросам обращайтесь:\n👨‍💼 Администратор: @rollertricksby\n\n⏰ Время ответа: обычно в течение 24 часов\n\n📧 Или опишите вашу проблему здесь, и мы постараемся помочь!';
+          break;
+
+        default:
+          if (text.startsWith('/')) {
+            response = '❓ Неизвестная команда. Доступные команды:\n\n🎮 /app - Открыть приложение\n💎 /premium - Premium подписка\n❓ /help - Помощь\n📞 /support - Поддержка';
+          }
+          break;
+      }
+
+      if (response) {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: response,
+            parse_mode: 'HTML'
+          }),
+        });
+      }
+    }
+
+    // Обработка pre_checkout_query для подтверждения платежа
+    if (update.pre_checkout_query) {
+      const preCheckoutQuery = update.pre_checkout_query;
+      
+      await fetch(`https://api.telegram.org/bot${botToken}/answerPreCheckoutQuery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pre_checkout_query_id: preCheckoutQuery.id,
+          ok: true
+        }),
       });
     }
 
-    const { chat, from, text } = update.message;
-    
-    // Обрабатываем команду /start
-    if (text === '/start') {
-      await sendWelcomeMessage(chat.id, from.first_name);
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error: any) {
-    console.error('Ошибка в telegram-bot функции:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+  } catch (error) {
+    console.error('Ошибка в telegram-bot:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 };
 
-async function sendWelcomeMessage(chatId: number, firstName: string) {
-  const welcomeText = `🛼 Привет, ${firstName}!
-
-Добро пожаловать в <b>WZ Battle</b> — самое крутое приложение для роллеров!
-
-🔥 <b>Что тебя ждет:</b>
-• Загружай видео своих трюков
-• Участвуй в ежедневных соревнованиях  
-• Получай лайки и оценки от сообщества
-• Зарабатывай баллы за победы
-• Открывай достижения
-• Покупай крутые предметы в магазине
-
-🏆 <b>Как это работает:</b>
-Каждый день проходит голосование за лучший трюк. Побеждает видео с наибольшим количеством оценок! Победитель получает баллы равные количеству голосов.
-
-Готов показать свои навыки? Жми кнопку ниже! 👇`;
-
-  const keyboard = {
-    inline_keyboard: [
-      [{
-        text: "🚀 Открыть WZ Battle",
-        web_app: {
-          url: WEBAPP_URL
-        }
-      }]
-    ]
-  };
-
-  console.log(`Отправляем приветственное сообщение пользователю ${chatId}`);
-
-  const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: welcomeText,
-      parse_mode: 'HTML',
-      reply_markup: keyboard,
-    }),
-  });
-
-  const telegramData = await response.json();
-  
-  if (!response.ok) {
-    console.error('Ошибка отправки сообщения Telegram:', telegramData);
-    throw new Error(`Telegram API error: ${telegramData.description || 'Unknown error'}`);
-  }
-
-  console.log('Приветственное сообщение отправлено успешно:', telegramData);
-}
-
-serve(handler);
+serve(serve_handler);

@@ -202,6 +202,57 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount_stars: number
+          created_at: string | null
+          id: string
+          processed_at: string | null
+          status: string
+          subscription_id: string | null
+          telegram_invoice_payload: string
+          telegram_payment_charge_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_stars: number
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          telegram_invoice_payload: string
+          telegram_payment_charge_id: string
+          user_id: string
+        }
+        Update: {
+          amount_stars?: number
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          telegram_invoice_payload?: string
+          telegram_payment_charge_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       points_history: {
         Row: {
           created_at: string
@@ -362,6 +413,7 @@ export type Database = {
           id: string
           is_premium: boolean | null
           last_name: string | null
+          premium_expires_at: string | null
           sport_category: string | null
           telegram_id: string | null
           telegram_photo_url: string | null
@@ -377,6 +429,7 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           last_name?: string | null
+          premium_expires_at?: string | null
           sport_category?: string | null
           telegram_id?: string | null
           telegram_photo_url?: string | null
@@ -392,6 +445,7 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           last_name?: string | null
+          premium_expires_at?: string | null
           sport_category?: string | null
           telegram_id?: string | null
           telegram_photo_url?: string | null
@@ -758,6 +812,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "spots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          amount_stars: number
+          created_at: string | null
+          expires_at: string
+          id: string
+          starts_at: string
+          status: string
+          subscription_type: string
+          telegram_invoice_payload: string | null
+          telegram_payment_charge_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_stars?: number
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          starts_at?: string
+          status?: string
+          subscription_type?: string
+          telegram_invoice_payload?: string | null
+          telegram_payment_charge_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_stars?: number
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          starts_at?: string
+          status?: string
+          subscription_type?: string
+          telegram_invoice_payload?: string | null
+          telegram_payment_charge_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1252,6 +1356,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_active_subscription: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       complete_task: {
         Args: { p_task_id: string }
         Returns: Json
@@ -1265,6 +1373,15 @@ export type Database = {
           p_reference_id?: string
         }
         Returns: undefined
+      }
+      create_subscription_after_payment: {
+        Args: {
+          p_user_id: string
+          p_telegram_charge_id: string
+          p_invoice_payload: string
+          p_amount_stars: number
+        }
+        Returns: Json
       }
       decrement_likes_count: {
         Args: { video_id: string }
