@@ -34,18 +34,24 @@ export const useNotificationSettings = () => {
     if (!user?.id) return;
 
     try {
+      console.log('Загружаем настройки уведомлений для пользователя:', user.id);
+      
       const { data, error } = await supabase
         .from('notification_settings')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Ошибка загрузки настроек:', error);
+        if (error.code !== 'PGRST116') {
+          toast.error('Ошибка загрузки настроек');
+        }
         return;
       }
 
       if (data) {
+        console.log('Настройки загружены:', data);
         setSettings({
           likes_notifications: data.likes_notifications,
           comments_notifications: data.comments_notifications,
@@ -53,37 +59,78 @@ export const useNotificationSettings = () => {
           achievements_notifications: data.achievements_notifications,
           system_notifications: data.system_notifications,
         });
+      } else {
+        console.log('Настройки не найдены, используем значения по умолчанию');
       }
     } catch (error) {
       console.error('Ошибка загрузки настроек уведомлений:', error);
+      toast.error('Ошибка загрузки настроек');
     }
   };
 
   const updateSettings = async (newSettings: Partial<NotificationSettings>) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast.error('Необходима авторизация');
+      return;
+    }
 
     setLoading(true);
     try {
       const updatedSettings = { ...settings, ...newSettings };
+      
+      console.log('Сохраняем настройки:', {
+        user_id: user.id,
+        settings: updatedSettings
+      });
 
-      const { error } = await supabase
+      // Сначала пробуем обновить существующую запись
+      const { data: existingData, error: selectError } = await supabase
         .from('notification_settings')
-        .upsert({
-          user_id: user.id,
-          ...updatedSettings,
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Ошибка сохранения настроек:', error);
-        toast.error('Ошибка сохранения настроек');
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('Ошибка поиска существующих настроек:', selectError);
+        throw selectError;
+      }
+
+      let saveError = null;
+
+      if (existingData?.id) {
+        // Обновляем существующую запись
+        console.log('Обновляем существующие настройки с ID:', existingData.id);
+        const { error } = await supabase
+          .from('notification_settings')
+          .update(updatedSettings)
+          .eq('user_id', user.id);
+        
+        saveError = error;
+      } else {
+        // Создаем новую запись
+        console.log('Создаем новые настройки');
+        const { error } = await supabase
+          .from('notification_settings')
+          .insert({
+            user_id: user.id,
+            ...updatedSettings,
+          });
+        
+        saveError = error;
+      }
+
+      if (saveError) {
+        console.error('Ошибка сохранения настроек:', saveError);
+        toast.error(`Ошибка сохранения: ${saveError.message}`);
         return;
       }
 
       setSettings(updatedSettings);
       toast.success('Настройки сохранены');
-    } catch (error) {
+      console.log('Настройки успешно сохранены');
+    } catch (error: any) {
       console.error('Ошибка обновления настроек:', error);
-      toast.error('Ошибка сохранения настроек');
+      toast.error(`Ошибка сохранения настроек: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setLoading(false);
     }
