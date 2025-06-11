@@ -5,10 +5,11 @@ import { useAuth } from '@/components/AuthWrapper';
 import VideoCard from '@/components/VideoCard';
 import WinnerAnnouncement from '@/components/WinnerAnnouncement';
 import AdminWinnerControl from '@/components/AdminWinnerControl';
+import FullScreenUploadModal from '@/components/FullScreenUploadModal';
+import FullScreenUserProfileModal from '@/components/FullScreenUserProfileModal';
 import { Loader2, Plus, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error, refetch } = useVideos();
@@ -16,7 +17,9 @@ const VideoFeed: React.FC = () => {
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -65,6 +68,11 @@ const VideoFeed: React.FC = () => {
     toast.success('Обновляем ленту...');
   };
 
+  const handleUserProfileClick = (userId: string) => {
+    setSelectedUserId(userId);
+    setIsUserProfileModalOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[300px] pb-16">
@@ -99,7 +107,7 @@ const VideoFeed: React.FC = () => {
       {/* Upload Button */}
       <div className="p-3">
         <Button
-          onClick={() => navigate('/upload')}
+          onClick={() => setIsUploadModalOpen(true)}
           className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
@@ -142,6 +150,7 @@ const VideoFeed: React.FC = () => {
                 }}
                 onLike={handleLike}
                 onRate={handleRate}
+                onUserClick={handleUserProfileClick}
               />
             </div>
           ))
@@ -152,13 +161,30 @@ const VideoFeed: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Пока нет видео</h3>
             <p className="text-gray-500 mb-4">Станьте первым, кто поделится своим трюком!</p>
-            <Button onClick={() => navigate('/upload')} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => setIsUploadModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               Загрузить первое видео
             </Button>
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <FullScreenUploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+      />
+      
+      {selectedUserId && (
+        <FullScreenUserProfileModal 
+          isOpen={isUserProfileModalOpen} 
+          onClose={() => {
+            setIsUserProfileModalOpen(false);
+            setSelectedUserId(null);
+          }}
+          userId={selectedUserId}
+        />
+      )}
     </div>
   );
 };
