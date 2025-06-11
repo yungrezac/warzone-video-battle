@@ -28,6 +28,36 @@ export const useSubscription = () => {
     enabled: !!user,
   });
 
+  const createInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('📞 Вызываем Edge Function для создания инвойса...');
+
+      const { data, error } = await supabase.functions.invoke('create-subscription-invoice', {
+        body: {
+          user_id: user.id
+        }
+      });
+
+      if (error) {
+        console.error('❌ Ошибка Edge Function:', error);
+        throw error;
+      }
+
+      console.log('✅ Ответ Edge Function:', data);
+      return data;
+    },
+    onSuccess: () => {
+      console.log('✅ Инвойс успешно создан');
+    },
+    onError: (error) => {
+      console.error('❌ Ошибка создания инвойса:', error);
+    },
+  });
+
   const checkPaymentMutation = useMutation({
     mutationFn: async (paymentData: { telegram_payment_charge_id: string, telegram_invoice_payload: string }) => {
       const { data, error } = await supabase.functions.invoke('process-payment', {
@@ -50,6 +80,8 @@ export const useSubscription = () => {
     subscription,
     isLoading,
     isPremium: !!subscription,
+    createInvoice: createInvoiceMutation.mutateAsync,
+    isCreatingInvoice: createInvoiceMutation.isPending,
     processPayment: checkPaymentMutation.mutateAsync,
     isProcessingPayment: checkPaymentMutation.isPending,
   };

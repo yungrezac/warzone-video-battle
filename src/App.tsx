@@ -34,7 +34,7 @@ if (typeof window !== 'undefined') {
       console.log('📊 WebApp данные:', {
         initDataUnsafe: window.Telegram.WebApp.initDataUnsafe,
         готов: typeof window.Telegram.WebApp.ready === 'function',
-        версия: window.Telegram.WebApp.version || 'неизвестно'
+        версия: (window.Telegram.WebApp as any).version || 'неизвестно'
       });
       
       // Принудительно вызываем ready() если еще не вызван

@@ -15,7 +15,7 @@ interface SubscriptionModalProps {
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { subscription, isPremium, processPayment, isProcessingPayment } = useSubscription();
+  const { subscription, isPremium, createInvoice, isCreatingInvoice } = useSubscription();
   const { webApp } = useTelegramWebApp();
   const { toast } = useToast();
 
@@ -30,56 +30,29 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
     }
 
     try {
-      // Создаем инвойс напрямую через Telegram WebApp API
-      if (webApp.sendInvoice) {
-        const invoicePayload = `premium_subscription_${Date.now()}`;
+      console.log('🎯 Создаем инвойс для подписки...');
+      
+      // Создаем инвойс через нашу Edge Function
+      const invoiceData = await createInvoice();
+      console.log('📄 Инвойс создан:', invoiceData);
+
+      if (!invoiceData?.invoice_url) {
+        throw new Error('Не удалось получить URL инвойса');
+      }
+
+      // Открываем инвойс в Telegram
+      if (webApp.openInvoice) {
+        console.log('💳 Открываем инвойс через webApp.openInvoice...');
         
-        webApp.sendInvoice({
-          title: 'Premium подписка',
-          description: 'Месячная премиум подписка на RollerTricks',
-          payload: invoicePayload,
-          provider_token: '', // Для Telegram Stars оставляем пустым
-          currency: 'XTR', // Telegram Stars
-          prices: [
-            {
-              label: 'Premium подписка',
-              amount: 300 // 300 Telegram Stars
-            }
-          ],
-          photo_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-          photo_width: 400,
-          photo_height: 300,
-          need_name: false,
-          need_phone_number: false,
-          need_email: false,
-          need_shipping_address: false,
-          send_phone_number_to_provider: false,
-          send_email_to_provider: false,
-          is_flexible: false
-        }, async (status: string, data?: any) => {
-          console.log('Статус платежа:', status, data);
+        webApp.openInvoice(invoiceData.invoice_url, (status: string) => {
+          console.log('💰 Статус платежа:', status);
           
-          if (status === 'paid' && data?.telegram_payment_charge_id) {
-            // Обрабатываем успешный платеж
-            try {
-              await processPayment({
-                telegram_payment_charge_id: data.telegram_payment_charge_id,
-                telegram_invoice_payload: invoicePayload
-              });
-              
-              toast({
-                title: "Успех!",
-                description: "Подписка успешно оформлена",
-              });
-              setIsOpen(false);
-            } catch (error) {
-              console.error('Ошибка обработки платежа:', error);
-              toast({
-                title: "Ошибка",
-                description: "Платеж прошел, но возникла ошибка обработки",
-                variant: "destructive",
-              });
-            }
+          if (status === 'paid') {
+            toast({
+              title: "Успех!",
+              description: "Подписка успешно оформлена",
+            });
+            setIsOpen(false);
           } else if (status === 'cancelled') {
             toast({
               title: "Платеж отменен",
@@ -94,19 +67,21 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
           }
         });
       } else {
-        toast({
-          title: "Ошибка",
-          description: "Функция оплаты недоступна в вашей версии Telegram",
-          variant: "destructive",
-        });
+        // Fallback: открываем ссылку
+        console.log('🔗 Открываем ссылку на инвойс...');
+        if (webApp.openLink) {
+          webApp.openLink(invoiceData.invoice_url);
+        } else {
+          window.open(invoiceData.invoice_url, '_blank');
+        }
       }
       
     } catch (error) {
-      console.error('Ошибка создания платежа:', error);
+      console.error('❌ Ошибка создания платежа:', error);
       
       toast({
         title: "Ошибка",
-        description: "Не удалось создать счет для оплаты",
+        description: error instanceof Error ? error.message : "Не удалось создать счет для оплаты",
         variant: "destructive",
       });
     }
@@ -189,14 +164,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
 
               <Button 
                 onClick={handleSubscribe}
-                disabled={isProcessingPayment}
+                disabled={isCreatingInvoice}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                 size="lg"
               >
-                {isProcessingPayment ? (
+                {isCreatingInvoice ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Обрабатываем...
+                    Создаем счет...
                   </>
                 ) : (
                   <>
