@@ -26,6 +26,10 @@ export interface Video {
     last_name?: string;
     avatar_url?: string;
   };
+  // Добавляем правильные поля для пользовательских данных
+  user_liked?: boolean;
+  user_rating?: number;
+  comments_count?: number;
 }
 
 export const useVideos = () => {
@@ -117,7 +121,7 @@ export const useVideos = () => {
           ratingsMap.set(videoId, { avg: Number(avgRating.toFixed(1)), userRating });
         });
 
-        // Собираем финальные данные
+        // Собираем финальные данные с правильными полями
         const videosWithStats = videos.map(video => {
           const likes = likesMap.get(video.id) || { count: 0, userLiked: false };
           const commentsCount = commentsMap.get(video.id) || 0;
@@ -128,8 +132,8 @@ export const useVideos = () => {
             likes_count: likes.count,
             comments_count: commentsCount,
             average_rating: ratings.avg,
-            user_liked: likes.userLiked,
-            user_rating: ratings.userRating,
+            user_liked: likes.userLiked, // Правильное поле для лайков пользователя
+            user_rating: ratings.userRating, // Правильное поле для рейтинга пользователя
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         });
