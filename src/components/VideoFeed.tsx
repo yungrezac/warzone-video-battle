@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
 import VideoCard from '@/components/VideoCard';
-import UploadModal from '@/components/UploadModal';
 import WinnerAnnouncement from '@/components/WinnerAnnouncement';
 import AdminWinnerControl from '@/components/AdminWinnerControl';
 import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error } = useVideos();
@@ -15,7 +16,7 @@ const VideoFeed: React.FC = () => {
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -89,7 +90,7 @@ const VideoFeed: React.FC = () => {
       {/* Upload Button */}
       <div className="p-3">
         <Button
-          onClick={() => setIsUploadModalOpen(true)}
+          onClick={() => navigate('/upload')}
           className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
@@ -139,12 +140,6 @@ const VideoFeed: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Upload Modal */}
-      <UploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-      />
     </div>
   );
 };
