@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,7 +35,7 @@ export const useAuth = () => {
 };
 
 interface AuthWrapperProps {
-  children: React.ReactNode;
+  children: React.ReactNode | ((props: { user: User | null; loading: boolean }) => React.ReactNode);
 }
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
@@ -261,9 +262,11 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     localStorage.removeItem('roller_tricks_user');
   };
 
+  const contextValue = { user, loading, signOut, signIn };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, signIn }}>
-      {children}
+    <AuthContext.Provider value={contextValue}>
+      {typeof children === 'function' ? children({ user, loading }) : children}
     </AuthContext.Provider>
   );
 };
