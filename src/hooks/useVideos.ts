@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -53,7 +54,9 @@ export const useVideos = () => {
             avatar_url,
             telegram_username
           ),
-          video_likes (user_id)
+          video_likes (user_id),
+          video_ratings (rating, user_id),
+          video_comments (id)
         `)
         .order('created_at', { ascending: false });
 
@@ -66,17 +69,42 @@ export const useVideos = () => {
       const savedUser = localStorage.getItem('roller_tricks_user');
       const user = savedUser ? JSON.parse(savedUser) : null;
 
-      const videosWithLikes = data.map((video) => {
-        const user_liked = video.video_likes.some((like) => like.user_id === user?.id);
+      const videosWithStats = data.map((video) => {
+        // Подсчитываем лайки
+        const likes_count = video.video_likes?.length || 0;
+        const user_liked = video.video_likes?.some((like) => like.user_id === user?.id) || false;
 
-        // Преобразуем video_likes в boolean значение
+        // Подсчитываем комментарии
+        const comments_count = video.video_comments?.length || 0;
+
+        // Подсчитываем рейтинг
+        const ratings = video.video_ratings || [];
+        const average_rating = ratings.length > 0 
+          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+          : 0;
+        
+        // Находим рейтинг пользователя
+        const user_rating = ratings.find(r => r.user_id === user?.id)?.rating || 0;
+
+        console.log(`📊 Статистика видео ${video.id}:`, {
+          likes_count,
+          user_liked,
+          comments_count,
+          average_rating: average_rating.toFixed(1),
+          user_rating
+        });
+
         return {
           ...video,
+          likes_count,
           user_liked,
+          comments_count,
+          average_rating: Number(average_rating.toFixed(1)),
+          user_rating,
         };
       });
 
-      return videosWithLikes;
+      return videosWithStats;
     },
   });
 };
@@ -169,7 +197,7 @@ export const useUploadVideo = () => {
           description,
           video_url: videoUrl,
           thumbnail_url: thumbnailUrl,
-          user_id: user.id, // Используем ID из локального хранилища
+          user_id: user.id,
           category,
         })
         .select()
@@ -233,15 +261,21 @@ export const useLikeVideo = () => {
         
         if (error) throw error;
         
-        // Обновляем счетчик
-        const { error: updateError } = await supabase
+        // Обновляем счетчик лайков в таблице videos
+        const { data: currentVideo } = await supabase
           .from('videos')
-          .update({ 
-            likes_count: supabase.raw('likes_count - 1')
-          })
-          .eq('id', videoId);
+          .select('likes_count')
+          .eq('id', videoId)
+          .single();
         
-        if (updateError) throw updateError;
+        if (currentVideo) {
+          await supabase
+            .from('videos')
+            .update({ 
+              likes_count: Math.max((currentVideo.likes_count || 1) - 1, 0)
+            })
+            .eq('id', videoId);
+        }
       } else {
         // Ставим лайк
         console.log('➕ Ставим лайк...');
@@ -251,15 +285,21 @@ export const useLikeVideo = () => {
         
         if (error) throw error;
         
-        // Обновляем счетчик
-        const { error: updateError } = await supabase
+        // Обновляем счетчик лайков в таблице videos
+        const { data: currentVideo } = await supabase
           .from('videos')
-          .update({ 
-            likes_count: supabase.raw('likes_count + 1')
-          })
-          .eq('id', videoId);
+          .select('likes_count')
+          .eq('id', videoId)
+          .single();
         
-        if (updateError) throw updateError;
+        if (currentVideo) {
+          await supabase
+            .from('videos')
+            .update({ 
+              likes_count: (currentVideo.likes_count || 0) + 1
+            })
+            .eq('id', videoId);
+        }
       }
     },
     onSuccess: () => {

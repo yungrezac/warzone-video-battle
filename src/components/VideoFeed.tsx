@@ -222,7 +222,9 @@ const VideoFeed: React.FC = () => {
               title: video.title,
               user_liked: video.user_liked,
               user_rating: video.user_rating,
-              likes_count: video.likes_count
+              likes_count: video.likes_count,
+              comments_count: video.comments_count,
+              average_rating: video.average_rating
             });
 
             return (
