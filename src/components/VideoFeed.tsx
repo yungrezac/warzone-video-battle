@@ -242,7 +242,7 @@ const VideoFeed: React.FC = () => {
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
                     rating: video.average_rating || 0,
-                    views: video.views,
+                    views: video.views || 0,
                     isWinner: video.is_winner,
                     timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
                       day: 'numeric',
