@@ -150,7 +150,6 @@ const VideoFeed: React.FC = () => {
                 }}
                 onLike={handleLike}
                 onRate={handleRate}
-                onUserClick={handleUserProfileClick}
               />
             </div>
           ))
