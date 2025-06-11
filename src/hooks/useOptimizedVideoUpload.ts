@@ -158,11 +158,15 @@ export const useOptimizedVideoUpload = () => {
         onProgress?.(95);
 
         // Асинхронно обновляем достижения (не блокируем UI)
-        supabase.rpc('update_achievement_progress', { 
-          p_user_id: user.id,
-          p_category: 'videos_uploaded',
-          p_increment: 1
-        }).catch(error => console.warn('Ошибка обновления достижений:', error));
+        try {
+          await supabase.rpc('update_achievement_progress', { 
+            p_user_id: user.id,
+            p_category: 'videos_uploaded',
+            p_increment: 1
+          });
+        } catch (error) {
+          console.warn('Ошибка обновления достижений:', error);
+        }
 
         onProgress?.(100);
 
