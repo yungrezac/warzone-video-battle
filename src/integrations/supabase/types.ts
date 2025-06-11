@@ -1213,14 +1213,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      decrement_likes_count: {
-        Args: { video_id: string }
-        Returns: undefined
-      }
-      increment_likes_count: {
-        Args: { video_id: string }
-        Returns: undefined
-      }
       purchase_item: {
         Args: { p_item_id: string; p_quantity?: number }
         Returns: Json

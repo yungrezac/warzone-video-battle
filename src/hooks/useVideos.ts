@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -54,9 +53,7 @@ export const useVideos = () => {
             avatar_url,
             telegram_username
           ),
-          video_likes (user_id),
-          video_ratings (user_id, rating),
-          video_comments (id)
+          video_likes (user_id)
         `)
         .order('created_at', { ascending: false });
 
@@ -71,15 +68,11 @@ export const useVideos = () => {
 
       const videosWithLikes = data.map((video) => {
         const user_liked = video.video_likes.some((like) => like.user_id === user?.id);
-        const userRating = video.video_ratings.find((rating) => rating.user_id === user?.id);
 
+        // Преобразуем video_likes в boolean значение
         return {
           ...video,
           user_liked,
-          user_rating: userRating?.rating || 0,
-          comments_count: video.video_comments?.length || 0,
-          // Используем likes_count из базы данных, а не подсчитываем связанные записи
-          likes_count: video.likes_count || 0,
         };
       });
 
@@ -240,21 +233,15 @@ export const useLikeVideo = () => {
         
         if (error) throw error;
         
-        // Обновляем счетчик вручную
-        const { data: currentVideo } = await supabase
+        // Обновляем счетчик
+        const { error: updateError } = await supabase
           .from('videos')
-          .select('likes_count')
-          .eq('id', videoId)
-          .single();
+          .update({ 
+            likes_count: supabase.raw('likes_count - 1')
+          })
+          .eq('id', videoId);
         
-        if (currentVideo) {
-          const { error: updateError } = await supabase
-            .from('videos')
-            .update({ likes_count: Math.max(0, (currentVideo.likes_count || 0) - 1) })
-            .eq('id', videoId);
-          
-          if (updateError) throw updateError;
-        }
+        if (updateError) throw updateError;
       } else {
         // Ставим лайк
         console.log('➕ Ставим лайк...');
@@ -264,21 +251,15 @@ export const useLikeVideo = () => {
         
         if (error) throw error;
         
-        // Обновляем счетчик вручную
-        const { data: currentVideo } = await supabase
+        // Обновляем счетчик
+        const { error: updateError } = await supabase
           .from('videos')
-          .select('likes_count')
-          .eq('id', videoId)
-          .single();
+          .update({ 
+            likes_count: supabase.raw('likes_count + 1')
+          })
+          .eq('id', videoId);
         
-        if (currentVideo) {
-          const { error: updateError } = await supabase
-            .from('videos')
-            .update({ likes_count: (currentVideo.likes_count || 0) + 1 })
-            .eq('id', videoId);
-          
-          if (updateError) throw updateError;
-        }
+        if (updateError) throw updateError;
       }
     },
     onSuccess: () => {

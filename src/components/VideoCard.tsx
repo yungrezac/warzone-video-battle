@@ -37,7 +37,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   const [showRating, setShowRating] = useState(false);
   const [localUserLiked, setLocalUserLiked] = useState(video.userLiked || false);
   const [localUserRating, setLocalUserRating] = useState(video.userRating || 0);
-  const [localLikes, setLocalLikes] = useState(video.likes || 0);
   const location = useLocation();
 
   // Обновляем локальное состояние при изменении props
@@ -46,26 +45,17 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
       videoId: video.id,
       userLiked: video.userLiked,
       localUserLiked,
-      userRating: video.userRating,
-      likes: video.likes,
-      localLikes
+      userRating: video.userRating
     });
     
     setLocalUserLiked(video.userLiked || false);
     setLocalUserRating(video.userRating || 0);
-    setLocalLikes(video.likes || 0);
-  }, [video.userLiked, video.userRating, video.likes, video.id]);
+  }, [video.userLiked, video.userRating, video.id]);
 
   const handleLike = () => {
-    console.log('💖 VideoCard handleLike вызван для видео:', video.id, 'текущий статус лайка:', localUserLiked);
-    
+    console.log('💖 VideoCard handleLike вызван для видео:', video.id);
     // Мгновенно обновляем локальное состояние для лучшего UX
-    const newLikedState = !localUserLiked;
-    const newLikesCount = newLikedState ? localLikes + 1 : localLikes - 1;
-    
-    setLocalUserLiked(newLikedState);
-    setLocalLikes(Math.max(0, newLikesCount));
-    
+    setLocalUserLiked(!localUserLiked);
     onLike(video.id);
   };
 
@@ -163,7 +153,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
               className={`${localUserLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}
             >
               <Heart className={`w-3.5 h-3.5 mr-1 ${localUserLiked ? 'fill-current' : ''}`} />
-              <span className="text-xs">{localLikes}</span>
+              <span className="text-xs">{video.likes}</span>
             </Button>
 
             <VideoComments 
@@ -178,7 +168,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
               className="text-gray-600 hover:text-yellow-500 h-7 px-1.5"
             >
               <Star className="w-3.5 h-3.5 mr-1" />
-              <span className="text-xs">{Number(video.rating).toFixed(1)}</span>
+              <span className="text-xs">{video.rating.toFixed(1)}</span>
             </Button>
 
             <Button
