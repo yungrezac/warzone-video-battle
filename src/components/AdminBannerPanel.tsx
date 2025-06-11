@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Plus, Settings, X, Image as ImageIcon } from 'lucide-react';
 import { useCreateMarketBanner, useMarketBanners } from '@/hooks/useMarketBanners';
 import { useAuth } from '@/components/AuthWrapper';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const AdminBannerPanel: React.FC = () => {
   const { user } = useAuth();
+  const { data: userProfile } = useUserProfile();
   const { data: banners } = useMarketBanners();
   const createBannerMutation = useCreateMarketBanner();
   
@@ -17,10 +19,17 @@ const AdminBannerPanel: React.FC = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
 
-  // Проверяем, является ли пользователь админом
-  const isAdmin = user?.telegram_username === 'rollertricksby' || 
-                 user?.username === 'TrickMaster' || 
-                 user?.telegram_username === 'TrickMaster';
+  // Проверяем, является ли пользователь админом через профиль из базы данных
+  const isAdmin = userProfile?.telegram_username === 'rollertricksby' || 
+                 userProfile?.username === 'TrickMaster' || 
+                 userProfile?.telegram_username === 'TrickMaster';
+
+  console.log('Проверка админа:', {
+    userId: user?.id,
+    userProfileTelegramUsername: userProfile?.telegram_username,
+    userProfileUsername: userProfile?.username,
+    isAdmin
+  });
 
   if (!isAdmin) {
     return null;
