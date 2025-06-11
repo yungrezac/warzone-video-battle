@@ -7,6 +7,8 @@ import { useAuth } from '@/components/AuthWrapper';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import AdminWinnerControl from './AdminWinnerControl';
 import AdminMarketPanel from './AdminMarketPanel';
+import AdminBannerPanel from './AdminBannerPanel';
+import BannerCarousel from './BannerCarousel';
 import MarketItemCard from './MarketItemCard';
 import MarketItemModal from './MarketItemModal';
 import { Loader2 } from 'lucide-react';
@@ -28,10 +30,20 @@ const Market: React.FC = () => {
     setSelectedItem(null);
   };
 
+  // Приводим изображения к правильному типу
+  const processedItems = marketItems?.map(item => ({
+    ...item,
+    images: Array.isArray(item.images) ? item.images : 
+            (typeof item.images === 'string' ? [item.images] : [])
+  })) || [];
+
   return (
     <div className="p-4 pb-20 max-w-6xl mx-auto">
       {/* Admin Winner Control */}
       <AdminWinnerControl />
+
+      {/* Admin Banner Panel */}
+      <AdminBannerPanel />
 
       {/* Admin Market Panel */}
       <AdminMarketPanel />
@@ -60,6 +72,9 @@ const Market: React.FC = () => {
         </CardHeader>
       </Card>
 
+      {/* Banner Carousel */}
+      <BannerCarousel />
+
       {/* Loading state */}
       {isLoading && (
         <div className="flex justify-center items-center min-h-[300px]">
@@ -79,9 +94,9 @@ const Market: React.FC = () => {
       {/* Market Items */}
       {!isLoading && !error && (
         <>
-          {marketItems && marketItems.length > 0 ? (
+          {processedItems && processedItems.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {marketItems.map((item) => (
+              {processedItems.map((item) => (
                 <MarketItemCard 
                   key={item.id} 
                   item={item} 

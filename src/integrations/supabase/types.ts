@@ -80,6 +80,39 @@ export type Database = {
           },
         ]
       }
+      market_banners: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       market_items: {
         Row: {
           category: string
