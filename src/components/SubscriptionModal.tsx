@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ interface SubscriptionModalProps {
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { subscription, isPremium, createPayment, isCreatingPayment } = useSubscription();
+  const { subscription, isPremium, processPayment, isProcessingPayment } = useSubscription();
   const { webApp } = useTelegramWebApp();
   const { toast } = useToast();
 
@@ -29,31 +30,74 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
     }
 
     try {
-      // Сначала создаем инвойс через нашу функцию
-      const response = await createPayment();
-      
-      // Затем открываем его через webApp.openInvoice
-      if (webApp.openInvoice && response?.invoice_url) {
-        webApp.openInvoice(response.invoice_url, (status: string) => {
-          console.log('Статус платежа через openInvoice:', status);
-          if (status === 'paid') {
-            toast({
-              title: "Успех!",
-              description: "Подписка успешно оформлена",
-            });
-            setIsOpen(false);
+      // Создаем инвойс напрямую через Telegram WebApp API
+      if (webApp.sendInvoice) {
+        const invoicePayload = `premium_subscription_${Date.now()}`;
+        
+        webApp.sendInvoice({
+          title: 'Premium подписка',
+          description: 'Месячная премиум подписка на RollerTricks',
+          payload: invoicePayload,
+          provider_token: '', // Для Telegram Stars оставляем пустым
+          currency: 'XTR', // Telegram Stars
+          prices: [
+            {
+              label: 'Premium подписка',
+              amount: 300 // 300 Telegram Stars
+            }
+          ],
+          photo_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+          photo_width: 400,
+          photo_height: 300,
+          need_name: false,
+          need_phone_number: false,
+          need_email: false,
+          need_shipping_address: false,
+          send_phone_number_to_provider: false,
+          send_email_to_provider: false,
+          is_flexible: false
+        }, async (status: string, data?: any) => {
+          console.log('Статус платежа:', status, data);
+          
+          if (status === 'paid' && data?.telegram_payment_charge_id) {
+            // Обрабатываем успешный платеж
+            try {
+              await processPayment({
+                telegram_payment_charge_id: data.telegram_payment_charge_id,
+                telegram_invoice_payload: invoicePayload
+              });
+              
+              toast({
+                title: "Успех!",
+                description: "Подписка успешно оформлена",
+              });
+              setIsOpen(false);
+            } catch (error) {
+              console.error('Ошибка обработки платежа:', error);
+              toast({
+                title: "Ошибка",
+                description: "Платеж прошел, но возникла ошибка обработки",
+                variant: "destructive",
+              });
+            }
           } else if (status === 'cancelled') {
             toast({
               title: "Платеж отменен",
               description: "Вы можете попробовать еще раз",
             });
+          } else if (status === 'failed') {
+            toast({
+              title: "Ошибка платежа",
+              description: "Попробуйте еще раз",
+              variant: "destructive",
+            });
           }
         });
       } else {
-        // Fallback - показываем сообщение о создании счета
         toast({
-          title: "Счет создан",
-          description: "Проверьте личные сообщения бота",
+          title: "Ошибка",
+          description: "Функция оплаты недоступна в вашей версии Telegram",
+          variant: "destructive",
         });
       }
       
@@ -145,14 +189,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
 
               <Button 
                 onClick={handleSubscribe}
-                disabled={isCreatingPayment}
+                disabled={isProcessingPayment}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                 size="lg"
               >
-                {isCreatingPayment ? (
+                {isProcessingPayment ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Создаем счет...
+                    Обрабатываем...
                   </>
                 ) : (
                   <>

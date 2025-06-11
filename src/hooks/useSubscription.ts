@@ -28,20 +28,6 @@ export const useSubscription = () => {
     enabled: !!user,
   });
 
-  const createPaymentMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('create-subscription-invoice', {
-        body: { user_id: user?.id }
-      });
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-    },
-  });
-
   const checkPaymentMutation = useMutation({
     mutationFn: async (paymentData: { telegram_payment_charge_id: string, telegram_invoice_payload: string }) => {
       const { data, error } = await supabase.functions.invoke('process-payment', {
@@ -64,9 +50,7 @@ export const useSubscription = () => {
     subscription,
     isLoading,
     isPremium: !!subscription,
-    createPayment: () => createPaymentMutation.mutateAsync(),
-    processPayment: checkPaymentMutation.mutate,
-    isCreatingPayment: createPaymentMutation.isPending,
+    processPayment: checkPaymentMutation.mutateAsync,
     isProcessingPayment: checkPaymentMutation.isPending,
   };
 };
