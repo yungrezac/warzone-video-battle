@@ -7,11 +7,12 @@ export const useWithdrawal = () => {
   const queryClient = useQueryClient();
 
   const createWithdrawalRequest = useMutation({
-    mutationFn: async ({ amount }: { amount: number }) => {
+    mutationFn: async ({ amount_points }: { amount_points: number }) => {
       const { data, error } = await supabase
         .from('withdrawal_requests')
         .insert({
-          amount,
+          amount_points,
+          amount_rubles: amount_points * 0.1, // 1 балл = 0.1 рубля
           status: 'pending'
         })
         .select()
