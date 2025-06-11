@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Calendar, Trophy, Video, Trash2, Award } from 'lucide-react';
+import { Calendar, Trophy, Video, Trash2, Award, Settings, ArrowUpRight } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
@@ -12,6 +11,8 @@ import { Loader2 } from 'lucide-react';
 import VideoCard from './VideoCard';
 import DeleteVideoDialog from './DeleteVideoDialog';
 import AchievementCard from './AchievementCard';
+import NotificationSettings from './NotificationSettings';
+import ComingSoonModal from './ComingSoonModal';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,8 @@ const Profile: React.FC = () => {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<{id: string, title: string} | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
   // Update achievements when user stats change
   useEffect(() => {
@@ -133,6 +136,38 @@ const Profile: React.FC = () => {
     <div className="pb-16">
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3">
+        {/* Header with settings buttons */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center">
+            <div className="bg-white bg-opacity-20 rounded-full p-1.5 mr-2">
+              <Trophy className="w-4 h-4" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">Мой профиль</h1>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8 bg-white bg-opacity-20 hover:bg-white hover:bg-opacity-30 rounded-full"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8 bg-white bg-opacity-20 hover:bg-white hover:bg-opacity-30 rounded-full"
+              onClick={() => setIsWithdrawOpen(true)}
+            >
+              <ArrowUpRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+        
         <div className="flex items-center mb-2">
           <img
             src={displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
@@ -332,6 +367,17 @@ const Profile: React.FC = () => {
         onConfirm={handleDeleteConfirm}
         isDeleting={deleteVideoMutation.isPending}
         videoTitle={videoToDelete?.title || ''}
+      />
+
+      {/* Modals for settings and withdraw */}
+      <NotificationSettings 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
+      
+      <ComingSoonModal 
+        isOpen={isWithdrawOpen} 
+        onClose={() => setIsWithdrawOpen(false)} 
       />
     </div>
   );

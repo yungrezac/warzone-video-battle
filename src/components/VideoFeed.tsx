@@ -1,9 +1,6 @@
-
 import React, { useState } from 'react';
 import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useAuth } from '@/components/AuthWrapper';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import Header from '@/components/Header';
 import VideoCard from '@/components/VideoCard';
 import VideoCardSkeleton from '@/components/VideoCardSkeleton';
 import WinnerAnnouncement from '@/components/WinnerAnnouncement';
@@ -17,7 +14,6 @@ import { Button } from '@/components/ui/button';
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error, refetch } = useVideos();
   const { user, loading: authLoading } = useAuth();
-  const { data: userProfile } = useUserProfile();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -138,10 +134,6 @@ const VideoFeed: React.FC = () => {
   if (authLoading) {
     return (
       <div className="pb-16">
-        <Header 
-          userBalance={0} 
-          userName="Загрузка..." 
-        />
         <div className="p-3 space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <VideoCardSkeleton key={index} />
@@ -155,11 +147,6 @@ const VideoFeed: React.FC = () => {
   if (isLoading) {
     return (
       <div className="pb-16">
-        <Header 
-          userBalance={userProfile?.balance || 0} 
-          userName={user?.username || user?.telegram_username || 'Роллер'} 
-        />
-        
         {/* Winner Announcement Skeleton */}
         <div className="p-3">
           <div className="bg-gray-200 animate-pulse rounded-lg p-4 mb-4">
@@ -192,10 +179,6 @@ const VideoFeed: React.FC = () => {
   if (error) {
     return (
       <div className="pb-16">
-        <Header 
-          userBalance={userProfile?.balance || 0} 
-          userName={user?.username || user?.telegram_username || 'Роллер'} 
-        />
         <div className="p-3">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center">
             <p className="font-semibold mb-2">Ошибка загрузки видео</p>
@@ -211,11 +194,6 @@ const VideoFeed: React.FC = () => {
 
   return (
     <div className="pb-16">
-      <Header 
-        userBalance={userProfile?.balance || 0} 
-        userName={user?.username || user?.telegram_username || 'Роллер'} 
-      />
-      
       {/* Winner Announcement */}
       <WinnerAnnouncement onViewWinner={handleViewWinner} />
       
