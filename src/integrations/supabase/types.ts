@@ -715,6 +715,39 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          reward_points: number
+          telegram_channel_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          reward_points?: number
+          telegram_channel_url: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          reward_points?: number
+          telegram_channel_url?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -904,6 +937,38 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_tasks: {
+        Row: {
+          completed_at: string
+          id: string
+          points_awarded: number
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          points_awarded?: number
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          points_awarded?: number
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -1134,6 +1199,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_task: {
+        Args: { p_task_id: string }
+        Returns: Json
+      }
       create_points_history: {
         Args: {
           p_user_id: string
