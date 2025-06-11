@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,7 +33,35 @@ export const useYesterdayWinner = () => {
         throw error;
       }
 
-      console.log('Победитель найден:', winner);
+      if (winner) {
+        // Загружаем актуальную статистику видео
+        const { count: likesCount } = await supabase
+          .from('video_likes')
+          .select('*', { count: 'exact' })
+          .eq('video_id', winner.id);
+
+        const { count: commentsCount } = await supabase
+          .from('video_comments')
+          .select('*', { count: 'exact' })
+          .eq('video_id', winner.id);
+
+        const { data: ratings } = await supabase
+          .from('video_ratings')
+          .select('rating')
+          .eq('video_id', winner.id);
+
+        const averageRating = ratings && ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+          : 0;
+
+        // Обновляем статистику в объекте winner
+        winner.likes_count = likesCount || 0;
+        winner.comments_count = commentsCount || 0;
+        winner.average_rating = Number(averageRating.toFixed(1));
+
+        console.log('Победитель найден с обновленной статистикой:', winner);
+      }
+
       return winner;
     },
   });
