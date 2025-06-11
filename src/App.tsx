@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { VideoPlaybackProvider } from "@/contexts/VideoPlaybackContext";
 import AuthWrapper from "@/components/AuthWrapper";
-import TelegramAuth from "@/components/TelegramAuth";
 import AchievementTracker from "@/components/AchievementTracker";
 import Index from "./pages/Index";
 import UserProfile from "./pages/UserProfile";
@@ -58,16 +57,18 @@ const App = () => {
           });
           
           if (loading) {
-            console.log('⏳ Показываем TelegramAuth из-за loading');
-            return <TelegramAuth />;
+            console.log('⏳ Показываем загрузку');
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                <div className="bg-white rounded-lg p-8 text-center">
+                  <div className="w-8 h-8 animate-spin mx-auto mb-4 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                  <p className="text-gray-600">Загрузка...</p>
+                </div>
+              </div>
+            );
           }
 
-          if (!user) {
-            console.log('👤 Показываем TelegramAuth из-за отсутствия пользователя');
-            return <TelegramAuth />;
-          }
-
-          console.log('🏠 Показываем основное приложение для пользователя:', user.id);
+          console.log('🏠 Показываем основное приложение для пользователя:', user?.id || 'без пользователя');
           
           return (
             <VideoPlaybackProvider>

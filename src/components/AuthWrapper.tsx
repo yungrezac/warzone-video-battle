@@ -104,22 +104,27 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             } else {
               console.log('❌ Нет данных пользователя в initDataUnsafe');
               console.log('🔍 Полный объект initDataUnsafe:', tg.initDataUnsafe);
+              // Все равно создаем пользователя как админа, если в Telegram но без данных
+              console.log('🔧 Создаем админского пользователя для Telegram без данных');
+              await createAdminUser();
+              return;
             }
           } else {
-            console.log('❌ Telegram WebApp не найден');
-            console.log('🔍 Доступные свойства window.Telegram:', 
-              window.Telegram ? Object.keys(window.Telegram) : 'Telegram объект отсутствует'
-            );
+            console.log('❌ Telegram WebApp не найден - создаем админа');
+            await createAdminUser();
+            return;
           }
         } else {
-          console.log('❌ Window объект недоступен');
+          console.log('❌ Window объект недоступен - создаем админа');
+          await createAdminUser();
+          return;
         }
-
-        console.log('🚫 Переходим к экрану авторизации');
 
       } catch (err: any) {
         console.error('❌ Критическая ошибка инициализации:', err);
         console.error('📋 Stack trace:', err.stack);
+        // В случае ошибки тоже создаем админа
+        await createAdminUser();
       } finally {
         console.log('✅ Завершаем инициализацию, убираем loading');
         setLoading(false);
@@ -225,7 +230,103 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
       } catch (err: any) {
         console.error('❌ Ошибка работы с пользователем:', err);
-        throw err;
+        // В случае ошибки создаем админа
+        await createAdminUser();
+      }
+    };
+
+    const createAdminUser = async () => {
+      try {
+        console.log('👑 Создаем админский аккаунт');
+        
+        // Проверяем существует ли админ профиль
+        const { data: existingAdmin, error: adminError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('username', 'TrickMaster')
+          .maybeSingle();
+
+        let adminId = existingAdmin?.id;
+
+        if (!existingAdmin && (!adminError || adminError.code === 'PGRST116')) {
+          // Создаем админский профиль
+          const newAdminId = crypto.randomUUID();
+          
+          console.log('➕ Создаем админский профиль с ID:', newAdminId);
+          
+          const { data: newAdmin, error: insertAdminError } = await supabase
+            .from('profiles')
+            .insert({
+              id: newAdminId,
+              username: 'TrickMaster',
+              first_name: 'Admin',
+              last_name: 'Master',
+              avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+              telegram_id: 'admin_web',
+              telegram_username: 'TrickMaster',
+              telegram_photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+            })
+            .select()
+            .single();
+
+          if (insertAdminError) {
+            console.error('❌ Ошибка создания админского профиля:', insertAdminError);
+            throw insertAdminError;
+          }
+
+          console.log('✅ Админский профиль создан:', newAdmin);
+
+          // Создаем запись в user_points
+          const { error: pointsError } = await supabase
+            .from('user_points')
+            .insert({
+              user_id: newAdminId,
+              total_points: 99999,
+              wins_count: 100,
+            });
+
+          if (pointsError) {
+            console.error('❌ Ошибка создания points для админа:', pointsError);
+          }
+
+          adminId = newAdminId;
+        } else if (adminError) {
+          console.error('❌ Ошибка при поиске админского профиля:', adminError);
+          throw adminError;
+        } else {
+          adminId = existingAdmin.id;
+        }
+
+        // Устанавливаем админа в контекст
+        const adminData = {
+          id: adminId,
+          telegram_id: 'admin_web',
+          username: 'TrickMaster',
+          first_name: 'Admin',
+          last_name: 'Master',
+          avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+          telegram_username: 'TrickMaster',
+        };
+
+        console.log('✅ Устанавливаем админа:', adminData);
+        
+        setUser(adminData);
+        localStorage.setItem('roller_tricks_user', JSON.stringify(adminData));
+
+      } catch (err: any) {
+        console.error('❌ Admin auth error:', err);
+        // В крайнем случае создаем простого пользователя
+        const fallbackUser = {
+          id: crypto.randomUUID(),
+          telegram_id: 'fallback_user',
+          username: 'User',
+          first_name: 'Guest',
+          last_name: 'User',
+          avatar_url: '',
+          telegram_username: 'User',
+        };
+        setUser(fallbackUser);
+        localStorage.setItem('roller_tricks_user', JSON.stringify(fallbackUser));
       }
     };
 
