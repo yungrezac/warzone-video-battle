@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, MessageCircle, Trophy, Award } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Trophy, Award, Settings } from 'lucide-react';
+import { useNotificationSettings } from '@/hooks/useNotificationSettings';
+import { Loader2 } from 'lucide-react';
 
 interface NotificationSettingsProps {
   isOpen: boolean;
@@ -11,24 +13,10 @@ interface NotificationSettingsProps {
 }
 
 const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onClose }) => {
-  const [settings, setSettings] = useState({
-    likes: true,
-    comments: true,
-    achievements: true,
-    dailyWinner: true,
-  });
+  const { settings, updateSettings, loading } = useNotificationSettings();
 
   const handleToggle = (key: keyof typeof settings) => {
-    setSettings(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const handleSave = () => {
-    // Здесь будет логика сохранения настроек
-    console.log('Сохраняем настройки:', settings);
-    onClose();
+    updateSettings({ [key]: !settings[key] });
   };
 
   return (
@@ -48,8 +36,9 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
               <span className="text-sm">Лайки</span>
             </div>
             <Switch
-              checked={settings.likes}
-              onCheckedChange={() => handleToggle('likes')}
+              checked={settings.likes_notifications}
+              onCheckedChange={() => handleToggle('likes_notifications')}
+              disabled={loading}
             />
           </div>
           
@@ -59,8 +48,9 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
               <span className="text-sm">Комментарии</span>
             </div>
             <Switch
-              checked={settings.comments}
-              onCheckedChange={() => handleToggle('comments')}
+              checked={settings.comments_notifications}
+              onCheckedChange={() => handleToggle('comments_notifications')}
+              disabled={loading}
             />
           </div>
           
@@ -70,8 +60,9 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
               <span className="text-sm">Достижения</span>
             </div>
             <Switch
-              checked={settings.achievements}
-              onCheckedChange={() => handleToggle('achievements')}
+              checked={settings.achievements_notifications}
+              onCheckedChange={() => handleToggle('achievements_notifications')}
+              disabled={loading}
             />
           </div>
           
@@ -81,18 +72,29 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
               <span className="text-sm">Победитель дня</span>
             </div>
             <Switch
-              checked={settings.dailyWinner}
-              onCheckedChange={() => handleToggle('dailyWinner')}
+              checked={settings.winners_notifications}
+              onCheckedChange={() => handleToggle('winners_notifications')}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4 text-gray-500" />
+              <span className="text-sm">Системные</span>
+            </div>
+            <Switch
+              checked={settings.system_notifications}
+              onCheckedChange={() => handleToggle('system_notifications')}
+              disabled={loading}
             />
           </div>
         </div>
         
-        <div className="flex gap-2 mt-6">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Отмена
-          </Button>
-          <Button onClick={handleSave} className="flex-1">
-            Сохранить
+        <div className="flex justify-end mt-6">
+          <Button onClick={onClose} disabled={loading}>
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Закрыть
           </Button>
         </div>
       </DialogContent>
