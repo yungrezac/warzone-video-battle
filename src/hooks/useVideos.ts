@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -424,12 +425,18 @@ export const useUploadVideo = () => {
       title, 
       description, 
       videoFile,
-      category 
+      category,
+      thumbnailBlob,
+      trimStart,
+      trimEnd
     }: { 
       title: string; 
       description?: string; 
       videoFile: File;
       category: 'Rollers' | 'BMX' | 'Skateboard';
+      thumbnailBlob?: Blob;
+      trimStart?: number;
+      trimEnd?: number;
     }) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
@@ -461,6 +468,24 @@ export const useUploadVideo = () => {
 
       console.log('✅ Файл загружен, создаем запись в БД...', publicUrl);
 
+      // Upload thumbnail if provided
+      let thumbnailUrl = null;
+      if (thumbnailBlob) {
+        const thumbnailFileName = `thumbnail_${Date.now()}.jpg`;
+        const thumbnailPath = `${user.id}/thumbnails/${thumbnailFileName}`;
+        
+        const { error: thumbnailError } = await supabase.storage
+          .from('videos')
+          .upload(thumbnailPath, thumbnailBlob);
+
+        if (!thumbnailError) {
+          const { data: { publicUrl: thumbnailPublicUrl } } = supabase.storage
+            .from('videos')
+            .getPublicUrl(thumbnailPath);
+          thumbnailUrl = thumbnailPublicUrl;
+        }
+      }
+
       // Create video record in database
       const { data: videoData, error: dbError } = await supabase
         .from('videos')
@@ -468,6 +493,7 @@ export const useUploadVideo = () => {
           title,
           description,
           video_url: publicUrl,
+          thumbnail_url: thumbnailUrl,
           user_id: user.id,
           category,
         })
