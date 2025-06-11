@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -74,7 +75,6 @@ const TelegramAuth: React.FC = () => {
 
         if (pointsError) {
           console.error('Ошибка создания points:', pointsError);
-          // Не бросаем ошибку, так как это не критично
         }
 
         profileId = newUserId;
@@ -97,7 +97,6 @@ const TelegramAuth: React.FC = () => {
 
         if (updateError) {
           console.error('Ошибка обновления профиля:', updateError);
-          // Не бросаем ошибку, так как это не критично
         }
         
         profileId = existingProfile.id;
@@ -126,29 +125,6 @@ const TelegramAuth: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    // Проверяем, если мы в Telegram WebApp
-    if (window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      if (tg.expand) {
-        tg.expand();
-      }
-
-      console.log('Telegram WebApp данные:', tg.initDataUnsafe);
-
-      // Получаем данные пользователя из Telegram
-      if (tg.initDataUnsafe?.user) {
-        const telegramUser = tg.initDataUnsafe.user as TelegramUser;
-        handleTelegramAuth(telegramUser);
-      } else {
-        console.log('Данные пользователя Telegram недоступны');
-      }
-    } else {
-      console.log('Telegram WebApp не обнаружен');
-    }
-  }, []);
-
   const handleManualAuth = () => {
     // Для тестирования создаем тестового пользователя
     const testUser: TelegramUser = {
@@ -168,7 +144,7 @@ const TelegramAuth: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
         <div className="bg-white rounded-lg p-8 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Авторизация через Telegram...</p>
+          <p className="text-gray-600">Авторизация...</p>
         </div>
       </div>
     );

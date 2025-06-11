@@ -47,6 +47,16 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       try {
         console.log('Инициализируем пользователя...');
         
+        // Сначала проверяем сохраненного пользователя в localStorage для быстрой загрузки
+        const savedUser = localStorage.getItem('roller_tricks_user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          console.log('Быстрая загрузка сохраненного пользователя:', userData);
+          setUser(userData);
+          setLoading(false);
+          return;
+        }
+
         // Проверяем, запущено ли приложение в Telegram WebApp
         if (window.Telegram?.WebApp) {
           console.log('Telegram WebApp обнаружен');
@@ -64,25 +74,12 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             console.log('Данные пользователя Telegram:', telegramUser);
             
             await createOrUpdateUser(telegramUser);
-            setLoading(false);
             return;
           }
         }
 
-        // Проверяем сохраненного пользователя в localStorage
-        const savedUser = localStorage.getItem('roller_tricks_user');
-        if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          console.log('Загружен сохраненный пользователь:', userData);
-          setUser(userData);
-          setLoading(false);
-          return;
-        }
-
-        // Fallback - создаем тестового пользователя для разработки
-        console.log('Создаем тестового пользователя');
-        const testTelegramId = '123456789';
-        await createTestUser(testTelegramId);
+        // Если нет данных Telegram и нет сохраненного пользователя, показываем TelegramAuth
+        console.log('Нет данных пользователя, переходим к экрану авторизации');
 
       } catch (err: any) {
         console.error('Ошибка инициализации пользователя:', err);
@@ -136,7 +133,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
           if (pointsError) {
             console.error('Ошибка создания points:', pointsError);
-            // Не бросаем ошибку, так как это не критично
           }
 
           profileId = newUserId;
@@ -178,73 +174,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
       } catch (err: any) {
         console.error('Ошибка создания/обновления пользователя:', err);
-        throw err;
-      }
-    };
-
-    const createTestUser = async (testTelegramId: string) => {
-      try {
-        // Проверяем существует ли тестовый пользователь в базе
-        const { data: existingProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('telegram_id', testTelegramId)
-          .maybeSingle();
-
-        let profileId = existingProfile?.id;
-
-        if (!existingProfile) {
-          // Создаем тестового пользователя
-          const newUserId = crypto.randomUUID();
-          
-          const { error: insertProfileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: newUserId,
-              username: 'TrickMaster',
-              first_name: 'Trick',
-              last_name: 'Master',
-              avatar_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
-              telegram_id: testTelegramId,
-              telegram_username: 'TrickMaster',
-              telegram_photo_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
-            });
-
-          if (insertProfileError) throw insertProfileError;
-
-          // Создаем запись в user_points
-          const { error: pointsError } = await supabase
-            .from('user_points')
-            .insert({
-              user_id: newUserId,
-              total_points: 0,
-              wins_count: 0,
-            });
-
-          if (pointsError) {
-            console.error('Ошибка создания points:', pointsError);
-            // Не бросаем ошибку, так как это не критично
-          }
-
-          profileId = newUserId;
-        }
-
-        const userData = {
-          id: profileId,
-          telegram_id: testTelegramId,
-          username: 'TrickMaster',
-          first_name: 'Trick',
-          last_name: 'Master',
-          avatar_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop',
-          telegram_username: 'TrickMaster',
-        };
-
-        setUser(userData);
-        localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
-        console.log('Тестовый пользователь создан/загружен');
-
-      } catch (err: any) {
-        console.error('Ошибка создания тестового пользователя:', err);
         throw err;
       }
     };
