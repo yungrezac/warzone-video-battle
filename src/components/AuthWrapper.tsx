@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -162,7 +163,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             .select()
             .single();
 
-          if (insertProfileError) throw insertProfileError;
+          if (insertProfileError) {
+            console.error('❌ Ошибка создания профиля:', insertProfileError);
+            throw insertProfileError;
+          }
 
           console.log('✅ Профиль создан');
 
@@ -181,6 +185,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
           profileId = newUserId;
         } else if (profileError) {
+          console.error('❌ Ошибка поиска профиля:', profileError);
           throw profileError;
         } else {
           // Обновляем существующий профиль с актуальными данными из Telegram
