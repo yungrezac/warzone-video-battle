@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ShoppingBag, Package } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMarketItems } from '@/hooks/useMarketItems';
@@ -8,15 +8,28 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import AdminWinnerControl from './AdminWinnerControl';
 import AdminMarketPanel from './AdminMarketPanel';
 import MarketItemCard from './MarketItemCard';
+import MarketItemModal from './MarketItemModal';
 import { Loader2 } from 'lucide-react';
 
 const Market: React.FC = () => {
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
   const { data: marketItems, isLoading, error } = useMarketItems();
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleItemClick = (item: any) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
 
   return (
-    <div className="p-4 pb-20 max-w-4xl mx-auto">
+    <div className="p-4 pb-20 max-w-6xl mx-auto">
       {/* Admin Winner Control */}
       <AdminWinnerControl />
 
@@ -67,9 +80,13 @@ const Market: React.FC = () => {
       {!isLoading && !error && (
         <>
           {marketItems && marketItems.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {marketItems.map((item) => (
-                <MarketItemCard key={item.id} item={item} />
+                <MarketItemCard 
+                  key={item.id} 
+                  item={item} 
+                  onItemClick={handleItemClick}
+                />
               ))}
             </div>
           ) : (
@@ -90,6 +107,13 @@ const Market: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Modal для отображения детальной информации о товаре */}
+      <MarketItemModal
+        item={selectedItem}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

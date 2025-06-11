@@ -87,9 +87,11 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          images: Json | null
           is_active: boolean
           price: number
           stock_quantity: number | null
+          subcategory: string | null
           title: string
           updated_at: string
         }
@@ -99,9 +101,11 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
           is_active?: boolean
           price?: number
           stock_quantity?: number | null
+          subcategory?: string | null
           title: string
           updated_at?: string
         }
@@ -111,9 +115,11 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
           is_active?: boolean
           price?: number
           stock_quantity?: number | null
+          subcategory?: string | null
           title?: string
           updated_at?: string
         }

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Settings } from 'lucide-react';
+import { Plus, Settings, X, Upload } from 'lucide-react';
 import { useCreateMarketItem } from '@/hooks/useMarketItems';
 import { useAuth } from '@/components/AuthWrapper';
 
@@ -18,7 +18,10 @@ const AdminMarketPanel: React.FC = () => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('general');
+  const [subcategory, setSubcategory] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   // Проверяем, является ли пользователь админом
   const isAdmin = user?.telegram_username === 'rollertricksby' || 
@@ -28,6 +31,24 @@ const AdminMarketPanel: React.FC = () => {
   if (!isAdmin) {
     return null;
   }
+
+  const addImageUrl = () => {
+    if (newImageUrl.trim() && !imageUrls.includes(newImageUrl.trim())) {
+      setImageUrls([...imageUrls, newImageUrl.trim()]);
+      setNewImageUrl('');
+    }
+  };
+
+  const removeImageUrl = (index: number) => {
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  };
+
+  const subcategoryOptions = {
+    general: ['Товары для всех', 'Аксессуары', 'Подарки'],
+    premium: ['Эксклюзив', 'Премиум товары', 'Ограниченная серия'],
+    badge: ['Уровни', 'Достижения', 'Статус'],
+    equipment: ['Ролики', 'BMX', 'Скейтборды', 'Защита', 'Запчасти']
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +63,9 @@ const AdminMarketPanel: React.FC = () => {
         description: description || undefined,
         price: parseInt(price),
         category,
+        subcategory: subcategory || undefined,
         stockQuantity: stockQuantity ? parseInt(stockQuantity) : undefined,
+        images: imageUrls,
       });
 
       // Очищаем форму
@@ -50,7 +73,10 @@ const AdminMarketPanel: React.FC = () => {
       setDescription('');
       setPrice('');
       setCategory('general');
+      setSubcategory('');
       setStockQuantity('');
+      setImageUrls([]);
+      setNewImageUrl('');
     } catch (error) {
       console.error('Ошибка создания товара:', error);
     }
@@ -124,16 +150,83 @@ const AdminMarketPanel: React.FC = () => {
             </div>
 
             <div>
-              <Label htmlFor="stock">Количество (оставьте пустым для безлимита)</Label>
-              <Input
-                id="stock"
-                type="number"
-                value={stockQuantity}
-                onChange={(e) => setStockQuantity(e.target.value)}
-                placeholder="Безлимит"
-                min="1"
-              />
+              <Label htmlFor="subcategory">Подкатегория</Label>
+              <Select value={subcategory} onValueChange={setSubcategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите подкатегорию" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subcategoryOptions[category as keyof typeof subcategoryOptions]?.map((sub) => (
+                    <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="stock">Количество (оставьте пустым для безлимита)</Label>
+            <Input
+              id="stock"
+              type="number"
+              value={stockQuantity}
+              onChange={(e) => setStockQuantity(e.target.value)}
+              placeholder="Безлимит"
+              min="1"
+            />
+          </div>
+
+          {/* Секция изображений */}
+          <div className="space-y-3">
+            <Label>Изображения товара</Label>
+            
+            {/* Добавление нового изображения */}
+            <div className="flex gap-2">
+              <Input
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                placeholder="URL изображения"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={addImageUrl}
+                variant="outline"
+                size="sm"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Список добавленных изображений */}
+            {imageUrls.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm text-gray-600">Добавленные изображения:</Label>
+                {imageUrls.map((url, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border">
+                    <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                      <img 
+                        src={url} 
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <span className="flex-1 text-sm truncate">{url}</span>
+                    <Button
+                      type="button"
+                      onClick={() => removeImageUrl(index)}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <Button 

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -89,19 +88,23 @@ export const useCreateMarketItem = () => {
       description, 
       price, 
       category,
-      stockQuantity 
+      subcategory,
+      stockQuantity,
+      images 
     }: { 
       title: string; 
       description?: string; 
       price: number; 
       category: string;
+      subcategory?: string;
       stockQuantity?: number;
+      images?: string[];
     }) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
-      console.log('Создаем товар:', { title, description, price, category, stockQuantity });
+      console.log('Создаем товар:', { title, description, price, category, subcategory, stockQuantity, images });
 
       const { data, error } = await supabase
         .from('market_items')
@@ -110,7 +113,9 @@ export const useCreateMarketItem = () => {
           description,
           price,
           category,
+          subcategory,
           stock_quantity: stockQuantity,
+          images: images || [],
         })
         .select()
         .single();
