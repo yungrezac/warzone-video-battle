@@ -9,7 +9,6 @@ import AuthWrapper from "@/components/AuthWrapper";
 import TelegramAuth from "@/components/TelegramAuth";
 import AchievementTracker from "@/components/AchievementTracker";
 import Index from "./pages/Index";
-import Upload from "./pages/Upload";
 import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
@@ -44,7 +43,6 @@ const App = () => (
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/upload" element={<Upload />} />
                   <Route path="/user/:userId" element={<UserProfile />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
