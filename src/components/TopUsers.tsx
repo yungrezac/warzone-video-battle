@@ -57,7 +57,7 @@ const TopUsers: React.FC = () => {
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
         <div className="flex items-center justify-center mb-2">
           <Trophy className="w-8 h-8 mr-2" />
-          <h1 className="text-2xl font-bold">Рейтинг игроков</h1>
+          <h1 className="text-2xl font-bold">Рейтинг пользователей</h1>
         </div>
         <p className="text-center text-purple-100 text-sm">
           Топ пользователей по количеству баллов
