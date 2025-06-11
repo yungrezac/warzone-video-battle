@@ -1,6 +1,4 @@
-
 export const captureElementAsImage = async (element: HTMLElement): Promise<Blob> => {
-  // Импортируем html2canvas динамически
   const html2canvas = (await import('html2canvas')).default;
   
   const canvas = await html2canvas(element, {
@@ -25,35 +23,43 @@ export const shareToTelegram = async (imageBlob: Blob, text: string) => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
       
-      // Создаем FormData для отправки изображения
-      const formData = new FormData();
-      formData.append('photo', imageBlob, 'trick_share.png');
-      formData.append('caption', text);
+      // Конвертируем изображение в base64
+      const imageBase64 = await blobToBase64(imageBlob);
       
-      // Используем метод отправки данных в Telegram
-      if (typeof tg.sendData === 'function') {
-        const shareData = {
-          type: 'share_image',
-          image: await blobToBase64(imageBlob),
-          text: text
-        };
-        
-        tg.sendData(JSON.stringify(shareData));
-        return true;
-      }
-      
-      // Альтернативный способ через HapticFeedback и уведомление
+      // Используем haptic feedback
       if (tg.HapticFeedback) {
         tg.HapticFeedback.impactOccurred('medium');
       }
       
-      // Показываем уведомление о том, что нужно поделиться вручную
-      if (tg.showAlert) {
-        tg.showAlert('Скопируйте текст и поделитесь изображением в чате Telegram!');
-      }
+      // Создаем временную ссылку для скачивания изображения
+      const url = URL.createObjectURL(imageBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'trick_share.png';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       
       // Копируем текст в буфер обмена
-      await navigator.clipboard.writeText(text);
+      try {
+        await navigator.clipboard.writeText(text);
+        
+        // Показываем уведомление пользователю
+        if (tg.showAlert) {
+          tg.showAlert('Изображение скачано, текст скопирован! Теперь вы можете поделиться в любом чате Telegram.');
+        } else {
+          alert('Изображение скачано, текст скопирован! Теперь вы можете поделиться в любом чате Telegram.');
+        }
+      } catch (clipboardError) {
+        console.log('Ошибка копирования в буфер:', clipboardError);
+        if (tg.showAlert) {
+          tg.showAlert('Изображение скачано! Скопируйте текст вручную: ' + text);
+        } else {
+          alert('Изображение скачано! Скопируйте текст вручную: ' + text);
+        }
+      }
       
       return true;
     } else {
