@@ -92,15 +92,20 @@ const serve_handler = async (req: Request): Promise<Response> => {
       throw new Error('Failed to create Telegram invoice');
     }
 
+    // Создаем invoice_url для openInvoice
+    const invoiceUrl = `https://t.me/invoice/${invoicePayload}`;
+
     console.log('Счет создан успешно:', {
       payload: invoicePayload,
-      telegram_id: user.telegram_id
+      telegram_id: user.telegram_id,
+      invoice_url: invoiceUrl
     });
 
     return new Response(
       JSON.stringify({
         success: true,
         invoice_payload: invoicePayload,
+        invoice_url: invoiceUrl,
         message: 'Invoice created successfully'
       }),
       {

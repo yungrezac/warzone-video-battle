@@ -64,7 +64,7 @@ export const useSubscription = () => {
     subscription,
     isLoading,
     isPremium: !!subscription,
-    createPayment: createPaymentMutation.mutate,
+    createPayment: () => createPaymentMutation.mutateAsync(),
     processPayment: checkPaymentMutation.mutate,
     isCreatingPayment: createPaymentMutation.isPending,
     isProcessingPayment: checkPaymentMutation.isPending,
