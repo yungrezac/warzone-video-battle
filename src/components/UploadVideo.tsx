@@ -1,6 +1,5 @@
-
 import React, { useState, useRef } from 'react';
-import { Upload, Video, X, AlertCircle } from 'lucide-react';
+import { Upload, Video, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

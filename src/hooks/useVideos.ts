@@ -274,6 +274,8 @@ export const useUploadVideo = () => {
       videoFile,
       category,
       thumbnailBlob,
+      trimStart,
+      trimEnd,
       onProgress,
     }: {
       title: string;
@@ -281,6 +283,8 @@ export const useUploadVideo = () => {
       videoFile: File;
       category: 'Rollers' | 'BMX' | 'Skateboard';
       thumbnailBlob?: Blob;
+      trimStart?: number;
+      trimEnd?: number;
       onProgress?: (progress: number) => void;
     }) => {
       if (!user?.id) {
