@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Trophy, Video, Trash2, Award, Settings, ArrowUpRight } from 'lucide-react';
+import { Calendar, Trophy, Video, Trash2, Award, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
@@ -7,12 +7,15 @@ import { useDeleteVideo } from '@/hooks/useDeleteVideo';
 import { useAuth } from '@/components/AuthWrapper';
 import { useAchievementStats, useUserAchievements } from '@/hooks/useAchievements';
 import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Loader2 } from 'lucide-react';
 import VideoCard from './VideoCard';
 import DeleteVideoDialog from './DeleteVideoDialog';
 import AchievementCard from './AchievementCard';
 import NotificationSettings from './NotificationSettings';
 import ComingSoonModal from './ComingSoonModal';
+import SubscriptionModal from './SubscriptionModal';
+import PremiumBadge from './PremiumBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +25,7 @@ const Profile: React.FC = () => {
   const { data: userVideos, isLoading: videosLoading } = useUserVideos();
   const { data: achievementStats } = useAchievementStats();
   const { data: userAchievements } = useUserAchievements();
+  const { isPremium, subscription } = useSubscription();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
@@ -175,9 +179,12 @@ const Profile: React.FC = () => {
             className="w-12 h-12 rounded-full border-2 border-white mr-2"
           />
           <div className="flex-1">
-            <h2 className="text-lg font-bold">
-              {displayUser.username || displayUser.telegram_username || 'Роллер'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold">
+                {displayUser.username || displayUser.telegram_username || 'Роллер'}
+              </h2>
+              {isPremium && <PremiumBadge size="sm" />}
+            </div>
             {displayUser.first_name && displayUser.last_name && (
               <p className="text-blue-100 text-sm">
                 {displayUser.first_name} {displayUser.last_name}
@@ -204,160 +211,200 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
+      {/* Premium Section */}
       <div className="p-2">
-        <div className="bg-white rounded-lg shadow-md p-2 mb-3">
-          <h3 className="text-base font-semibold mb-2 flex items-center">
-            <Trophy className="w-4 h-4 mr-2 text-yellow-500" />
-            Статистика
-          </h3>
-          
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className="text-base font-bold text-blue-600">{userProfile?.total_videos || 0}</div>
-              <div className="text-xs text-gray-600">Трюков</div>
-            </div>
-            <div>
-              <div className="text-base font-bold text-red-500">{userProfile?.total_likes || 0}</div>
-              <div className="text-xs text-gray-600">Лайков</div>
-            </div>
-            <div>
-              <div className="text-base font-bold text-green-500">{userProfile?.total_views || 0}</div>
-              <div className="text-xs text-gray-600">Просмотров</div>
-            </div>
-          </div>
-
-          <div className="mt-2 p-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg">
+        {isPremium ? (
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-3 mb-3">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-gray-700 text-sm">Уровень:</span>
-              <span className="font-bold text-orange-600 text-sm">
-                {(userProfile?.total_points || 0) < 100 ? 'Новичок' :
-                 (userProfile?.total_points || 0) < 500 ? 'Любитель' :
-                 (userProfile?.total_points || 0) < 1000 ? 'Мастер' : 'Профи'}
-              </span>
+              <div>
+                <h3 className="text-base font-bold mb-1 flex items-center">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Premium активен
+                </h3>
+                <p className="text-sm opacity-90">
+                  {subscription && `До ${new Date(subscription.expires_at).toLocaleDateString('ru-RU')}`}
+                </p>
+              </div>
+              <PremiumBadge size="md" />
             </div>
           </div>
-        </div>
-
-        {/* Achievement Section */}
-        {achievementStats && (
-          <div className="bg-white rounded-lg shadow-md p-2 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-base font-semibold flex items-center">
-                <Award className="w-4 h-4 mr-2 text-purple-500" />
-                Достижения
-              </h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.dispatchEvent(new CustomEvent('showAchievements'))}
-                className="text-xs"
-              >
-                Все
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 text-center mb-3">
-              <div className="bg-purple-50 rounded-lg p-2">
-                <div className="text-base font-bold text-purple-600">{achievementStats.completed}</div>
-                <div className="text-xs text-purple-700">Получено</div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-2">
-                <div className="text-base font-bold text-blue-600">{achievementStats.remaining}</div>
-                <div className="text-xs text-blue-700">Осталось</div>
-              </div>
-              <div className="bg-orange-50 rounded-lg p-2">
-                <div className="text-base font-bold text-orange-600">{achievementStats.completionRate}%</div>
-                <div className="text-xs text-orange-700">Прогресс</div>
-              </div>
-            </div>
-
-            {recentAchievements.length > 0 && (
+        ) : (
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg p-3 mb-3">
+            <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Последние достижения:</h4>
-                <div className="space-y-1">
-                  {recentAchievements.map(ua => (
-                    <div key={ua.id} className="flex items-center text-xs bg-yellow-50 rounded p-1">
-                      <span className="mr-2">{ua.achievement.icon}</span>
-                      <span className="flex-1 text-gray-700">{ua.achievement.title}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        +{ua.achievement.reward_points}
-                      </Badge>
-                    </div>
-                  ))}
+                <h3 className="text-base font-bold mb-1">Получите Premium!</h3>
+                <p className="text-sm opacity-90">
+                  Эксклюзивные функции за 300 ⭐
+                </p>
+              </div>
+              <SubscriptionModal>
+                <Button 
+                  size="sm"
+                  className="bg-white hover:bg-gray-100 text-orange-600 font-bold"
+                >
+                  <Crown className="w-4 h-4 mr-1" />
+                  Подключить
+                </Button>
+              </SubscriptionModal>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Section */}
+        <div className="p-2">
+          <div className="bg-white rounded-lg shadow-md p-2 mb-3">
+            <h3 className="text-base font-semibold mb-2 flex items-center">
+              <Trophy className="w-4 h-4 mr-2 text-yellow-500" />
+              Статистика
+            </h3>
+            
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="text-base font-bold text-blue-600">{userProfile?.total_videos || 0}</div>
+                <div className="text-xs text-gray-600">Трюков</div>
+              </div>
+              <div>
+                <div className="text-base font-bold text-red-500">{userProfile?.total_likes || 0}</div>
+                <div className="text-xs text-gray-600">Лайков</div>
+              </div>
+              <div>
+                <div className="text-base font-bold text-green-500">{userProfile?.total_views || 0}</div>
+                <div className="text-xs text-gray-600">Просмотров</div>
+              </div>
+            </div>
+
+            <div className="mt-2 p-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-gray-700 text-sm">Уровень:</span>
+                <span className="font-bold text-orange-600 text-sm">
+                  {(userProfile?.total_points || 0) < 100 ? 'Новичок' :
+                   (userProfile?.total_points || 0) < 500 ? 'Любитель' :
+                   (userProfile?.total_points || 0) < 1000 ? 'Мастер' : 'Профи'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Achievement Section */}
+          {achievementStats && (
+            <div className="bg-white rounded-lg shadow-md p-2 mb-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-base font-semibold flex items-center">
+                  <Award className="w-4 h-4 mr-2 text-purple-500" />
+                  Достижения
+                </h3>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.dispatchEvent(new CustomEvent('showAchievements'))}
+                  className="text-xs"
+                >
+                  Все
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                <div className="bg-purple-50 rounded-lg p-2">
+                  <div className="text-base font-bold text-purple-600">{achievementStats.completed}</div>
+                  <div className="text-xs text-purple-700">Получено</div>
                 </div>
+                <div className="bg-blue-50 rounded-lg p-2">
+                  <div className="text-base font-bold text-blue-600">{achievementStats.remaining}</div>
+                  <div className="text-xs text-blue-700">Осталось</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-2">
+                  <div className="text-base font-bold text-orange-600">{achievementStats.completionRate}%</div>
+                  <div className="text-xs text-orange-700">Прогресс</div>
+                </div>
+              </div>
+
+              {recentAchievements.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Последние достижения:</h4>
+                  <div className="space-y-1">
+                    {recentAchievements.map(ua => (
+                      <div key={ua.id} className="flex items-center text-xs bg-yellow-50 rounded p-1">
+                        <span className="mr-2">{ua.achievement.icon}</span>
+                        <span className="flex-1 text-gray-700">{ua.achievement.title}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          +{ua.achievement.reward_points}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {userProfile?.is_premium && (
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-2 mb-3">
+              <h3 className="text-base font-bold mb-1">⭐ Premium статус</h3>
+              <p className="text-sm opacity-90">
+                У вас есть доступ к эксклюзивным функциям!
+              </p>
+            </div>
+          )}
+
+          {/* Video Feed Section */}
+          <div className="bg-white rounded-lg shadow-md p-2">
+            <h3 className="text-base font-semibold mb-2 flex items-center">
+              <Video className="w-4 h-4 mr-2 text-purple-500" />
+              Мои трюки ({userProfile?.total_videos || 0})
+            </h3>
+            
+            {videosLoading ? (
+              <div className="flex justify-center py-3">
+                <Loader2 className="w-5 h-5 animate-spin" />
+              </div>
+            ) : (userProfile?.total_videos || 0) === 0 ? (
+              <div className="text-center py-4 text-gray-500">
+                <p className="text-sm">У вас пока нет загруженных трюков</p>
+                <p className="text-xs mt-1">Загрузите свой первый трюк во вкладке "Загрузить"</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {userVideos?.map(video => (
+                  <div key={video.id} className="relative">
+                    <VideoCard
+                      video={{
+                        id: video.id,
+                        title: video.title,
+                        author: displayUser.username || displayUser.telegram_username || 'Роллер',
+                        authorAvatar: displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                        thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
+                        videoUrl: video.video_url,
+                        likes: video.likes_count || 0,
+                        comments: video.comments_count || 0,
+                        rating: video.average_rating || 0,
+                        views: video.views,
+                        isWinner: video.is_winner,
+                        timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }),
+                        userLiked: video.user_liked || false,
+                        userRating: video.user_rating || 0,
+                        userId: video.user_id,
+                      }}
+                      onLike={handleLike}
+                      onRate={handleRate}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClick(video.id, video.title)}
+                      className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        )}
-
-        {userProfile?.is_premium && (
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-2 mb-3">
-            <h3 className="text-base font-bold mb-1">⭐ Premium статус</h3>
-            <p className="text-sm opacity-90">
-              У вас есть доступ к эксклюзивным функциям!
-            </p>
-          </div>
-        )}
-
-        {/* Video Feed Section */}
-        <div className="bg-white rounded-lg shadow-md p-2">
-          <h3 className="text-base font-semibold mb-2 flex items-center">
-            <Video className="w-4 h-4 mr-2 text-purple-500" />
-            Мои трюки ({userProfile?.total_videos || 0})
-          </h3>
-          
-          {videosLoading ? (
-            <div className="flex justify-center py-3">
-              <Loader2 className="w-5 h-5 animate-spin" />
-            </div>
-          ) : (userProfile?.total_videos || 0) === 0 ? (
-            <div className="text-center py-4 text-gray-500">
-              <p className="text-sm">У вас пока нет загруженных трюков</p>
-              <p className="text-xs mt-1">Загрузите свой первый трюк во вкладке "Загрузить"</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {userVideos?.map(video => (
-                <div key={video.id} className="relative">
-                  <VideoCard
-                    video={{
-                      id: video.id,
-                      title: video.title,
-                      author: displayUser.username || displayUser.telegram_username || 'Роллер',
-                      authorAvatar: displayUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-                      thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
-                      videoUrl: video.video_url,
-                      likes: video.likes_count || 0,
-                      comments: video.comments_count || 0,
-                      rating: video.average_rating || 0,
-                      views: video.views,
-                      isWinner: video.is_winner,
-                      timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }),
-                      userLiked: video.user_liked || false,
-                      userRating: video.user_rating || 0,
-                      userId: video.user_id,
-                    }}
-                    onLike={handleLike}
-                    onRate={handleRate}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteClick(video.id, video.title)}
-                    className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
