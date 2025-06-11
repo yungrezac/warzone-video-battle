@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
@@ -49,14 +50,16 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     const initializeUser = async () => {
       try {
         console.log('⚡ Начинаем инициализацию пользователя...');
+        console.log('📱 Telegram готов:', telegramReady);
+        console.log('👤 Telegram пользователь:', telegramUser);
         
-        // Ждем готовности Telegram WebApp
+        // Ждем готовности Telegram WebApp (или таймаут для веб-версии)
         if (!telegramReady) {
           console.log('⏳ Ожидаем готовности Telegram WebApp...');
           return;
         }
 
-        // Проверяем сохраненного пользователя
+        // Проверяем сохраненного пользователя в localStorage
         const savedUser = localStorage.getItem('roller_tricks_user');
         console.log('💾 Сохраненный пользователь:', savedUser ? 'найден' : 'не найден');
         
@@ -65,6 +68,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             const userData = JSON.parse(savedUser);
             console.log('⚡ Быстрая загрузка пользователя:', userData.username || userData.first_name);
             setUser(userData);
+            
+            // Проверяем актуальность данных если есть Telegram пользователь
+            if (telegramUser && telegramUser.id.toString() === userData.telegram_id) {
+              console.log('🔄 Обновляем данные пользователя из Telegram...');
+              await updateUserFromTelegram(telegramUser, userData.id);
+            }
+            
             setLoading(false);
             return;
           } catch (parseError) {
@@ -75,7 +85,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
         // Если есть данные из Telegram WebApp
         if (telegramUser) {
-          console.log('👤 Данные пользователя Telegram:', {
+          console.log('👤 Создаем/обновляем пользователя из Telegram:', {
             id: telegramUser.id,
             first_name: telegramUser.first_name,
             username: telegramUser.username
@@ -83,10 +93,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           
           await createOrUpdateUser(telegramUser);
           return;
-        } 
+        }
 
-        // Создаем администратора для разработки
-        console.log('🔧 Создаем админского пользователя');
+        // Создаем администратора для разработки/веб-версии
+        console.log('🔧 Создаем администратора для веб-версии');
         await createAdminUser();
 
       } catch (err: any) {
@@ -98,18 +108,55 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       }
     };
 
-    // Инициализируем только когда Telegram WebApp готов
+    // Инициализируем когда Telegram WebApp готов или через таймаут
     if (telegramReady) {
       initializeUser();
     }
   }, [telegramReady, telegramUser]);
+
+  const updateUserFromTelegram = async (telegramUser: any, userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: telegramUser.username || `user_${telegramUser.id}`,
+          first_name: telegramUser.first_name,
+          last_name: telegramUser.last_name,
+          avatar_url: telegramUser.photo_url,
+          telegram_username: telegramUser.username,
+          telegram_photo_url: telegramUser.photo_url,
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('❌ Ошибка обновления пользователя:', error);
+      } else {
+        console.log('✅ Данные пользователя обновлены');
+        
+        // Обновляем локальные данные
+        const updatedUser = {
+          id: userId,
+          telegram_id: telegramUser.id.toString(),
+          username: telegramUser.username || `user_${telegramUser.id}`,
+          first_name: telegramUser.first_name,
+          last_name: telegramUser.last_name,
+          avatar_url: telegramUser.photo_url,
+          telegram_username: telegramUser.username,
+        };
+        
+        setUser(updatedUser);
+        localStorage.setItem('roller_tricks_user', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error('❌ Ошибка обновления пользователя из Telegram:', error);
+    }
+  };
 
   const createOrUpdateUser = async (telegramUser: any) => {
     try {
       const telegramId = telegramUser.id.toString();
       console.log('🔍 Ищем пользователя с Telegram ID:', telegramId);
       
-      // Проверяем существует ли пользователь в базе
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -121,7 +168,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       let profileId = existingProfile?.id;
 
       if (!existingProfile) {
-        // Пользователь не найден, создаем новый профиль
+        // Создаем новый профиль
         const newUserId = crypto.randomUUID();
         
         console.log('➕ Создаем профиль с ID:', newUserId);
@@ -166,23 +213,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         console.error('❌ Ошибка поиска профиля:', profileError);
         throw profileError;
       } else {
-        // Обновляем существующий профиль с актуальными данными из Telegram
+        // Обновляем существующий профиль
         console.log('🔄 Обновляем существующий профиль:', existingProfile.id);
-        
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            username: telegramUser.username || existingProfile.username,
-            first_name: telegramUser.first_name,
-            last_name: telegramUser.last_name,
-            avatar_url: telegramUser.photo_url || existingProfile.avatar_url,
-            telegram_username: telegramUser.username,
-            telegram_photo_url: telegramUser.photo_url,
-          })
-          .eq('id', existingProfile.id);
-
-        if (updateError) console.error('❌ Ошибка обновления профиля:', updateError);
-        console.log('✅ Профиль пользователя обновлен');
+        await updateUserFromTelegram(telegramUser, existingProfile.id);
+        profileId = existingProfile.id;
       }
 
       // Устанавливаем пользователя в контекст
@@ -203,7 +237,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
     } catch (err: any) {
       console.error('❌ Ошибка работы с пользователем:', err);
-      // В случае ошибки создаем админа
       await createAdminUser();
     }
   };
@@ -212,7 +245,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     try {
       console.log('👑 Создаем админский аккаунт');
       
-      // Проверяем существует ли админ профиль
       const { data: existingAdmin, error: adminError } = await supabase
         .from('profiles')
         .select('*')
@@ -222,7 +254,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       let adminId = existingAdmin?.id;
 
       if (!existingAdmin && (!adminError || adminError.code === 'PGRST116')) {
-        // Создаем админский профиль
         const newAdminId = crypto.randomUUID();
         
         console.log('➕ Создаем админский профиль с ID:', newAdminId);
@@ -249,7 +280,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
         console.log('✅ Админский профиль создан:', newAdmin);
 
-        // Создаем запись в user_points
         const { error: pointsError } = await supabase
           .from('user_points')
           .insert({
@@ -270,7 +300,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         adminId = existingAdmin.id;
       }
 
-      // Устанавливаем админа в контекст
       const adminData = {
         id: adminId,
         telegram_id: 'admin_web',
@@ -288,7 +317,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
     } catch (err: any) {
       console.error('❌ Admin auth error:', err);
-      // В крайнем случае создаем простого пользователя
       const fallbackUser = {
         id: crypto.randomUUID(),
         telegram_id: 'fallback_user',

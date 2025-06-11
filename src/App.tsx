@@ -33,8 +33,19 @@ if (typeof window !== 'undefined') {
       console.log('✅ window.Telegram.WebApp существует');
       console.log('📊 WebApp данные:', {
         initDataUnsafe: window.Telegram.WebApp.initDataUnsafe,
-        готов: typeof window.Telegram.WebApp.ready === 'function'
+        готов: typeof window.Telegram.WebApp.ready === 'function',
+        версия: window.Telegram.WebApp.version || 'неизвестно'
       });
+      
+      // Принудительно вызываем ready() если еще не вызван
+      if (typeof window.Telegram.WebApp.ready === 'function') {
+        try {
+          window.Telegram.WebApp.ready();
+          console.log('✅ WebApp.ready() вызван принудительно');
+        } catch (error) {
+          console.log('⚠️ Ошибка при вызове WebApp.ready():', error);
+        }
+      }
     } else {
       console.log('❌ window.Telegram.WebApp НЕ существует');
     }
@@ -60,9 +71,10 @@ const App = () => {
             console.log('⏳ Показываем загрузку');
             return (
               <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                <div className="bg-white rounded-lg p-8 text-center">
+                <div className="bg-white rounded-lg p-8 text-center shadow-xl">
                   <div className="w-8 h-8 animate-spin mx-auto mb-4 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-                  <p className="text-gray-600">Загрузка...</p>
+                  <p className="text-gray-600 font-medium">Загрузка RollerTricks...</p>
+                  <p className="text-gray-400 text-sm mt-2">Инициализация приложения</p>
                 </div>
               </div>
             );
