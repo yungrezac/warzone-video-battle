@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Award } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -204,7 +205,7 @@ const Profile: React.FC = () => {
           </div>
         </div>
 
-        {/* Tasks Section - NEW */}
+        {/* Tasks Section */}
         <TasksSection />
 
         {/* Achievement Section */}
@@ -341,5 +342,3 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
-
-}
