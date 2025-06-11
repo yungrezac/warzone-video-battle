@@ -19,7 +19,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
   const [newComment, setNewComment] = useState('');
   
   const { user } = useAuth();
-  const { data: comments, isLoading } = useVideoComments(videoId);
+  const { comments, isLoading } = useVideoComments(videoId);
   const addCommentMutation = useAddComment();
 
   console.log('VideoComments рендер:', { videoId, commentsCount, comments, isLoading, user: user?.id });
@@ -92,9 +92,9 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
               <div key={comment.id} className="bg-white rounded-lg p-3 shadow-sm">
                 <div className="flex items-center mb-2">
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-2">
-                    {comment.user?.avatar_url ? (
+                    {comment.profiles?.avatar_url ? (
                       <img 
-                        src={comment.user.avatar_url} 
+                        src={comment.profiles.avatar_url} 
                         alt="Avatar" 
                         className="w-8 h-8 rounded-full object-cover"
                       />
@@ -104,7 +104,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
                   </div>
                   <div>
                     <p className="font-medium text-sm">
-                      {comment.user?.username || comment.user?.telegram_username || 'Пользователь'}
+                      {comment.profiles?.username || comment.profiles?.telegram_username || 'Пользователь'}
                     </p>
                     <p className="text-xs text-gray-500">
                       {new Date(comment.created_at).toLocaleString('ru-RU', {

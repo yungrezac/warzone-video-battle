@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -34,6 +35,17 @@ interface VideoRating {
   video_id: string;
   user_id: string;
   rating: number;
+}
+
+interface UploadVideoParams {
+  title: string;
+  description?: string;
+  videoFile: File;
+  category: 'Rollers' | 'BMX' | 'Skateboard';
+  thumbnailBlob?: Blob;
+  trimStart?: number;
+  trimEnd?: number;
+  onProgress?: (progress: number) => void;
 }
 
 export const useVideos = () => {
@@ -127,6 +139,139 @@ export const useVideos = () => {
       );
 
       return videosWithStats as Video[];
+    },
+  });
+};
+
+export const useUploadVideo = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (params: UploadVideoParams) => {
+      if (!user?.id) {
+        throw new Error('Необходима авторизация');
+      }
+
+      const { title, description, videoFile, category, thumbnailBlob, trimStart, trimEnd, onProgress } = params;
+      
+      console.log('🎬 Начинаем загрузку видео:', {
+        userId: user.id,
+        title,
+        category,
+        fileSize: `${(videoFile.size / 1024 / 1024).toFixed(2)}MB`
+      });
+
+      // Генерируем уникальные имена файлов
+      const videoFileName = `${user.id}/${Date.now()}_${videoFile.name}`;
+      const thumbnailFileName = thumbnailBlob ? `${user.id}/${Date.now()}_thumbnail.jpg` : null;
+
+      try {
+        onProgress?.(10);
+
+        // Загружаем видео файл
+        console.log('📹 Загружаем видео файл...');
+        const { data: videoUpload, error: videoError } = await supabase.storage
+          .from('videos')
+          .upload(videoFileName, videoFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (videoError) {
+          console.error('Ошибка загрузки видео:', videoError);
+          throw new Error(`Ошибка загрузки видео: ${videoError.message}`);
+        }
+
+        onProgress?.(50);
+
+        // Получаем публичный URL для видео
+        const { data: videoUrlData } = supabase.storage
+          .from('videos')
+          .getPublicUrl(videoFileName);
+
+        let thumbnailUrl = null;
+
+        // Загружаем превью, если есть
+        if (thumbnailBlob && thumbnailFileName) {
+          console.log('🖼️ Загружаем превью...');
+          const { data: thumbnailUpload, error: thumbnailError } = await supabase.storage
+            .from('videos')
+            .upload(thumbnailFileName, thumbnailBlob, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (thumbnailError) {
+            console.warn('Ошибка загрузки превью:', thumbnailError);
+          } else {
+            const { data: thumbnailUrlData } = supabase.storage
+              .from('videos')
+              .getPublicUrl(thumbnailFileName);
+            thumbnailUrl = thumbnailUrlData.publicUrl;
+          }
+        }
+
+        onProgress?.(75);
+
+        // Сохраняем запись в базе данных
+        console.log('💾 Сохраняем в базу данных...');
+        const { data: videoRecord, error: dbError } = await supabase
+          .from('videos')
+          .insert({
+            title,
+            description,
+            video_url: videoUrlData.publicUrl,
+            thumbnail_url: thumbnailUrl,
+            user_id: user.id,
+            category,
+            views: 0,
+            likes_count: 0,
+            comments_count: 0,
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error('Ошибка сохранения в БД:', dbError);
+          throw new Error(`Ошибка сохранения: ${dbError.message}`);
+        }
+
+        onProgress?.(90);
+
+        // Обновляем достижения пользователя
+        try {
+          await supabase.rpc('increment_videos_uploaded', { user_uuid: user.id });
+        } catch (error) {
+          console.warn('Ошибка обновления счетчика видео:', error);
+        }
+
+        onProgress?.(100);
+
+        console.log('✅ Видео успешно загружено:', videoRecord);
+        return videoRecord;
+      } catch (error) {
+        console.error('❌ Ошибка загрузки видео:', error);
+        
+        // Очищаем загруженные файлы в случае ошибки
+        try {
+          await supabase.storage.from('videos').remove([videoFileName]);
+          if (thumbnailFileName) {
+            await supabase.storage.from('videos').remove([thumbnailFileName]);
+          }
+        } catch (cleanupError) {
+          console.warn('Ошибка очистки файлов:', cleanupError);
+        }
+        
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+    },
+    onError: (error) => {
+      console.error('Ошибка мутации загрузки видео:', error);
     },
   });
 };
