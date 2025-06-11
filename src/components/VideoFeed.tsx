@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error, refetch } = useVideos();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -22,35 +22,93 @@ const VideoFeed: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const handleLike = async (videoId: string) => {
+    console.log('💖 Попытка поставить лайк:', { 
+      videoId, 
+      user: user ? `${user.id} (${user.username})` : 'null',
+      authLoading,
+      userExists: !!user
+    });
+
+    // Проверяем загрузку авторизации
+    if (authLoading) {
+      console.log('⏳ Авторизация еще загружается...');
+      toast.error('Подождите, загружается авторизация...');
+      return;
+    }
+
     if (!user) {
+      console.log('❌ Пользователь не авторизован');
       toast.error('Войдите в систему, чтобы ставить лайки');
       return;
     }
 
     const video = videos?.find(v => v.id === videoId);
-    if (video) {
-      try {
-        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
-        toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
-      } catch (error) {
-        console.error('Ошибка при обработке лайка:', error);
-        toast.error('Ошибка при обработке лайка');
-      }
+    if (!video) {
+      console.log('❌ Видео не найдено:', videoId);
+      toast.error('Видео не найдено');
+      return;
+    }
+
+    console.log('📊 Данные видео для лайка:', {
+      id: video.id,
+      user_liked: video.user_liked,
+      likes_count: video.likes_count
+    });
+
+    try {
+      console.log('🔄 Отправляем запрос на лайк...');
+      await likeVideoMutation.mutateAsync({ 
+        videoId, 
+        isLiked: video.user_liked || false 
+      });
+      
+      const action = video.user_liked ? 'убран' : 'поставлен';
+      console.log('✅ Лайк успешно', action);
+      toast.success(`Лайк ${action}`);
+    } catch (error: any) {
+      console.error('❌ Ошибка при обработке лайка:', {
+        error: error.message,
+        stack: error.stack,
+        userId: user.id,
+        videoId
+      });
+      toast.error(`Ошибка при обработке лайка: ${error.message || 'Неизвестная ошибка'}`);
     }
   };
 
   const handleRate = async (videoId: string, rating: number) => {
+    console.log('⭐ Попытка поставить оценку:', { 
+      videoId, 
+      rating,
+      user: user ? `${user.id} (${user.username})` : 'null',
+      authLoading
+    });
+
+    if (authLoading) {
+      console.log('⏳ Авторизация еще загружается...');
+      toast.error('Подождите, загружается авторизация...');
+      return;
+    }
+
     if (!user) {
+      console.log('❌ Пользователь не авторизован для оценки');
       toast.error('Войдите в систему, чтобы ставить оценки');
       return;
     }
 
     try {
+      console.log('🔄 Отправляем запрос на оценку...');
       await rateVideoMutation.mutateAsync({ videoId, rating });
+      console.log('✅ Оценка успешно поставлена');
       toast.success(`Оценка ${rating} поставлена`);
-    } catch (error) {
-      console.error('Ошибка при выставлении оценки:', error);
-      toast.error('Ошибка при выставлении оценки');
+    } catch (error: any) {
+      console.error('❌ Ошибка при выставлении оценки:', {
+        error: error.message,
+        userId: user.id,
+        videoId,
+        rating
+      });
+      toast.error(`Ошибка при выставлении оценки: ${error.message || 'Неизвестная ошибка'}`);
     }
   };
 
@@ -96,6 +154,16 @@ const VideoFeed: React.FC = () => {
     );
   }
 
+  // Показываем индикатор загрузки авторизации если нужно
+  if (authLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[300px] pb-16">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+        <p className="text-sm text-gray-600">Загружается авторизация...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="pb-16">
       {/* Winner Announcement */}
@@ -118,41 +186,51 @@ const VideoFeed: React.FC = () => {
       {/* Video Feed */}
       <div className="p-3 space-y-4">
         {videos && videos.length > 0 ? (
-          videos.map((video) => (
-            <div 
-              key={video.id} 
-              id={`video-${video.id}`}
-              className={selectedVideoId === video.id ? 'ring-2 ring-yellow-400 rounded-lg' : ''}
-            >
-              <VideoCard
-                video={{
-                  id: video.id,
-                  title: video.title,
-                  author: video.user?.username || video.user?.telegram_username || 'Роллер',
-                  authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-                  thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
-                  videoUrl: video.video_url,
-                  likes: video.likes_count || 0,
-                  comments: video.comments_count || 0,
-                  rating: video.average_rating || 0,
-                  views: video.views,
-                  isWinner: video.is_winner,
-                  timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  }),
-                  userLiked: video.user_liked || false,
-                  userRating: video.user_rating || 0,
-                  userId: video.user_id,
-                  category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
-                }}
-                onLike={handleLike}
-                onRate={handleRate}
-              />
-            </div>
-          ))
+          videos.map((video) => {
+            console.log('🎬 Рендерим видео:', {
+              id: video.id,
+              title: video.title,
+              user_liked: video.user_liked,
+              user_rating: video.user_rating,
+              likes_count: video.likes_count
+            });
+
+            return (
+              <div 
+                key={video.id} 
+                id={`video-${video.id}`}
+                className={selectedVideoId === video.id ? 'ring-2 ring-yellow-400 rounded-lg' : ''}
+              >
+                <VideoCard
+                  video={{
+                    id: video.id,
+                    title: video.title,
+                    author: video.user?.username || video.user?.telegram_username || 'Роллер',
+                    authorAvatar: video.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                    thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
+                    videoUrl: video.video_url,
+                    likes: video.likes_count || 0,
+                    comments: video.comments_count || 0,
+                    rating: video.average_rating || 0,
+                    views: video.views,
+                    isWinner: video.is_winner,
+                    timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }),
+                    userLiked: video.user_liked || false,
+                    userRating: video.user_rating || 0,
+                    userId: video.user_id,
+                    category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
+                  }}
+                  onLike={handleLike}
+                  onRate={handleRate}
+                />
+              </div>
+            );
+          })
         ) : (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">

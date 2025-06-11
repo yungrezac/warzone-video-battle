@@ -159,71 +159,106 @@ export const useLikeVideo = () => {
 
   return useMutation({
     mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
+      console.log('💖 useLikeVideo mutationFn вызван:', { videoId, isLiked, userId: user?.id });
+
       if (!user?.id) {
+        console.error('❌ Нет пользователя для лайка');
         throw new Error('Необходима авторизация');
       }
 
       console.log('💖 Обрабатываем лайк:', videoId, 'убираем:', isLiked);
 
-      if (isLiked) {
-        const { error } = await supabase
-          .from('video_likes')
-          .delete()
-          .eq('video_id', videoId)
-          .eq('user_id', user.id);
+      try {
+        if (isLiked) {
+          console.log('🗑️ Удаляем лайк...');
+          const { error } = await supabase
+            .from('video_likes')
+            .delete()
+            .eq('video_id', videoId)
+            .eq('user_id', user.id);
 
-        if (error) throw error;
-
-        // Убираем баллы за снятие лайка
-        await supabase.rpc('update_user_points', {
-          p_user_id: user.id,
-          p_points_change: -2
-        });
-      } else {
-        const { error } = await supabase
-          .from('video_likes')
-          .insert({
-            video_id: videoId,
-            user_id: user.id,
-          });
-
-        if (error) throw error;
-        
-        // Начисляем баллы за лайк
-        await supabase.rpc('update_user_points', {
-          p_user_id: user.id,
-          p_points_change: 2
-        });
-        
-        triggerSocialLike();
-
-        // Отправляем уведомление
-        try {
-          const { data: videoWithUser } = await supabase
-            .from('videos')
-            .select(`
-              title,
-              user_id,
-              user:profiles!user_id(telegram_id, username, first_name)
-            `)
-            .eq('id', videoId)
-            .single();
-
-          if (videoWithUser && videoWithUser.user?.telegram_id && videoWithUser.user_id !== user.id) {
-            const likerName = user.first_name || user.username || 'Роллер';
-            await sendLikeNotification(videoWithUser.user.telegram_id, likerName, videoWithUser.title);
+          if (error) {
+            console.error('❌ Ошибка удаления лайка:', error);
+            throw error;
           }
-        } catch (notificationError) {
-          console.error('Ошибка отправки уведомления:', notificationError);
+
+          // Убираем баллы за снятие лайка
+          console.log('💰 Убираем баллы за снятие лайка...');
+          await supabase.rpc('update_user_points', {
+            p_user_id: user.id,
+            p_points_change: -2
+          });
+        } else {
+          console.log('➕ Добавляем лайк...');
+          const { error } = await supabase
+            .from('video_likes')
+            .insert({
+              video_id: videoId,
+              user_id: user.id,
+            });
+
+          if (error) {
+            console.error('❌ Ошибка добавления лайка:', error);
+            throw error;
+          }
+          
+          // Начисляем баллы за лайк
+          console.log('💰 Начисляем баллы за лайк...');
+          await supabase.rpc('update_user_points', {
+            p_user_id: user.id,
+            p_points_change: 2
+          });
+          
+          triggerSocialLike();
+
+          // Отправляем уведомление
+          try {
+            const { data: videoWithUser } = await supabase
+              .from('videos')
+              .select(`
+                title,
+                user_id,
+                user:profiles!user_id(telegram_id, username, first_name)
+              `)
+              .eq('id', videoId)
+              .single();
+
+            if (videoWithUser && videoWithUser.user?.telegram_id && videoWithUser.user_id !== user.id) {
+              const likerName = user.first_name || user.username || 'Роллер';
+              await sendLikeNotification(videoWithUser.user.telegram_id, likerName, videoWithUser.title);
+            }
+          } catch (notificationError) {
+            console.error('⚠️ Ошибка отправки уведомления:', notificationError);
+          }
         }
+
+        console.log('✅ Лайк успешно обработан');
+      } catch (error: any) {
+        console.error('❌ Критическая ошибка в лайке:', {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          userId: user.id,
+          videoId,
+          isLiked
+        });
+        throw error;
       }
     },
     onSuccess: () => {
-      console.log('🔄 Лайк обработан, обновляем кэш');
+      console.log('🔄 Лайк обработан успешно, обновляем кэш');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
+    onError: (error: any) => {
+      console.error('❌ Ошибка в useLikeVideo:', {
+        error: error.message,
+        stack: error.stack,
+        userId: user?.id
+      });
+    }
   });
 };
 
