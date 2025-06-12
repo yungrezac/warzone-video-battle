@@ -3,8 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 
 interface CategorySelectorProps {
-  selectedCategory: 'Rollers' | 'BMX' | 'Skateboard';
-  onCategoryChange: (category: 'Rollers' | 'BMX' | 'Skateboard') => void;
+  selectedCategory: 'all' | 'Rollers' | 'BMX' | 'Skateboard';
+  onCategoryChange: (category: 'all' | 'Rollers' | 'BMX' | 'Skateboard') => void;
   disabled?: boolean;
 }
 
@@ -14,6 +14,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   disabled = false,
 }) => {
   const categories = [
+    { value: 'all' as const, label: 'Все', emoji: '🏷️' },
     { value: 'Rollers' as const, label: 'Роллеры', emoji: '⛸️' },
     { value: 'BMX' as const, label: 'BMX', emoji: '🚴' },
     { value: 'Skateboard' as const, label: 'Скейтборд', emoji: '🛹' },
@@ -24,7 +25,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       <label className="block text-sm font-medium text-gray-700 mb-2">
         Направление *
       </label>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {categories.map((category) => (
           <Button
             key={category.value}

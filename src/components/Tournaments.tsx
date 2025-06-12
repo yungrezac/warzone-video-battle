@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import SubscriptionModal from './SubscriptionModal';
 import VideoCard from './VideoCard';
-import { toast } from 'sonner';
 
 const Tournaments: React.FC = () => {
   const { user } = useAuth();
@@ -32,7 +31,7 @@ const Tournaments: React.FC = () => {
     },
   });
 
-  // Получаем видео турниров
+  // Получаем видео турниров с профилями пользователей
   const { data: tournamentVideos, isLoading: videosLoading } = useQuery({
     queryKey: ['tournament-videos', selectedTournament],
     queryFn: async () => {
@@ -40,18 +39,27 @@ const Tournaments: React.FC = () => {
 
       const { data: videos, error } = await supabase
         .from('tournament_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            telegram_username,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('tournament_id', selectedTournament)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Получаем профили пользователей отдельно
+      if (videos && videos.length > 0) {
+        const userIds = videos.map(v => v.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, telegram_username, avatar_url')
+          .in('id', userIds);
+
+        // Объединяем данные
+        return videos.map(video => ({
+          ...video,
+          profile: profiles?.find(p => p.id === video.user_id)
+        }));
+      }
+
       return videos || [];
     },
     enabled: !!selectedTournament,
@@ -255,15 +263,15 @@ const Tournaments: React.FC = () => {
                   video={{
                     id: video.id,
                     title: video.title,
-                    author: video.profiles?.username || video.profiles?.telegram_username || 'Участник',
-                    authorAvatar: video.profiles?.avatar_url || '',
+                    author: video.profile?.username || video.profile?.telegram_username || 'Участник',
+                    authorAvatar: video.profile?.avatar_url || '',
                     thumbnail: video.thumbnail_url || '',
                     videoUrl: video.video_url,
                     likes: 0,
                     comments: 0,
                     rating: 0,
                     views: video.views || 0,
-                    isWinner: false,
+                    isWinner: video.is_winner || false,
                     timestamp: new Date(video.created_at).toLocaleString('ru-RU'),
                     userLiked: false,
                     userRating: 0,
