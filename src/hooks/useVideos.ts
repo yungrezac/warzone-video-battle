@@ -1,8 +1,7 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
-import { compressVideo, shouldCompress, generateQuickThumbnail } from '@/utils/videoOptimization';
+import { generateQuickThumbnail } from '@/utils/videoOptimization';
 
 interface Video {
   id: string;
@@ -268,7 +267,7 @@ export const useUploadVideo = () => {
 
       const { title, description, videoFile, category, thumbnailBlob, trimStart, trimEnd, onProgress } = params;
       
-      console.log('Начинаем загрузку видео:', {
+      console.log('Начинаем загрузку видео в оригинальном качестве:', {
         userId: user.id,
         title,
         category,
@@ -277,36 +276,28 @@ export const useUploadVideo = () => {
 
       onProgress?.(5);
 
+      // Загружаем оригинальное видео без сжатия
       let finalVideoFile = videoFile;
       let finalThumbnailBlob = thumbnailBlob;
       
-      // Автоматически создаем превью если не предоставлено
+      // Создаем превью если не предоставлено
       if (!finalThumbnailBlob) {
         try {
-          console.log('Генерируем превью автоматически...');
+          console.log('Генерируем превью...');
           finalThumbnailBlob = await generateQuickThumbnail(videoFile);
         } catch (error) {
           console.warn('Не удалось создать превью:', error);
         }
       }
 
-      // Сжимаем видео если нужно
-      if (shouldCompress(videoFile)) {
-        console.log('Сжимаем видео...');
-        try {
-          finalVideoFile = await compressVideo(videoFile, 0.7);
-          console.log(`Сжатие завершено: ${(finalVideoFile.size / 1024 / 1024).toFixed(2)}MB`);
-        } catch (error) {
-          console.warn('Сжатие не удалось, загружаем оригинал:', error);
-        }
-      }
-
       onProgress?.(20);
 
-      const videoFileName = `${user.id}/${Date.now()}_${finalVideoFile.name}`;
+      // Сохраняем оригинальное расширение файла
+      const fileExtension = videoFile.name.split('.').pop() || 'mp4';
+      const videoFileName = `${user.id}/${Date.now()}_original.${fileExtension}`;
       
       try {
-        console.log('Загружаем видео в хранилище...');
+        console.log('Загружаем оригинальное видео...');
         const { data: videoUpload, error: videoError } = await supabase.storage
           .from('videos')
           .upload(videoFileName, finalVideoFile, {
@@ -384,7 +375,7 @@ export const useUploadVideo = () => {
 
         onProgress?.(100);
 
-        console.log('Загрузка видео завершена успешно');
+        console.log('Загрузка оригинального видео завершена успешно');
         return videoRecord;
       } catch (error) {
         console.error('Ошибка загрузки видео:', error);

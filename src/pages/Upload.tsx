@@ -43,11 +43,11 @@ const Upload: React.FC = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
-      // Обновленный лимит 50MB
-      if (file.size > 50 * 1024 * 1024) {
+      // Увеличиваем лимит до 100MB для оригинального качества
+      if (file.size > 100 * 1024 * 1024) {
         toast({
           title: "Ошибка",
-          description: "Размер файла не должен превышать 50MB. Сожмите видео в любом видеоредакторе.",
+          description: "Размер файла не должен превышать 100MB.",
           variant: "destructive",
         });
         return;
@@ -115,7 +115,7 @@ const Upload: React.FC = () => {
     setUploadProgress(0);
     
     try {
-      console.log('Начинаем загрузку видео...');
+      console.log('Начинаем загрузку оригинального видео...');
       await uploadMutation.mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
@@ -129,7 +129,7 @@ const Upload: React.FC = () => {
 
       toast({
         title: "Успешно!",
-        description: "Видео успешно загружено и появится в ленте после модерации.",
+        description: "Видео успешно загружено в оригинальном качестве и появится в ленте после модерации.",
       });
       
       // Сбрасываем форму
@@ -172,7 +172,7 @@ const Upload: React.FC = () => {
             <Button variant="ghost" size="sm" onClick={() => navigate('/')} disabled={isUploading}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <h1 className="text-lg font-bold text-gray-800">Загрузить трюк</h1>
+            <h1 className="text-lg font-bold text-gray-800">Загрузить трюк в оригинальном качестве</h1>
           </div>
         </div>
       </div>
@@ -183,14 +183,14 @@ const Upload: React.FC = () => {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <UploadIcon className="w-10 h-10 text-gray-400 mx-auto mb-3" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Выберите видео для загрузки
+                Выберите видео для загрузки в оригинальном качестве
               </h3>
               <p className="text-gray-500 mb-3 text-sm">
-                Поддерживаются форматы: MP4, MOV, AVI, MKV, WEBM. Максимальный размер: 50MB
+                Поддерживаются форматы: MP4, MOV, AVI, MKV, WEBM. Максимальный размер: <span className="font-semibold text-blue-600">100MB</span>
               </p>
-              <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mb-3">
-                <p className="text-xs text-yellow-700">
-                  💡 Для сжатия видео используйте любой видеоредактор или онлайн-сервисы
+              <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-3">
+                <p className="text-xs text-blue-700">
+                  📹 Видео будет загружено в оригинальном качестве без сжатия
                 </p>
               </div>
               <input
@@ -314,12 +314,12 @@ const Upload: React.FC = () => {
           {isUploading && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-blue-700">Загрузка видео...</span>
+                <span className="text-sm font-medium text-blue-700">Загрузка оригинального видео...</span>
                 <span className="text-sm text-blue-600">{uploadProgress}%</span>
               </div>
               <Progress value={uploadProgress} className="w-full" />
               <p className="text-xs text-blue-600 mt-1">
-                {uploadProgress < 50 ? 'Загружаем видео...' :
+                {uploadProgress < 50 ? 'Загружаем оригинальное видео...' :
                  uploadProgress < 75 ? 'Загружаем превью...' :
                  uploadProgress < 90 ? 'Сохраняем в базу данных...' :
                  uploadProgress < 100 ? 'Обновляем достижения...' : 'Готово!'}
@@ -327,10 +327,21 @@ const Upload: React.FC = () => {
             </div>
           )}
 
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <h4 className="font-semibold text-blue-800 mb-1 text-sm">Преимущества оригинального качества:</h4>
+            <ul className="text-xs text-blue-700 space-y-0.5">
+              <li>• Максимальное качество видео без потерь</li>
+              <li>• Сохранение всех деталей трюков</li>
+              <li>• Оригинальное разрешение</li>
+              <li>• Увеличен лимит до 100MB</li>
+              <li>• Автоматическое создание превью</li>
+            </ul>
+          </div>
+
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Правила конкурса:</h4>
             <ul className="text-xs text-yellow-700 space-y-0.5">
-              <li>• Максимальный размер файла: 50MB</li>
+              <li>• Максимальный размер файла: 100MB</li>
               <li>• Видео проходит модерацию перед публикацией</li>
               <li>• Победитель определяется каждый день в 00:00</li>
               <li>• Баллы начисляются равно количеству полученных оценок</li>
@@ -343,7 +354,7 @@ const Upload: React.FC = () => {
             disabled={!selectedFile || !title.trim() || isUploading}
             className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 disabled:opacity-50"
           >
-            {isUploading ? `Загрузка... ${uploadProgress}%` : 'Загрузить трюк'}
+            {isUploading ? `Загрузка... ${uploadProgress}%` : '📹 Загрузить в оригинальном качестве'}
           </Button>
         </div>
       </div>

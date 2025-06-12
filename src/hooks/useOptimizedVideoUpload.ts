@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
-import { compressVideo, shouldCompress, generateQuickThumbnail } from '@/utils/videoOptimization';
+import { generateQuickThumbnail } from '@/utils/videoOptimization';
 
 interface OptimizedUploadParams {
   title: string;
@@ -12,15 +12,15 @@ interface OptimizedUploadParams {
   onProgress?: (progress: number) => void;
 }
 
-// Ультрабыстрая загрузка с минимальными задержками
-const uploadFileOptimized = async (
+// Загрузка оригинального видео без сжатия
+const uploadOriginalVideo = async (
   file: File,
   fileName: string,
   onProgress?: (progress: number) => void
 ): Promise<string> => {
-  console.log(`⚡ Начинаем ультрабыструю загрузку: ${(file.size / 1024).toFixed(0)}KB`);
+  console.log(`📹 Загружаем оригинальное видео: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
   
-  // Прямая загрузка без лишних проверок
+  // Прямая загрузка оригинального файла
   const { data, error } = await supabase.storage
     .from('videos')
     .upload(fileName, file, {
@@ -32,11 +32,11 @@ const uploadFileOptimized = async (
     throw new Error(`Ошибка загрузки: ${error.message}`);
   }
 
-  // Быстрая симуляция прогресса
+  // Симуляция прогресса
   if (onProgress) {
-    for (let i = 10; i <= 100; i += 15) {
+    for (let i = 10; i <= 100; i += 20) {
       onProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
@@ -59,7 +59,7 @@ export const useOptimizedVideoUpload = () => {
 
       const { title, description, videoFile, category, onProgress } = params;
       
-      console.log('⚡ Начинаем экстремально быструю загрузку:', {
+      console.log('📹 Загружаем оригинальное видео:', {
         userId: user.id,
         title,
         category,
@@ -68,45 +68,30 @@ export const useOptimizedVideoUpload = () => {
 
       onProgress?.(2);
 
+      // Загружаем оригинальное видео
       let finalVideoFile = videoFile;
       let thumbnailPromise: Promise<Blob | null> = Promise.resolve(null);
       
-      // Параллельно запускаем сжатие и создание превью
-      if (shouldCompress(videoFile)) {
-        console.log('🚀 Сжимаем видео для ультра-скорости...');
-        try {
-          const [compressedFile, thumbnail] = await Promise.all([
-            compressVideo(videoFile, 0.5), // Более агрессивное сжатие
-            generateQuickThumbnail(videoFile).catch(() => null)
-          ]);
-          
-          finalVideoFile = compressedFile;
-          thumbnailPromise = Promise.resolve(thumbnail);
-          console.log(`✅ Сжатие завершено: ${(finalVideoFile.size / 1024 / 1024).toFixed(2)}MB`);
-        } catch (error) {
-          console.warn('⚠️ Сжатие не удалось, загружаем оригинал:', error);
-          // Генерируем превью без сжатия видео
-          thumbnailPromise = generateQuickThumbnail(videoFile).catch(() => null);
-        }
-      } else {
-        // Для небольших файлов только превью
-        thumbnailPromise = generateQuickThumbnail(videoFile).catch(() => null);
-      }
+      // Генерируем только превью
+      console.log('🖼️ Создаем превью...');
+      thumbnailPromise = generateQuickThumbnail(videoFile).catch(() => null);
 
       onProgress?.(15);
 
-      const videoFileName = `${user.id}/${Date.now()}_optimized.webm`;
+      // Сохраняем оригинальное расширение
+      const fileExtension = videoFile.name.split('.').pop() || 'mp4';
+      const videoFileName = `${user.id}/${Date.now()}_original.${fileExtension}`;
       
       try {
-        // Загружаем видео максимально быстро
-        console.log('📹 Загружаем видео на максимальной скорости...');
-        const videoUrl = await uploadFileOptimized(finalVideoFile, videoFileName, (progress) => {
+        // Загружаем оригинальное видео
+        console.log('📹 Загружаем оригинальное видео...');
+        const videoUrl = await uploadOriginalVideo(finalVideoFile, videoFileName, (progress) => {
           onProgress?.(15 + (progress * 0.6)); // 15-75%
         });
 
         onProgress?.(75);
 
-        // Обрабатываем превью параллельно
+        // Обрабатываем превью
         let thumbnailUrl = null;
         try {
           const thumbnailBlob = await thumbnailPromise;
@@ -133,7 +118,7 @@ export const useOptimizedVideoUpload = () => {
 
         onProgress?.(85);
 
-        // Быстро сохраняем в БД
+        // Сохраняем в БД
         console.log('💾 Сохраняем в базу данных...');
         const { data: videoRecord, error: dbError } = await supabase
           .from('videos')
@@ -157,7 +142,7 @@ export const useOptimizedVideoUpload = () => {
 
         onProgress?.(95);
 
-        // Асинхронно обновляем достижения (не блокируем UI)
+        // Асинхронно обновляем достижения
         try {
           await supabase.rpc('update_achievement_progress', { 
             p_user_id: user.id,
@@ -170,10 +155,10 @@ export const useOptimizedVideoUpload = () => {
 
         onProgress?.(100);
 
-        console.log('🎉 Экстремально быстрая загрузка завершена!');
+        console.log('🎉 Загрузка оригинального видео завершена!');
         return videoRecord;
       } catch (error) {
-        console.error('❌ Ошибка быстрой загрузки:', error);
+        console.error('❌ Ошибка загрузки:', error);
         
         // Очищаем файлы при ошибке
         try {
@@ -193,7 +178,7 @@ export const useOptimizedVideoUpload = () => {
       queryClient.invalidateQueries({ queryKey: ['video-feed'] });
     },
     onError: (error) => {
-      console.error('❌ Ошибка мутации экстремальной загрузки:', error);
+      console.error('❌ Ошибка мутации загрузки:', error);
     },
   });
 };
