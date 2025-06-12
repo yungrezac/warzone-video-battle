@@ -11,6 +11,24 @@ import { Badge } from '@/components/ui/badge';
 import SubscriptionModal from './SubscriptionModal';
 import VideoCard from './VideoCard';
 
+interface TournamentVideo {
+  id: string;
+  title: string;
+  tournament_id: string;
+  user_id: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  views: number;
+  is_winner: boolean;
+  created_at: string;
+  updated_at: string;
+  profile?: {
+    username: string | null;
+    telegram_username: string | null;
+    avatar_url: string | null;
+  };
+}
+
 const Tournaments: React.FC = () => {
   const { user } = useAuth();
   const { isPremium } = useSubscription();
@@ -57,7 +75,7 @@ const Tournaments: React.FC = () => {
         return videos.map(video => ({
           ...video,
           profile: profiles?.find(p => p.id === video.user_id)
-        }));
+        })) as TournamentVideo[];
       }
 
       return videos || [];

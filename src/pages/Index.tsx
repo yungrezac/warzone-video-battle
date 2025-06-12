@@ -46,6 +46,8 @@ const Index: React.FC = () => {
         return <Market />;
       case 'profile':
         return <Profile />;
+      case 'achievements':
+        return <Achievements />;
       default:
         return <VideoFeed />;
     }
