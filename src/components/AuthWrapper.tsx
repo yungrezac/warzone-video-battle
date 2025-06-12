@@ -41,7 +41,7 @@ interface AuthWrapperProps {
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false); // Убираем изначальную загрузку
+  const [loading, setLoading] = useState(false);
   const { webApp, isReady: telegramReady, user: telegramUser } = useTelegramWebApp();
 
   useEffect(() => {
@@ -177,15 +177,20 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         }
 
         // Создаем запись в user_points асинхронно
-        supabase
-          .from('user_points')
-          .insert({
-            user_id: newUserId,
-            total_points: 0,
-            wins_count: 0,
-          })
-          .then(() => console.log('✅ User points created'))
-          .catch(err => console.error('❌ Error creating points:', err));
+        (async () => {
+          try {
+            await supabase
+              .from('user_points')
+              .insert({
+                user_id: newUserId,
+                total_points: 0,
+                wins_count: 0,
+              });
+            console.log('✅ User points created');
+          } catch (err) {
+            console.error('❌ Error creating points:', err);
+          }
+        })();
 
         profileId = newUserId;
       } else if (profileError) {
@@ -257,15 +262,20 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         }
 
         // Создаем user_points асинхронно
-        supabase
-          .from('user_points')
-          .insert({
-            user_id: newAdminId,
-            total_points: 99999,
-            wins_count: 100,
-          })
-          .then(() => console.log('✅ Admin points created'))
-          .catch(err => console.error('❌ Error creating admin points:', err));
+        (async () => {
+          try {
+            await supabase
+              .from('user_points')
+              .insert({
+                user_id: newAdminId,
+                total_points: 99999,
+                wins_count: 100,
+              });
+            console.log('✅ Admin points created');
+          } catch (err) {
+            console.error('❌ Error creating admin points:', err);
+          }
+        })();
 
         adminId = newAdminId;
       } else if (adminError) {
