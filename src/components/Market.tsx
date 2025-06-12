@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 const Market: React.FC = () => {
   const { user } = useAuth();
   const { isPremium } = useSubscription();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'Rollers' | 'BMX' | 'Skateboard'>('all');
   const [selectedItem, setSelectedItem] = useState<any>(null);
   
   const { data: banners } = useMarketBanners();
@@ -149,11 +149,11 @@ const Market: React.FC = () => {
                   category: item.category,
                   subcategory: item.subcategory,
                   stock_quantity: item.stock_quantity,
-                  images: Array.isArray(item.images) ? item.images : []
+                  images: Array.isArray(item.images) ? 
+                    item.images.filter((img): img is string => typeof img === 'string') : 
+                    []
                 }}
-                onClick={handleItemClick}
-                isPremiumItem={item.category === 'premium'}
-                userHasPremium={isPremium}
+                onItemClick={handleItemClick}
               />
             ))}
           </div>

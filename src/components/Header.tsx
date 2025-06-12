@@ -1,109 +1,108 @@
 
-import React from 'react';
-import { User, Crown, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Plus, Bell, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/AuthWrapper';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import PremiumBadge from './PremiumBadge';
+import { useSubscription } from '@/hooks/useSubscription';
 import SubscriptionModal from './SubscriptionModal';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onUploadClick?: () => void;
+  activeTab?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ onUploadClick, activeTab }) => {
   const { user, signOut } = useAuth();
-  const { data: userProfile } = useUserProfile();
   const { isPremium } = useSubscription();
-  const { webApp, colorScheme } = useTelegramWebApp();
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
-  // Адаптируемся к теме Telegram
-  const isDark = colorScheme === 'dark';
-  const headerClass = isDark 
-    ? 'bg-gray-800 border-gray-700 text-white' 
-    : 'bg-white border-gray-200 text-gray-900';
-
-  if (!user) return null;
+  const getTitle = () => {
+    switch (activeTab) {
+      case 'home':
+        return 'Лента';
+      case 'tournaments':
+        return 'Турниры';
+      case 'market':
+        return 'Магазин';
+      case 'profile':
+        return 'Профиль';
+      default:
+        return 'RollersApp';
+    }
+  };
 
   return (
-    <header className={`sticky top-0 z-50 border-b ${headerClass} backdrop-blur-md bg-opacity-90`}>
-      <div className="max-w-6xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Логотип и название */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">RT</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">RollerTricks</h1>
-              {isPremium && (
-                <PremiumBadge size="sm" />
-              )}
-            </div>
-          </div>
+    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-800">
+            {getTitle()}
+          </h1>
+          {isPremium && <PremiumBadge size="sm" />}
+        </div>
 
-          {/* Профиль пользователя */}
-          <div className="flex items-center gap-3">
-            {/* Баллы */}
-            <div className="hidden sm:flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-              <span>⭐</span>
-              <span>{userProfile?.total_points || 0}</span>
-            </div>
-
-            {/* Кнопка Premium */}
-            {!isPremium && (
-              <SubscriptionModal>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-                >
-                  <Crown className="w-4 h-4 mr-1" />
-                  Premium
-                </Button>
-              </SubscriptionModal>
-            )}
-
-            {/* Аватар */}
-            <div className="flex items-center gap-2">
-              <Avatar className="w-8 h-8">
-                <AvatarImage 
-                  src={userProfile?.avatar_url || user.avatar_url} 
-                  alt={userProfile?.first_name || user.first_name} 
-                />
-                <AvatarFallback>
-                  <User className="w-4 h-4" />
-                </AvatarFallback>
-              </Avatar>
+        <div className="flex items-center gap-2">
+          {activeTab === 'home' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSearchVisible(!isSearchVisible)}
+              >
+                <Search className="w-5 h-5" />
+              </Button>
               
-              {/* Имя пользователя - скрываем на мобильных */}
-              <div className="hidden sm:block">
-                <div className="text-sm font-medium">
-                  {userProfile?.first_name || user.first_name}
-                  {isPremium && <Crown className="w-3 h-3 text-yellow-500 inline ml-1" />}
-                </div>
-              </div>
-            </div>
+              {onUploadClick && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onUploadClick}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-600"
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
+              )}
+            </>
+          )}
 
-            {/* Настройки */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (webApp) {
-                  webApp.showPopup({
-                    title: 'Настройки',
-                    message: 'Настройки профиля доступны в разделе "Профиль"',
-                    buttons: [{ type: 'ok' }]
-                  });
-                }
-              }}
-              className="p-2"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button variant="ghost" size="sm">
+            <Bell className="w-5 h-5" />
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!isPremium && (
+                <SubscriptionModal>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    Получить Premium
+                  </DropdownMenuItem>
+                </SubscriptionModal>
+              )}
+              <DropdownMenuItem onClick={() => signOut()}>
+                Выйти
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {isSearchVisible && (
+        <div className="px-4 pb-3">
+          <Input
+            placeholder="Поиск видео..."
+            className="w-full"
+          />
+        </div>
+      )}
     </header>
   );
 };

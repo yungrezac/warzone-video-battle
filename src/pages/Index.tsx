@@ -15,14 +15,23 @@ const Index: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
 
   React.useEffect(() => {
     const handleShowAchievements = () => {
       setIsAchievementsOpen(true);
     };
 
+    const handleShowComingSoon = () => {
+      setIsComingSoonOpen(true);
+    };
+
     window.addEventListener('showAchievements', handleShowAchievements);
-    return () => window.removeEventListener('showAchievements', handleShowAchievements);
+    window.addEventListener('showComingSoon', handleShowComingSoon);
+    return () => {
+      window.removeEventListener('showAchievements', handleShowAchievements);
+      window.removeEventListener('showComingSoon', handleShowComingSoon);
+    };
   }, []);
 
   const renderContent = () => {
@@ -65,7 +74,10 @@ const Index: React.FC = () => {
         onClose={() => setIsAchievementsOpen(false)}
       />
 
-      <ComingSoonModal />
+      <ComingSoonModal 
+        isOpen={isComingSoonOpen}
+        onClose={() => setIsComingSoonOpen(false)}
+      />
     </div>
   );
 };
