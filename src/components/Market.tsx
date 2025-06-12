@@ -21,7 +21,7 @@ const Market: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   
   const { data: banners } = useMarketBanners();
-  const { data: items, isLoading, error } = useMarketItems(selectedCategory);
+  const { data: items, isLoading, error } = useMarketItems();
 
   const handleItemClick = (item: any) => {
     setSelectedItem(item);
@@ -30,6 +30,11 @@ const Market: React.FC = () => {
   const handleCloseModal = () => {
     setSelectedItem(null);
   };
+
+  // Фильтруем товары по категории
+  const filteredItems = items ? items.filter(item => 
+    selectedCategory === 'all' || item.category === selectedCategory
+  ) : [];
 
   if (isLoading) {
     return (
@@ -131,12 +136,21 @@ const Market: React.FC = () => {
         </div>
 
         {/* Items Grid */}
-        {items && items.length > 0 ? (
+        {filteredItems && filteredItems.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <MarketItemCard
                 key={item.id}
-                item={item}
+                item={{
+                  id: item.id,
+                  title: item.title,
+                  description: item.description,
+                  price: item.price,
+                  category: item.category,
+                  subcategory: item.subcategory,
+                  stock_quantity: item.stock_quantity,
+                  images: Array.isArray(item.images) ? item.images : []
+                }}
                 onClick={handleItemClick}
                 isPremiumItem={item.category === 'premium'}
                 userHasPremium={isPremium}
@@ -158,7 +172,6 @@ const Market: React.FC = () => {
           item={selectedItem}
           isOpen={!!selectedItem}
           onClose={handleCloseModal}
-          userHasPremium={isPremium}
         />
       )}
     </div>

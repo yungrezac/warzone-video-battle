@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Trophy, Calendar, Ruble, Crown, Upload, Video, Users } from 'lucide-react';
+import { Trophy, Calendar, DollarSign, Crown, Upload, Video, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -94,7 +94,7 @@ const Tournaments: React.FC = () => {
                   Участие в денежных турнирах
                 </li>
                 <li className="flex items-center gap-2">
-                  <Ruble className="w-4 h-4 text-green-500" />
+                  <DollarSign className="w-4 h-4 text-green-500" />
                   Призы до 100,000₽
                 </li>
                 <li className="flex items-center gap-2">
@@ -130,7 +130,7 @@ const Tournaments: React.FC = () => {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">{tournament.title}</CardTitle>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Ruble className="w-4 h-4" />
+                      <DollarSign className="w-4 h-4" />
                       <span>Приз: {tournament.prize_amount.toLocaleString('ru-RU')}₽</span>
                     </div>
                   </CardHeader>
@@ -202,7 +202,7 @@ const Tournaments: React.FC = () => {
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
-                      <Ruble className="w-4 h-4 text-green-600" />
+                      <DollarSign className="w-4 h-4 text-green-600" />
                       <span className="font-semibold text-green-600">
                         {tournament.prize_amount.toLocaleString('ru-RU')}₽
                       </span>
