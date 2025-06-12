@@ -1,47 +1,34 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ShoppingCart, Gift, Star, Crown } from 'lucide-react';
+import { useMarketItems } from '@/hooks/useMarketItems';
+import { useMarketBanners } from '@/hooks/useMarketBanners';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/components/AuthWrapper';
+import { Loader2, Crown, Star } from 'lucide-react';
 import MarketItemCard from './MarketItemCard';
 import MarketItemModal from './MarketItemModal';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BannerCarousel from './BannerCarousel';
+import CategorySelector from './CategorySelector';
 import SubscriptionModal from './SubscriptionModal';
-import { useSubscription } from '@/hooks/useSubscription';
+import PremiumBadge from './PremiumBadge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const Market: React.FC = () => {
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { user } = useAuth();
   const { isPremium } = useSubscription();
-
-  const { data: items, isLoading } = useQuery({
-    queryKey: ['market-items'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('market_items')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const categories = [
-    { id: 'all', name: 'Все товары', icon: ShoppingCart },
-    { id: 'equipment', name: 'Экипировка', icon: Gift },
-    { id: 'accessories', name: 'Аксессуары', icon: Star },
-  ];
-
-  const filteredItems = items?.filter(item => 
-    selectedCategory === 'all' || item.category === selectedCategory
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  
+  const { data: banners } = useMarketBanners();
+  const { data: items, isLoading, error } = useMarketItems(selectedCategory);
 
   const handleItemClick = (item: any) => {
     setSelectedItem(item);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
   };
 
   if (isLoading) {
@@ -52,80 +39,117 @@ const Market: React.FC = () => {
     );
   }
 
-  return (
-    <div className="pb-16">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center">
-            <div className="bg-white bg-opacity-20 rounded-full p-1.5 mr-2">
-              <ShoppingCart className="w-4 h-4" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">Магазин</h1>
-              <p className="text-green-100 text-sm">Обменивайте баллы на призы</p>
-            </div>
-          </div>
-          
-          <SubscriptionModal>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold"
-            >
-              <Crown className="w-4 h-4 mr-1" />
-              Premium
-            </Button>
-          </SubscriptionModal>
+  if (error) {
+    return (
+      <div className="p-3 pb-16">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+          Ошибка загрузки товаров: {error.message}
         </div>
       </div>
+    );
+  }
 
-      {/* Banner Carousel */}
-      <BannerCarousel />
+  return (
+    <div className="pb-16">
+      {/* Header with Premium Status */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-lg font-bold">Магазин</h1>
+          {isPremium ? (
+            <div className="flex items-center gap-2">
+              <PremiumBadge size="sm" />
+              <span className="text-xs opacity-90">Premium активен</span>
+            </div>
+          ) : (
+            <SubscriptionModal>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-white/20 border border-white/30"
+              >
+                <Crown className="w-4 h-4 mr-1" />
+                Premium
+              </Button>
+            </SubscriptionModal>
+          )}
+        </div>
+        <p className="text-sm opacity-90">
+          Обменивайте баллы на крутые призы
+        </p>
+      </div>
 
-      {/* Category Tabs */}
       <div className="p-3">
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className="grid w-full grid-cols-3">
-            {categories.map(category => {
-              const IconComponent = category.icon;
-              return (
-                <TabsTrigger 
-                  key={category.id} 
-                  value={category.id}
-                  className="flex items-center gap-1 text-xs"
-                >
-                  <IconComponent className="w-3 h-3" />
-                  {category.name}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+        {/* Premium Promotion for non-premium users */}
+        {!isPremium && (
+          <Card className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-none mb-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center">
+                <Crown className="w-5 h-5 mr-2" />
+                Получите Premium!
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm opacity-90 mb-2">
+                    • Участие в турнирах с призами до 100,000₽
+                  </p>
+                  <p className="text-sm opacity-90 mb-2">
+                    • Вывод баллов на карту
+                  </p>
+                  <p className="text-sm opacity-90">
+                    • Эксклюзивные товары
+                  </p>
+                </div>
+                <SubscriptionModal>
+                  <Button 
+                    className="bg-white hover:bg-gray-100 text-orange-600 font-bold"
+                    size="sm"
+                  >
+                    <Star className="w-4 h-4 mr-1" />
+                    300 ⭐
+                  </Button>
+                </SubscriptionModal>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {categories.map(category => (
-            <TabsContent key={category.id} value={category.id} className="mt-3">
-              {filteredItems && filteredItems.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {filteredItems.map(item => (
-                    <MarketItemCard 
-                      key={item.id}
-                      item={{
-                        ...item,
-                        images: Array.isArray(item.images) ? (item.images as string[]) : []
-                      }}
-                      onItemClick={handleItemClick}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Товары в этой категории скоро появятся</p>
-                </div>
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
+        {/* Banners */}
+        {banners && banners.length > 0 && (
+          <div className="mb-4">
+            <BannerCarousel banners={banners} />
+          </div>
+        )}
+
+        {/* Category Selector */}
+        <div className="mb-4">
+          <CategorySelector 
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+          />
+        </div>
+
+        {/* Items Grid */}
+        {items && items.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            {items.map((item) => (
+              <MarketItemCard
+                key={item.id}
+                item={item}
+                onClick={handleItemClick}
+                isPremiumItem={item.category === 'premium'}
+                userHasPremium={isPremium}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="bg-gray-100 rounded-lg p-6">
+              <p className="text-gray-500">Товары в данной категории пока отсутствуют</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Item Modal */}
@@ -133,7 +157,8 @@ const Market: React.FC = () => {
         <MarketItemModal
           item={selectedItem}
           isOpen={!!selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={handleCloseModal}
+          userHasPremium={isPremium}
         />
       )}
     </div>

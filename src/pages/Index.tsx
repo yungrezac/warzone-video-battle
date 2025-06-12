@@ -1,23 +1,24 @@
 
-import { useState, useEffect } from "react";
-import AuthWrapper from "@/components/AuthWrapper";
-import { useAuth } from "@/components/AuthWrapper";
-import BottomNavbar from "@/components/BottomNavbar";
-import VideoFeed from "@/components/VideoFeed";
-import Profile from "@/components/Profile";
-import Market from "@/components/Market";
-import Achievements from "@/components/Achievements";
-import TopUsers from "@/components/TopUsers";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import React, { useState } from 'react';
+import VideoFeed from '@/components/VideoFeed';
+import TopUsers from '@/components/TopUsers';
+import Market from '@/components/Market';
+import Profile from '@/components/Profile';
+import Tournaments from '@/components/Tournaments';
+import BottomNavbar from '@/components/BottomNavbar';
+import Header from '@/components/Header';
+import UploadModal from '@/components/UploadModal';
+import Achievements from '@/components/Achievements';
+import ComingSoonModal from '@/components/ComingSoonModal';
 
-const Index = () => {
+const Index: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
-  const { user } = useAuth();
-  const { data: userProfile } = useUserProfile();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleShowAchievements = () => {
-      setActiveTab('achievements');
+      setIsAchievementsOpen(true);
     };
 
     window.addEventListener('showAchievements', handleShowAchievements);
@@ -30,8 +31,8 @@ const Index = () => {
         return <VideoFeed />;
       case 'top':
         return <TopUsers />;
-      case 'achievements':
-        return <Achievements />;
+      case 'tournaments':
+        return <Tournaments />;
       case 'market':
         return <Market />;
       case 'profile':
@@ -42,26 +43,30 @@ const Index = () => {
   };
 
   return (
-    <AuthWrapper>
-      <div className="min-h-screen bg-gray-50">
-        <main>
-          {renderContent()}
-        </main>
-        {activeTab !== 'achievements' && (
-          <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-        )}
-        {activeTab === 'achievements' && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
-            >
-              Назад в профиль
-            </button>
-          </div>
-        )}
-      </div>
-    </AuthWrapper>
+    <div className="min-h-screen bg-gray-50">
+      <Header 
+        onUploadClick={() => setIsUploadModalOpen(true)}
+        activeTab={activeTab}
+      />
+      
+      <main className="pt-14">
+        {renderContent()}
+      </main>
+
+      <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      <UploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+      />
+
+      <Achievements
+        isOpen={isAchievementsOpen}
+        onClose={() => setIsAchievementsOpen(false)}
+      />
+
+      <ComingSoonModal />
+    </div>
   );
 };
 
