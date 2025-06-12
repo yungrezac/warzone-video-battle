@@ -65,26 +65,22 @@ interface TelegramWebApp {
 
 export const useTelegramWebApp = () => {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(true); // Начинаем с готового состояния
 
   useEffect(() => {
-    console.log('🔄 useTelegramWebApp useEffect запускается...');
+    console.log('🔄 useTelegramWebApp инициализация...');
     
     const initializeWebApp = () => {
       try {
-        // Проверяем доступность Telegram WebApp
         if (typeof window === 'undefined') {
           console.log('❌ Window недоступен');
           return;
         }
 
         console.log('🌐 Проверяем Telegram объект...');
-        console.log('Telegram объект:', !!window.Telegram);
-        console.log('WebApp объект:', !!window.Telegram?.WebApp);
-
+        
         if (!window.Telegram?.WebApp) {
-          console.log('❌ Telegram WebApp недоступен');
-          // Устанавливаем готовность как true для веб-версии
+          console.log('❌ Telegram WebApp недоступен - работаем в веб-режиме');
           setIsReady(true);
           return;
         }
@@ -147,17 +143,6 @@ export const useTelegramWebApp = () => {
     // Инициализируем сразу
     initializeWebApp();
     
-    // Также попробуем через небольшую задержку на случай если скрипт еще загружается
-    const timeoutId = setTimeout(() => {
-      if (!isReady) {
-        console.log('🔄 Повторная попытка инициализации через 500мс...');
-        initializeWebApp();
-      }
-    }, 500);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
   }, []);
 
   return {

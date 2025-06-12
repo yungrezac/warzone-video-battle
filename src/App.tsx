@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -67,20 +66,8 @@ const App = () => {
             timestamp: new Date().toISOString()
           });
           
-          if (loading) {
-            console.log('⏳ Показываем загрузку');
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                <div className="bg-white rounded-lg p-8 text-center shadow-xl">
-                  <div className="w-8 h-8 animate-spin mx-auto mb-4 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-                  <p className="text-gray-600 font-medium">Загрузка RollerTricks...</p>
-                  <p className="text-gray-400 text-sm mt-2">Инициализация приложения</p>
-                </div>
-              </div>
-            );
-          }
-
-          console.log('🏠 Показываем основное приложение для пользователя:', user?.id || 'без пользователя');
+          // Убираем экран загрузки - показываем приложение сразу
+          console.log('🏠 Показываем основное приложение для пользователя:', user?.id || 'гостевой пользователь');
           
           return (
             <VideoPlaybackProvider>

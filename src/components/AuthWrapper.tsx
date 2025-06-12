@@ -41,77 +41,66 @@ interface AuthWrapperProps {
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Убираем изначальную загрузку
   const { webApp, isReady: telegramReady, user: telegramUser } = useTelegramWebApp();
 
   useEffect(() => {
-    console.log('🔄 AuthWrapper useEffect запускается...');
+    console.log('🔄 AuthWrapper инициализация...');
     
     const initializeUser = async () => {
       try {
-        console.log('⚡ Начинаем инициализацию пользователя...');
-        console.log('📱 Telegram готов:', telegramReady);
-        console.log('👤 Telegram пользователь:', telegramUser);
-        
-        // Ждем готовности Telegram WebApp (или таймаут для веб-версии)
-        if (!telegramReady) {
-          console.log('⏳ Ожидаем готовности Telegram WebApp...');
-          return;
-        }
-
-        // Проверяем сохраненного пользователя в localStorage
+        // Проверяем сохраненного пользователя в localStorage для быстрого отображения
         const savedUser = localStorage.getItem('roller_tricks_user');
-        console.log('💾 Сохраненный пользователь:', savedUser ? 'найден' : 'не найден');
-        
         if (savedUser) {
           try {
             const userData = JSON.parse(savedUser);
-            console.log('⚡ Быстрая загрузка пользователя:', userData.username || userData.first_name);
+            console.log('⚡ Мгновенная загрузка пользователя:', userData.username || userData.first_name);
             setUser(userData);
-            
-            // Проверяем актуальность данных если есть Telegram пользователь
-            if (telegramUser && telegramUser.id.toString() === userData.telegram_id) {
-              console.log('🔄 Обновляем данные пользователя из Telegram...');
-              await updateUserFromTelegram(telegramUser, userData.id);
-            }
-            
-            setLoading(false);
-            return;
           } catch (parseError) {
             console.error('❌ Ошибка парсинга сохраненного пользователя:', parseError);
             localStorage.removeItem('roller_tricks_user');
           }
         }
 
-        // Если есть данные из Telegram WebApp
-        if (telegramUser) {
-          console.log('👤 Создаем/обновляем пользователя из Telegram:', {
-            id: telegramUser.id,
-            first_name: telegramUser.first_name,
-            username: telegramUser.username
-          });
-          
-          await createOrUpdateUser(telegramUser);
-          return;
+        // Если нет сохраненных данных, создаем пользователя сразу
+        if (!savedUser) {
+          // Проверяем данные из Telegram WebApp
+          if (telegramUser && telegramReady) {
+            console.log('👤 Создаем пользователя из Telegram WebApp:', telegramUser);
+            await createOrUpdateUser(telegramUser);
+          } else {
+            // Создаем админа для веб-версии без ожидания
+            console.log('🔧 Создаем админа для веб-версии');
+            await createAdminUser();
+          }
+        } else if (telegramUser && telegramReady) {
+          // Асинхронно обновляем данные если есть Telegram пользователь
+          const userData = JSON.parse(savedUser);
+          if (telegramUser.id.toString() === userData.telegram_id) {
+            console.log('🔄 Асинхронно обновляем данные пользователя из Telegram...');
+            updateUserFromTelegram(telegramUser, userData.id);
+          }
         }
 
-        // Создаем администратора для разработки/веб-версии
-        console.log('🔧 Создаем администратора для веб-версии');
-        await createAdminUser();
-
       } catch (err: any) {
-        console.error('❌ Критическая ошибка инициализации:', err);
-        await createAdminUser();
-      } finally {
-        console.log('✅ Завершаем инициализацию, убираем loading');
-        setLoading(false);
+        console.error('❌ Ошибка инициализации:', err);
+        // В случае ошибки создаем fallback пользователя
+        const fallbackUser = {
+          id: crypto.randomUUID(),
+          telegram_id: 'fallback_user',
+          username: 'User',
+          first_name: 'Guest',
+          last_name: 'User',
+          avatar_url: '',
+          telegram_username: 'User',
+        };
+        setUser(fallbackUser);
+        localStorage.setItem('roller_tricks_user', JSON.stringify(fallbackUser));
       }
     };
 
-    // Инициализируем когда Telegram WebApp готов или через таймаут
-    if (telegramReady) {
-      initializeUser();
-    }
+    // Запускаем инициализацию сразу
+    initializeUser();
   }, [telegramReady, telegramUser]);
 
   const updateUserFromTelegram = async (telegramUser: any, userId: string) => {
@@ -128,12 +117,9 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         })
         .eq('id', userId);
 
-      if (error) {
-        console.error('❌ Ошибка обновления пользователя:', error);
-      } else {
-        console.log('✅ Данные пользователя обновлены');
+      if (!error) {
+        console.log('✅ Данные пользователя обновлены асинхронно');
         
-        // Обновляем локальные данные
         const updatedUser = {
           id: userId,
           telegram_id: telegramUser.id.toString(),
@@ -148,14 +134,14 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         localStorage.setItem('roller_tricks_user', JSON.stringify(updatedUser));
       }
     } catch (error) {
-      console.error('❌ Ошибка обновления пользователя из Telegram:', error);
+      console.error('❌ Ошибка асинхронного обновления пользователя:', error);
     }
   };
 
   const createOrUpdateUser = async (telegramUser: any) => {
     try {
       const telegramId = telegramUser.id.toString();
-      console.log('🔍 Ищем пользователя с Telegram ID:', telegramId);
+      console.log('🔍 Создаем/ищем пользователя с Telegram ID:', telegramId);
       
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
@@ -163,15 +149,12 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         .eq('telegram_id', telegramId)
         .maybeSingle();
 
-      console.log('🔍 Результат поиска:', { найден: !!existingProfile, ошибка: !!profileError });
-
       let profileId = existingProfile?.id;
 
       if (!existingProfile) {
-        // Создаем новый профиль
         const newUserId = crypto.randomUUID();
         
-        console.log('➕ Создаем профиль с ID:', newUserId);
+        console.log('➕ Создаем новый профиль с ID:', newUserId);
         
         const { data: newProfile, error: insertProfileError } = await supabase
           .from('profiles')
@@ -193,33 +176,28 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           throw insertProfileError;
         }
 
-        console.log('✅ Профиль создан');
-
-        // Создаем запись в user_points
-        const { error: pointsError } = await supabase
+        // Создаем запись в user_points асинхронно
+        supabase
           .from('user_points')
           .insert({
             user_id: newUserId,
             total_points: 0,
             wins_count: 0,
-          });
-
-        if (pointsError) {
-          console.error('❌ Ошибка создания points:', pointsError);
-        }
+          })
+          .then(() => console.log('✅ User points created'))
+          .catch(err => console.error('❌ Error creating points:', err));
 
         profileId = newUserId;
       } else if (profileError) {
         console.error('❌ Ошибка поиска профиля:', profileError);
         throw profileError;
       } else {
-        // Обновляем существующий профиль
-        console.log('🔄 Обновляем существующий профиль:', existingProfile.id);
-        await updateUserFromTelegram(telegramUser, existingProfile.id);
+        // Асинхронно обновляем существующий профиль
+        updateUserFromTelegram(telegramUser, existingProfile.id);
         profileId = existingProfile.id;
       }
 
-      // Устанавливаем пользователя в контекст
+      // Устанавливаем пользователя мгновенно
       const userData = {
         id: profileId,
         telegram_id: telegramId,
@@ -230,13 +208,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         telegram_username: telegramUser.username,
       };
 
-      console.log('✅ Устанавливаем пользователя:', userData.username || userData.first_name);
+      console.log('✅ Мгновенно устанавливаем пользователя:', userData.username || userData.first_name);
       
       setUser(userData);
       localStorage.setItem('roller_tricks_user', JSON.stringify(userData));
 
     } catch (err: any) {
-      console.error('❌ Ошибка работы с пользователем:', err);
+      console.error('❌ Ошибка создания пользователя:', err);
       await createAdminUser();
     }
   };
@@ -278,19 +256,16 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           throw insertAdminError;
         }
 
-        console.log('✅ Админский профиль создан:', newAdmin);
-
-        const { error: pointsError } = await supabase
+        // Создаем user_points асинхронно
+        supabase
           .from('user_points')
           .insert({
             user_id: newAdminId,
             total_points: 99999,
             wins_count: 100,
-          });
-
-        if (pointsError) {
-          console.error('❌ Ошибка создания points для админа:', pointsError);
-        }
+          })
+          .then(() => console.log('✅ Admin points created'))
+          .catch(err => console.error('❌ Error creating admin points:', err));
 
         adminId = newAdminId;
       } else if (adminError) {
