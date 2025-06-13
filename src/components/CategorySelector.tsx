@@ -8,11 +8,13 @@ export type CategoryWithAll = "all" | Category;
 interface CategorySelectorProps {
   selectedCategory: CategoryWithAll;
   onCategoryChange: (category: CategoryWithAll) => void;
+  disabled?: boolean;
 }
 
 const CategorySelector: React.FC<CategorySelectorProps> = ({
   selectedCategory,
   onCategoryChange,
+  disabled = false,
 }) => {
   const categories: { key: CategoryWithAll; label: string }[] = [
     { key: 'all', label: 'Все' },
@@ -30,6 +32,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           size="sm"
           onClick={() => onCategoryChange(key)}
           className="whitespace-nowrap"
+          disabled={disabled}
         >
           {label}
         </Button>

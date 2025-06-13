@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import VideoCard from './VideoCard';
@@ -51,7 +51,12 @@ const VideoFeed: React.FC<VideoFeedProps> = ({ onUploadClick }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
+              <VideoCard 
+                key={video.id} 
+                video={video}
+                onLike={() => {}}
+                onRate={() => {}}
+              />
             ))}
           </div>
         )}

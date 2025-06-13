@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Trophy } from 'lucide-react';
@@ -123,11 +124,35 @@ const Tournaments: React.FC = () => {
                   <div key={video.id} className="relative">
                     <VideoCard
                       video={{
-                        ...video,
+                        id: video.id,
+                        title: video.title,
+                        description: '',
+                        thumbnail: video.thumbnail_url || '',
+                        author: video.profiles?.username || 'Неизвестный пользователь',
+                        authorAvatar: video.profiles?.avatar_url || '',
+                        likes: 0,
+                        views: video.views || 0,
+                        rating: 0,
+                        category: 'Rollers',
                         username: video.profiles?.username || 'Неизвестный пользователь',
                         telegram_username: video.profiles?.telegram_username || '',
-                        avatar_url: video.profiles?.avatar_url || ''
+                        avatar_url: video.profiles?.avatar_url || '',
+                        video_url: video.video_url,
+                        user_id: video.user_id,
+                        created_at: video.created_at,
+                        updated_at: video.updated_at,
+                        thumbnail_url: video.thumbnail_url,
+                        likes_count: 0,
+                        comments_count: 0,
+                        average_rating: 0,
+                        is_winner: video.is_winner || false,
+                        winner_date: null,
+                        user_liked: false,
+                        user_rating: 0,
+                        profiles: video.profiles
                       }}
+                      onLike={() => {}}
+                      onRate={() => {}}
                     />
                     {video.is_winner && (
                       <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center">
@@ -149,16 +174,6 @@ const Tournaments: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Winner Control Modal */}
-      {selectedTournament && (
-        <AdminWinnerControl
-          isOpen={isWinnerControlOpen}
-          onClose={() => setIsWinnerControlOpen(false)}
-          tournamentId={selectedTournament.id}
-          videos={tournamentVideos}
-        />
-      )}
 
       {/* Winner Announcement */}
       <WinnerAnnouncement />
