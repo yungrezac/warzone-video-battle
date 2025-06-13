@@ -1,177 +1,67 @@
+
 import React, { useState, useEffect } from 'react';
-import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
-import { useAuth } from '@/components/AuthWrapper';
-import { useVideoViews } from '@/hooks/useVideoViews';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import VideoCard from './VideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
-import BannerRotation from './BannerRotation';
-import AdminWinnerControl from './AdminWinnerControl';
-import UploadModal from './UploadModal';
-import { Button } from '@/components/ui/button';
-import { Upload } from 'lucide-react';
-import { toast } from 'sonner';
+import CategorySelector, { type CategoryWithAll } from './CategorySelector';
+import { useVideos } from '@/hooks/useVideos';
+import { useAuth } from './AuthWrapper';
 
-const VideoFeed: React.FC = () => {
-  const { data: videos, isLoading, error } = useVideos();
+interface VideoFeedProps {
+  onUploadClick?: () => void;
+}
+
+const VideoFeed: React.FC<VideoFeedProps> = ({ onUploadClick }) => {
   const { user } = useAuth();
-  const likeVideoMutation = useLikeVideo();
-  const rateVideoMutation = useRateVideo();
-  const { markVideoAsViewed } = useVideoViews();
-
-  const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const videoId = entry.target.getAttribute('data-video-id');
-            if (videoId && !viewedVideos.has(videoId)) {
-              markVideoAsViewed(videoId);
-              setViewedVideos(prev => new Set(prev).add(videoId));
-            }
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    const videoElements = document.querySelectorAll('[data-video-id]');
-    videoElements.forEach(el => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, [videos, markVideoAsViewed, viewedVideos]);
-
-  const handleLike = async (videoId: string) => {
-    if (!user) {
-      toast.error('Войдите в систему, чтобы ставить лайки');
-      return;
-    }
-
-    const video = videos?.find(v => v.id === videoId);
-    if (video) {
-      console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
-      try {
-        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
-        toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
-      } catch (error) {
-        console.error('Ошибка при обработке лайка:', error);
-        toast.error('Ошибка при обработке лайка');
-      }
-    }
-  };
-
-  const handleRate = async (videoId: string, rating: number) => {
-    if (!user) {
-      toast.error('Войдите в систему, чтобы ставить оценки');
-      return;
-    }
-
-    console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
-    try {
-      await rateVideoMutation.mutateAsync({ videoId, rating });
-      toast.success(`Оценка ${rating} поставлена`);
-    } catch (error) {
-      console.error('Ошибка при выставлении оценки:', error);
-      toast.error('Ошибка при выставлении оценки');
-    }
-  };
-
-  const handleViewWinner = (videoId: string) => {
-    const videoElement = document.querySelector(`[data-video-id="${videoId}"]`);
-    if (videoElement) {
-      videoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
-  const handleUploadClick = () => {
-    if (!user) {
-      toast.error('Войдите в систему для загрузки трюков');
-      return;
-    }
-    setIsUploadModalOpen(true);
-  };
+  const [selectedCategory, setSelectedCategory] = useState<CategoryWithAll>('all');
+  const { data: videos = [], isLoading, error } = useVideos(selectedCategory);
 
   if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px] pb-16">
-        <div className="text-center">
-          <p className="text-red-600 mb-2">Ошибка загрузки видео</p>
-          <p className="text-gray-500 text-sm">Попробуйте обновить страницу</p>
-        </div>
-      </div>
-    );
+    console.error('VideoFeed error:', error);
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
-      <AdminWinnerControl />
-      
-      <BannerRotation />
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold text-gray-800">Лента</h1>
+          {onUploadClick && (
+            <Button
+              onClick={onUploadClick}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Загрузить
+            </Button>
+          )}
+        </div>
 
-      {/* Кнопка загрузки трюка */}
-      <div className="px-3 mb-4">
-        <Button
-          onClick={handleUploadClick}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-xl shadow-lg"
-        >
-          <Upload className="w-5 h-5 mr-2" />
-          Загрузить свой трюк
-        </Button>
+        <CategorySelector
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <VideoCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {videos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
+        )}
+
+        {videos.length === 0 && !isLoading && (
+          <div className="text-center py-8 text-gray-500">
+            <p>Видео в этой категории пока нет</p>
+          </div>
+        )}
       </div>
-
-      {isLoading ? (
-        <div className="space-y-4 p-2">
-          {[...Array(3)].map((_, index) => (
-            <VideoCardSkeleton key={index} />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4 p-2">
-          {videos?.map((video) => {
-            const videoUser = video.profiles;
-            const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
-            
-            return (
-              <div key={video.id} data-video-id={video.id}>
-                <VideoCard
-                  video={{
-                    id: video.id,
-                    title: video.title,
-                    author: displayName,
-                    authorAvatar: videoUser?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-                    thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
-                    videoUrl: video.video_url,
-                    likes: video.likes_count || 0,
-                    comments: video.comments_count || 0,
-                    rating: video.average_rating || 0,
-                    views: video.views,
-                    isWinner: video.is_winner,
-                    timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }),
-                    userLiked: video.user_liked || false,
-                    userRating: video.user_rating || 0,
-                    userId: video.user_id,
-                  }}
-                  onLike={handleLike}
-                  onRate={handleRate}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Модальное окно загрузки */}
-      <UploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-      />
     </div>
   );
 };

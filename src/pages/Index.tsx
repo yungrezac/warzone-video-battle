@@ -6,7 +6,6 @@ import Market from '@/components/Market';
 import Profile from '@/components/Profile';
 import Tournaments from '@/components/Tournaments';
 import BottomNavbar from '@/components/BottomNavbar';
-import Header from '@/components/Header';
 import UploadModal from '@/components/UploadModal';
 import Achievements from '@/components/Achievements';
 import ComingSoonModal from '@/components/ComingSoonModal';
@@ -37,7 +36,7 @@ const Index: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <VideoFeed />;
+        return <VideoFeed onUploadClick={() => setIsUploadModalOpen(true)} />;
       case 'top':
         return <TopUsers />;
       case 'tournaments':
@@ -47,20 +46,15 @@ const Index: React.FC = () => {
       case 'profile':
         return <Profile />;
       case 'achievements':
-        return <Achievements />;
+        return <Achievements isOpen={true} onClose={() => setActiveTab('profile')} />;
       default:
-        return <VideoFeed />;
+        return <VideoFeed onUploadClick={() => setIsUploadModalOpen(true)} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header 
-        onUploadClick={() => setIsUploadModalOpen(true)}
-        activeTab={activeTab}
-      />
-      
-      <main className="pt-14">
+      <main>
         {renderContent()}
       </main>
 

@@ -2,44 +2,38 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 
+export type Category = "Rollers" | "BMX" | "Skateboard";
+export type CategoryWithAll = "all" | Category;
+
 interface CategorySelectorProps {
-  selectedCategory: 'all' | 'Rollers' | 'BMX' | 'Skateboard';
-  onCategoryChange: (category: 'all' | 'Rollers' | 'BMX' | 'Skateboard') => void;
-  disabled?: boolean;
+  selectedCategory: CategoryWithAll;
+  onCategoryChange: (category: CategoryWithAll) => void;
 }
 
 const CategorySelector: React.FC<CategorySelectorProps> = ({
   selectedCategory,
   onCategoryChange,
-  disabled = false,
 }) => {
-  const categories = [
-    { value: 'all' as const, label: 'Все', emoji: '🏷️' },
-    { value: 'Rollers' as const, label: 'Роллеры', emoji: '⛸️' },
-    { value: 'BMX' as const, label: 'BMX', emoji: '🚴' },
-    { value: 'Skateboard' as const, label: 'Скейтборд', emoji: '🛹' },
+  const categories: { key: CategoryWithAll; label: string }[] = [
+    { key: 'all', label: 'Все' },
+    { key: 'Rollers', label: 'Ролики' },
+    { key: 'BMX', label: 'BMX' },
+    { key: 'Skateboard', label: 'Скейт' },
   ];
 
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Направление *
-      </label>
-      <div className="grid grid-cols-4 gap-2">
-        {categories.map((category) => (
-          <Button
-            key={category.value}
-            type="button"
-            variant={selectedCategory === category.value ? "default" : "outline"}
-            onClick={() => onCategoryChange(category.value)}
-            disabled={disabled}
-            className="flex flex-col items-center p-3 h-auto"
-          >
-            <span className="text-lg mb-1">{category.emoji}</span>
-            <span className="text-xs">{category.label}</span>
-          </Button>
-        ))}
-      </div>
+    <div className="flex gap-2 mb-4 overflow-x-auto">
+      {categories.map(({ key, label }) => (
+        <Button
+          key={key}
+          variant={selectedCategory === key ? "default" : "outline"}
+          size="sm"
+          onClick={() => onCategoryChange(key)}
+          className="whitespace-nowrap"
+        >
+          {label}
+        </Button>
+      ))}
     </div>
   );
 };
