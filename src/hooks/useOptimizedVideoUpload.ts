@@ -9,6 +9,7 @@ interface OptimizedUploadParams {
   description?: string;
   videoFile: File;
   category: 'Rollers' | 'BMX' | 'Skateboard';
+  thumbnailBlob?: Blob;
   onProgress?: (progress: number) => void;
 }
 
@@ -57,7 +58,7 @@ export const useOptimizedVideoUpload = () => {
         throw new Error('Необходима авторизация');
       }
 
-      const { title, description, videoFile, category, onProgress } = params;
+      const { title, description, videoFile, category, thumbnailBlob, onProgress } = params;
       
       console.log('📹 Загружаем оригинальное видео:', {
         userId: user.id,
@@ -70,11 +71,15 @@ export const useOptimizedVideoUpload = () => {
 
       // Загружаем оригинальное видео
       let finalVideoFile = videoFile;
-      let thumbnailPromise: Promise<Blob | null> = Promise.resolve(null);
+      let thumbnailPromise: Promise<Blob | null>;
       
-      // Генерируем только превью
-      console.log('🖼️ Создаем превью...');
-      thumbnailPromise = generateQuickThumbnail(videoFile).catch(() => null);
+      // Используем переданный thumbnailBlob или генерируем новый
+      if (thumbnailBlob) {
+        thumbnailPromise = Promise.resolve(thumbnailBlob);
+      } else {
+        console.log('🖼️ Создаем превью...');
+        thumbnailPromise = generateQuickThumbnail(videoFile).catch(() => null);
+      }
 
       onProgress?.(15);
 
@@ -94,13 +99,13 @@ export const useOptimizedVideoUpload = () => {
         // Обрабатываем превью
         let thumbnailUrl = null;
         try {
-          const thumbnailBlob = await thumbnailPromise;
-          if (thumbnailBlob) {
+          const thumbnailBlobResult = await thumbnailPromise;
+          if (thumbnailBlobResult) {
             console.log('🖼️ Загружаем превью...');
             const thumbnailFileName = `${user.id}/${Date.now()}_thumb.jpg`;
             const { data: thumbnailUpload, error: thumbnailError } = await supabase.storage
               .from('videos')
-              .upload(thumbnailFileName, thumbnailBlob, {
+              .upload(thumbnailFileName, thumbnailBlobResult, {
                 cacheControl: '3600',
                 upsert: false,
               });

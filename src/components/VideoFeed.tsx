@@ -6,7 +6,7 @@ import VideoCard from './VideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
 import BannerRotation from './BannerRotation';
 import AdminWinnerControl from './AdminWinnerControl';
-import UploadModal from './UploadModal';
+import MinimalUploadForm from './MinimalUploadForm';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,7 +19,7 @@ const VideoFeed: React.FC = () => {
   const { markVideoAsViewed } = useVideoViews();
 
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -90,8 +90,12 @@ const VideoFeed: React.FC = () => {
       toast.error('Войдите в систему для загрузки трюков');
       return;
     }
-    setIsUploadModalOpen(true);
+    setShowUploadForm(true);
   };
+
+  if (showUploadForm) {
+    return <MinimalUploadForm />;
+  }
 
   if (error) {
     return (
@@ -110,7 +114,7 @@ const VideoFeed: React.FC = () => {
       
       <BannerRotation />
 
-      {/* Кнопка загрузки трюка */}
+      {/* Кнопка загрузки трюка под банерами */}
       <div className="px-3 mb-4">
         <Button
           onClick={handleUploadClick}
@@ -166,12 +170,6 @@ const VideoFeed: React.FC = () => {
           })}
         </div>
       )}
-
-      {/* Модальное окно загрузки */}
-      <UploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-      />
     </div>
   );
 };
