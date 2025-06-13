@@ -8,6 +8,7 @@ import Profile from "@/components/Profile";
 import Market from "@/components/Market";
 import Achievements from "@/components/Achievements";
 import TopUsers from "@/components/TopUsers";
+import MinimalUploadForm from "@/components/MinimalUploadForm";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Index = () => {
@@ -36,6 +37,8 @@ const Index = () => {
         return <Market />;
       case 'profile':
         return <Profile />;
+      case 'upload':
+        return <MinimalUploadForm />;
       default:
         return <VideoFeed />;
     }

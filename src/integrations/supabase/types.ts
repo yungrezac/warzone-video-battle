@@ -902,6 +902,95 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_videos: {
+        Row: {
+          created_at: string
+          id: string
+          is_winner: boolean | null
+          thumbnail_url: string | null
+          title: string
+          tournament_id: string
+          updated_at: string
+          user_id: string
+          video_url: string
+          views: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          thumbnail_url?: string | null
+          title: string
+          tournament_id: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+          views?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          thumbnail_url?: string | null
+          title?: string
+          tournament_id?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_videos_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          is_active: boolean
+          participants_count: number | null
+          prize_amount: number
+          start_date: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean
+          participants_count?: number | null
+          prize_amount?: number
+          start_date?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          participants_count?: number | null
+          prize_amount?: number
+          start_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
