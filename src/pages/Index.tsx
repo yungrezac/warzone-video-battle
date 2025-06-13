@@ -1,80 +1,67 @@
 
-import React, { useState } from 'react';
-import VideoFeed from '@/components/VideoFeed';
-import TopUsers from '@/components/TopUsers';
-import Market from '@/components/Market';
-import Profile from '@/components/Profile';
-import Tournaments from '@/components/Tournaments';
-import BottomNavbar from '@/components/BottomNavbar';
-import UploadModal from '@/components/UploadModal';
-import Achievements from '@/components/Achievements';
-import ComingSoonModal from '@/components/ComingSoonModal';
+import { useState, useEffect } from "react";
+import AuthWrapper from "@/components/AuthWrapper";
+import { useAuth } from "@/components/AuthWrapper";
+import BottomNavbar from "@/components/BottomNavbar";
+import VideoFeed from "@/components/VideoFeed";
+import Profile from "@/components/Profile";
+import Market from "@/components/Market";
+import Achievements from "@/components/Achievements";
+import TopUsers from "@/components/TopUsers";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
-const Index: React.FC = () => {
+const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
-  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+  const { user } = useAuth();
+  const { data: userProfile } = useUserProfile();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleShowAchievements = () => {
-      setIsAchievementsOpen(true);
-    };
-
-    const handleShowComingSoon = () => {
-      setIsComingSoonOpen(true);
+      setActiveTab('achievements');
     };
 
     window.addEventListener('showAchievements', handleShowAchievements);
-    window.addEventListener('showComingSoon', handleShowComingSoon);
-    return () => {
-      window.removeEventListener('showAchievements', handleShowAchievements);
-      window.removeEventListener('showComingSoon', handleShowComingSoon);
-    };
+    return () => window.removeEventListener('showAchievements', handleShowAchievements);
   }, []);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <VideoFeed onUploadClick={() => setIsUploadModalOpen(true)} />;
+        return <VideoFeed />;
       case 'top':
         return <TopUsers />;
-      case 'tournaments':
-        return <Tournaments />;
+      case 'achievements':
+        return <Achievements />;
       case 'market':
         return <Market />;
       case 'profile':
         return <Profile />;
-      case 'achievements':
-        return <Achievements isOpen={true} onClose={() => setActiveTab('profile')} />;
       default:
-        return <VideoFeed onUploadClick={() => setIsUploadModalOpen(true)} />;
+        return <VideoFeed />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main>
-        {renderContent()}
-      </main>
-
-      <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-      
-      <UploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-      />
-
-      <Achievements
-        isOpen={isAchievementsOpen}
-        onClose={() => setIsAchievementsOpen(false)}
-      />
-
-      <ComingSoonModal 
-        isOpen={isComingSoonOpen}
-        onClose={() => setIsComingSoonOpen(false)}
-      />
-    </div>
+    <AuthWrapper>
+      <div className="min-h-screen bg-gray-50">
+        <main>
+          {renderContent()}
+        </main>
+        {activeTab !== 'achievements' && (
+          <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+        )}
+        {activeTab === 'achievements' && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+            >
+              Назад в профиль
+            </button>
+          </div>
+        )}
+      </div>
+    </AuthWrapper>
   );
 };
 

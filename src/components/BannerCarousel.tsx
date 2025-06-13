@@ -1,26 +1,14 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { useMarketBanners } from '@/hooks/useMarketBanners';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface BannerCarouselProps {
-  banners?: Array<{
-    id: string;
-    title: string;
-    image_url: string;
-    link_url?: string;
-    is_active: boolean;
-  }>;
-}
-
-const BannerCarousel: React.FC<BannerCarouselProps> = ({ banners: propBanners }) => {
-  const { data: fetchedBanners, isLoading } = useMarketBanners();
+const BannerCarousel: React.FC = () => {
+  const { data: banners, isLoading } = useMarketBanners();
   const [currentIndex, setCurrentIndex] = React.useState(0);
 
-  // Используем переданные banners или загруженные из хука
-  const banners = propBanners || fetchedBanners;
-  
   // Фильтруем только активные банеры
   const activeBanners = banners?.filter(banner => banner.is_active) || [];
 

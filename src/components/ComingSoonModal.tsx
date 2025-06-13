@@ -4,7 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Coins, Clock } from 'lucide-react';
 
-export interface ComingSoonModalProps {
+interface ComingSoonModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
