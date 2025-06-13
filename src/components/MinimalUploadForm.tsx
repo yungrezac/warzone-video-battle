@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Upload, X, Loader2, Video, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,11 @@ import { useOptimizedVideoUpload } from '@/hooks/useOptimizedVideoUpload';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthWrapper';
 
-const MinimalUploadForm: React.FC = () => {
+interface MinimalUploadFormProps {
+  onSuccess?: () => void;
+}
+
+const MinimalUploadForm: React.FC<MinimalUploadFormProps> = ({ onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -105,6 +108,11 @@ const MinimalUploadForm: React.FC = () => {
         title: "Готово!",
         description: "Видео загружено",
       });
+
+      // Переходим на главную страницу
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Ошибка загрузки:', error);
       setUploadProgress(0);

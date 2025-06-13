@@ -93,8 +93,12 @@ const VideoFeed: React.FC = () => {
     setShowUploadForm(true);
   };
 
+  const handleUploadSuccess = () => {
+    setShowUploadForm(false);
+  };
+
   if (showUploadForm) {
-    return <MinimalUploadForm />;
+    return <MinimalUploadForm onSuccess={handleUploadSuccess} />;
   }
 
   if (error) {
