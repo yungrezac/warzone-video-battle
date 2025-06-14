@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import FullScreenLoader from './FullScreenLoader';
 
 interface User {
   id: string;
@@ -14,14 +14,12 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
   signOut: () => void;
   signIn: (userData: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  loading: true,
   signOut: () => {},
   signIn: () => {},
 });
@@ -35,12 +33,12 @@ export const useAuth = () => {
 };
 
 interface AuthWrapperProps {
-  children: React.ReactNode | ((props: { user: User | null; loading: boolean }) => React.ReactNode);
+  children: React.ReactNode;
 }
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     console.log('🚀 AuthWrapper мгновенная инициализация через Telegram API...');
@@ -61,6 +59,8 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       } catch (err: any) {
         console.error('❌ Ошибка инициализации:', err);
         createFallbackUser();
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -226,11 +226,15 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     setUser(null);
   };
 
-  const contextValue = { user, loading, signOut, signIn };
+  const contextValue = { user, signOut, signIn };
+
+  if (loading) {
+    return <FullScreenLoader />;
+  }
 
   return (
     <AuthContext.Provider value={contextValue}>
-      {typeof children === 'function' ? children({ user, loading }) : children}
+      {children}
     </AuthContext.Provider>
   );
 };
