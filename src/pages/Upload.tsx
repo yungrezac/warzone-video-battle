@@ -1,10 +1,11 @@
+
 import React, { useState, useRef } from 'react';
 import { UploadIcon, Video, X, Edit, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { useOptimizedVideoUpload } from '@/hooks/useOptimizedVideoUpload';
+import { useUploadVideo } from '@/hooks/useVideos';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import CategorySelector from '@/components/CategorySelector';
@@ -23,7 +24,7 @@ const Upload: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadMutation = useOptimizedVideoUpload();
+  const uploadMutation = useUploadVideo();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -121,6 +122,8 @@ const Upload: React.FC = () => {
         videoFile: selectedFile,
         category: category,
         thumbnailBlob: thumbnailBlob || undefined,
+        trimStart: trimStart > 0 ? trimStart : undefined,
+        trimEnd: trimEnd > 0 ? trimEnd : undefined,
         onProgress: setUploadProgress,
       });
 

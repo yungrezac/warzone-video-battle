@@ -1,178 +1,227 @@
 
-import React, { useState } from 'react';
-import { Heart, MessageCircle, Star, Play, Trophy, Eye } from 'lucide-react';
-import { useAuth } from '@/components/AuthWrapper';
+import React, { useState, useEffect } from 'react';
+import { Heart, Star, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Link, useLocation } from 'react-router-dom';
 import VideoPlayer from './VideoPlayer';
 import VideoComments from './VideoComments';
 import CategoryBadge from './CategoryBadge';
-import FullScreenUserProfileModal from './FullScreenUserProfileModal';
-import { Button } from '@/components/ui/button';
+
+interface Video {
+  id: string;
+  title: string;
+  author: string;
+  authorAvatar: string;
+  thumbnail: string;
+  videoUrl?: string;
+  likes: number;
+  comments: number;
+  rating: number;
+  views: number;
+  isWinner?: boolean;
+  timestamp: string;
+  userLiked?: boolean;
+  userRating?: number;
+  userId?: string;
+  category?: 'Rollers' | 'BMX' | 'Skateboard';
+}
 
 interface VideoCardProps {
-  video: {
-    id: string;
-    title: string;
-    video_url: string;
-    thumbnail_url?: string;
-    user_id: string;
-    category?: 'Rollers' | 'BMX' | 'Skateboard';
-    created_at: string;
-    views?: number;
-    likes_count: number;
-    comments_count: number;
-    average_rating: number;
-    user_liked: boolean;
-    user_rating: number;
-    profiles?: {
-      username?: string;
-      telegram_username?: string;
-      avatar_url?: string;
-    };
-  };
-  onLike: (videoId: string) => void;
-  onRate: (videoId: string, rating: number) => void;
+  video: Video;
+  onLike: (id: string) => void;
+  onRate: (id: string, rating: number) => void;
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
-  const { user } = useAuth();
-  const [showPlayer, setShowPlayer] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [localUserLiked, setLocalUserLiked] = useState(video.userLiked || false);
+  const [localUserRating, setLocalUserRating] = useState(video.userRating || 0);
+  const location = useLocation();
 
-  const handleLikeClick = () => {
-    console.log('💖 VideoCard: Клик по лайку для видео:', video.id);
+  // Синхронизируем локальное состояние с props при каждом изменении
+  useEffect(() => {
+    console.log('🔄 VideoCard синхронизация состояния для видео:', {
+      videoId: video.id,
+      userLiked: video.userLiked,
+      previousLocalUserLiked: localUserLiked,
+      userRating: video.userRating,
+      previousLocalUserRating: localUserRating
+    });
+    
+    // Обновляем локальное состояние только если пришли новые данные из props
+    if (video.userLiked !== localUserLiked) {
+      console.log('📝 Обновляем localUserLiked с', localUserLiked, 'на', video.userLiked);
+      setLocalUserLiked(video.userLiked || false);
+    }
+    
+    if (video.userRating !== localUserRating) {
+      console.log('📝 Обновляем localUserRating с', localUserRating, 'на', video.userRating);
+      setLocalUserRating(video.userRating || 0);
+    }
+  }, [video.userLiked, video.userRating, video.id]);
+
+  const handleLike = () => {
+    console.log('💖 VideoCard handleLike вызван для видео:', {
+      videoId: video.id,
+      currentLocalUserLiked: localUserLiked,
+      propsUserLiked: video.userLiked
+    });
+    
+    // Мгновенно обновляем локальное состояние для лучшего UX
+    const newLikedState = !localUserLiked;
+    setLocalUserLiked(newLikedState);
+    console.log('✨ Мгновенно изменили localUserLiked на:', newLikedState);
+    
+    // Вызываем родительский обработчик
     onLike(video.id);
   };
 
-  const handleStarClick = (rating: number) => {
-    console.log('⭐ VideoCard: Клик по звезде для видео:', video.id, 'рейтинг:', rating);
+  const handleRate = (rating: number) => {
+    console.log('⭐ VideoCard handleRate вызван для видео:', video.id, 'рейтинг:', rating);
+    // Мгновенно обновляем локальное состояние
+    setLocalUserRating(rating);
     onRate(video.id, rating);
+    setShowRating(false);
   };
 
-  const handleAuthorClick = () => {
-    if (video.user_id && video.user_id !== user?.id) {
-      setShowUserProfile(true);
-    }
-  };
-
-  // Определяем автора и аватар
-  const author = video.profiles?.username || video.profiles?.telegram_username || 'Пользователь';
-  const authorAvatar = video.profiles?.avatar_url || '/placeholder.svg';
-  const thumbnail = video.thumbnail_url || '/placeholder.svg';
+  // Не показываем ссылку если уже находимся на странице профиля этого пользователя
+  const isOnUserProfile = location.pathname === `/user/${video.userId}`;
 
   return (
-    <>
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-3">
-        {/* Header */}
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <img
-                src={authorAvatar}
-                alt={author}
-                className="w-8 h-8 rounded-full mr-2 cursor-pointer"
-                onClick={handleAuthorClick}
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}>
+      {video.isWinner && (
+        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-1 font-bold text-sm">
+          🏆 ПОБЕДИТЕЛЬ ДНЯ 🏆
+        </div>
+      )}
+      
+      <div className="relative">
+        {video.videoUrl ? (
+          <AspectRatio ratio={9 / 16} className="bg-black">
+            <VideoPlayer
+              src={video.videoUrl}
+              thumbnail={video.thumbnail}
+              title={video.title}
+              className="w-full h-full"
+              videoId={video.id}
+            />
+          </AspectRatio>
+        ) : (
+          <AspectRatio ratio={9 / 16} className="bg-black">
+            <div className="relative w-full h-full">
+              <img 
+                src={video.thumbnail} 
+                alt={video.title}
+                className="w-full h-full object-contain"
               />
-              <div>
-                <h3 
-                  className="font-semibold text-sm cursor-pointer hover:text-blue-600"
-                  onClick={handleAuthorClick}
-                >
-                  {author}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {new Date(video.created_at).toLocaleString('ru-RU')}
-                </p>
+              <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <p className="text-sm opacity-75">Видео недоступно</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {video.category && <CategoryBadge category={video.category} />}
-            </div>
-          </div>
-        </div>
-
-        {/* Video Thumbnail */}
-        <div className="relative">
-          <img
-            src={thumbnail}
-            alt={video.title}
-            className="w-full aspect-video object-cover cursor-pointer"
-            onClick={() => setShowPlayer(true)}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button
-              onClick={() => setShowPlayer(true)}
-              className="bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-3"
-            >
-              <Play className="w-6 h-6 text-white fill-white" />
-            </Button>
-          </div>
-          {video.views !== undefined && video.views > 0 && (
-            <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs flex items-center">
-              <Eye className="w-3 h-3 mr-1" />
-              {video.views}
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-3">
-          <h4 className="font-semibold text-base mb-2">{video.title}</h4>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleLikeClick}
-                className={`flex items-center space-x-1 ${
-                  video.user_liked ? 'text-red-500' : 'text-gray-600'
-                } hover:text-red-500 transition-colors`}
-              >
-                <Heart className={`w-5 h-5 ${video.user_liked ? 'fill-current' : ''}`} />
-                <span className="text-sm font-medium">{video.likes_count}</span>
-              </button>
-
-              <VideoComments videoId={video.id} />
-            </div>
-
-            {/* Rating Stars */}
-            <div className="flex items-center space-x-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => handleStarClick(star)}
-                  className={`${
-                    star <= video.user_rating ? 'text-yellow-400' : 'text-gray-300'
-                  } hover:text-yellow-400 transition-colors`}
-                >
-                  <Star className={`w-4 h-4 ${star <= video.user_rating ? 'fill-current' : ''}`} />
-                </button>
-              ))}
-              <span className="text-sm text-gray-600 ml-1">
-                {video.average_rating > 0 ? video.average_rating.toFixed(1) : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
+          </AspectRatio>
+        )}
       </div>
 
-      {/* Video Player Modal */}
-      {showPlayer && (
-        <VideoPlayer
-          url={video.video_url}
-          title={video.title}
-          onClose={() => setShowPlayer(false)}
-        />
-      )}
+      <div className="p-2">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center flex-1 min-w-0">
+            {video.userId && !isOnUserProfile ? (
+              <Link to={`/user/${video.userId}`} className="flex items-center flex-1 min-w-0 hover:opacity-80">
+                <img 
+                  src={video.authorAvatar} 
+                  alt={video.author}
+                  className="w-7 h-7 rounded-full mr-2"
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
+                  <p className="text-gray-600 text-xs">@{video.author}</p>
+                </div>
+              </Link>
+            ) : (
+              <div className="flex items-center flex-1 min-w-0">
+                <img 
+                  src={video.authorAvatar} 
+                  alt={video.author}
+                  className="w-7 h-7 rounded-full mr-2"
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
+                  <p className="text-gray-600 text-xs">@{video.author}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            {video.category && (
+              <CategoryBadge category={video.category} />
+            )}
+            <span className="text-gray-500 text-xs">{video.timestamp}</span>
+          </div>
+        </div>
 
-      {/* User Profile Modal */}
-      {showUserProfile && video.user_id && (
-        <FullScreenUserProfileModal
-          isOpen={showUserProfile}
-          onClose={() => setShowUserProfile(false)}
-          userId={video.user_id}
-        />
-      )}
-    </>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLike}
+              className={`${localUserLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}
+            >
+              <Heart className={`w-3.5 h-3.5 mr-1 ${localUserLiked ? 'fill-current' : ''}`} />
+              <span className="text-xs">{video.likes}</span>
+            </Button>
+
+            <VideoComments 
+              videoId={video.id} 
+              commentsCount={video.comments} 
+            />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRating(!showRating)}
+              className="text-gray-600 hover:text-yellow-500 h-7 px-1.5"
+            >
+              <Star className="w-3.5 h-3.5 mr-1" />
+              <span className="text-xs">{video.rating.toFixed(1)}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 h-7 px-1.5"
+            >
+              <Eye className="w-3.5 h-3.5 mr-1" />
+              <span className="text-xs">{video.views}</span>
+            </Button>
+          </div>
+        </div>
+
+        {showRating && (
+          <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Оцените видео:</p>
+            <div className="flex space-x-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Button
+                  key={star}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRate(star)}
+                  className="p-1 h-auto"
+                >
+                  <Star 
+                    className={`w-4 h-4 ${star <= localUserRating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+                  />
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

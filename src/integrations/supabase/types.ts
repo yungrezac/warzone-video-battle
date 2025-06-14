@@ -281,15 +281,7 @@ export type Database = {
           reference_id?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "points_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       post_comments: {
         Row: {
