@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
-import { Comment, useLikeVideoComment } from '@/hooks/useVideoComments';
+import { Comment, useLikeVideoComment, useDeleteVideoComment } from '@/hooks/useVideoComments';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThumbsUp, MessageSquare } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Trash2, Loader2 } from 'lucide-react';
 import { useAuth } from './AuthWrapper';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CommentItemProps {
   comment: Comment;
@@ -18,6 +29,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply }) 
     const [localLikesCount, setLocalLikesCount] = useState(comment.likes_count);
 
     const likeCommentMutation = useLikeVideoComment();
+    const deleteCommentMutation = useDeleteVideoComment();
 
     const handleLike = () => {
         if (!user) {
@@ -40,6 +52,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply }) 
             return;
         }
         onReply(comment);
+    };
+
+    const handleDelete = async () => {
+        try {
+            await deleteCommentMutation.mutateAsync({ commentId: comment.id, videoId });
+            toast.success("Комментарий удален");
+        } catch (error) {
+            toast.error("Ошибка при удалении комментария");
+            console.error("Ошибка удаления комментария:", error);
+        }
     };
     
     return (
@@ -67,7 +89,31 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply }) 
                         <MessageSquare size={14} />
                         <span>Ответить</span>
                     </button>
-                    <span className="text-gray-400">{new Date(comment.created_at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    {user?.id === comment.user_id && (
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <button disabled={deleteCommentMutation.isPending} className="flex items-center space-x-1 text-red-500 hover:text-red-700 transition-colors disabled:opacity-50">
+                                    <Trash2 size={14} />
+                                    <span>Удалить</span>
+                                </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Это действие необратимо. Ваш комментарий будет удален навсегда.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                                    {deleteCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Удалить"}
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                    <span className="text-gray-400 ml-auto">{new Date(comment.created_at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
             </div>
         </div>
