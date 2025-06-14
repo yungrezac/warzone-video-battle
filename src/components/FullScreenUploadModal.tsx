@@ -371,15 +371,7 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
                       </p>
                     </div>}
 
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Правила загрузки:</h4>
-                    <ul className="text-xs text-yellow-700 space-y-0.5">
-                      <li>• Максимальный размер файла: 50MB</li>
-                      <li>• Видео проходит модерацию перед публикацией</li>
-                      <li>• Победитель определяется каждый день в 00:00</li>
-                      <li>• Запрещены опасные трюки без защитной экипировки</li>
-                    </ul>
-                  </div>
+                  
 
                   <Button onClick={handleUpload} disabled={!selectedFile || !title.trim() || isUploading || !user} className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700">
                     {isUploading ? <>
