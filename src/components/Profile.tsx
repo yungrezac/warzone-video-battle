@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from 'lucide-react';
+import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown, Wallet } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -179,9 +179,22 @@ const Profile: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-            <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
-            <div className="text-xs opacity-90">Баллов</div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-2 relative">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
+                <div className="text-xs opacity-90">Баллов</div>
+              </div>
+              <Button 
+                size="sm"
+                variant="ghost" 
+                className="bg-white bg-opacity-30 hover:bg-white hover:bg-opacity-40 p-1.5"
+                onClick={() => setIsWithdrawOpen(true)}
+              >
+                <Wallet className="w-3 h-3 mr-1" />
+                <span className="text-xs">Вывод</span>
+              </Button>
+            </div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
             <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
@@ -295,6 +308,21 @@ const Profile: React.FC = () => {
               <div className="flex justify-between">
                 <span>Написать комментарий:</span>
                 <span className="font-semibold text-blue-600">+2 балла</span>
+              </div>
+            </div>
+            
+            <div className="mt-2 border-t border-gray-100 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-600">Вывод средств:</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-xs h-7 py-0 px-2 flex items-center gap-1 hover:bg-gray-100"
+                  onClick={() => setIsWithdrawOpen(true)}
+                >
+                  <Wallet className="w-3 h-3" />
+                  Вывести баллы
+                </Button>
               </div>
             </div>
           </div>
