@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Gift, Clock, MapPin, Wifi, WifiOff, Zap } from 'lucide-react';
+import TournamentBannerCarousel from './TournamentBannerCarousel';
 
 const Tournaments: React.FC = () => {
   return (
@@ -10,6 +11,8 @@ const Tournaments: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Турниры</h1>
         <p className="text-gray-600 text-sm">Соревнования по роллерам, BMX и скейтбордингу</p>
       </div>
+
+      <TournamentBannerCarousel />
 
       <Tabs defaultValue="online" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">

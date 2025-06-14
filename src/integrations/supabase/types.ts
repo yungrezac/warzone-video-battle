@@ -910,6 +910,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_banners: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tournament_videos: {
         Row: {
           created_at: string
@@ -1295,48 +1328,6 @@ export type Database = {
           },
           {
             foreignKeyName: "video_likes_video_id_fkey"
-            columns: ["video_id"]
-            isOneToOne: false
-            referencedRelation: "videos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      video_ratings: {
-        Row: {
-          created_at: string
-          id: string
-          rating: number
-          updated_at: string
-          user_id: string
-          video_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          rating: number
-          updated_at?: string
-          user_id: string
-          video_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          rating?: number
-          updated_at?: string
-          user_id?: string
-          video_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "video_ratings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "video_ratings_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
             referencedRelation: "videos"
