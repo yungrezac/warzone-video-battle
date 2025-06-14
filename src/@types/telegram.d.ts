@@ -17,6 +17,14 @@ declare global {
             hash: string;
           };
         };
+        platform?: string;
+        version?: string;
+        colorScheme?: 'light' | 'dark';
+        isExpanded?: boolean;
+        viewportHeight?: number;
+        setHeaderColor?: (color: string) => void;
+        setBackgroundColor?: (color: string) => void;
+        enableClosingConfirmation?: () => void;
       };
     };
   }
