@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -217,6 +218,7 @@ export const useLikeVideo = () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['video-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error) => {
       console.error('Ошибка мутации лайка:', error);
@@ -360,22 +362,9 @@ export const useUploadVideo = () => {
           throw new Error(`Ошибка сохранения: ${dbError.message}`);
         }
 
-        onProgress?.(90);
-
-        // Обновляем достижения
-        try {
-          await supabase.rpc('update_achievement_progress', { 
-            p_user_id: user.id,
-            p_category: 'videos_uploaded',
-            p_increment: 1
-          });
-        } catch (error) {
-          console.warn('Ошибка обновления достижений:', error);
-        }
-
         onProgress?.(100);
 
-        console.log('Загрузка оригинального видео завершена успешно');
+        console.log('Загрузка видео завершена успешно - баллы начислены автоматически через триггеры');
         return videoRecord;
       } catch (error) {
         console.error('Ошибка загрузки видео:', error);

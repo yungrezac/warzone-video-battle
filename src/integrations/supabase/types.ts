@@ -1445,6 +1445,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_points_for_action: {
+        Args: {
+          p_user_id: string
+          p_action_type: string
+          p_points: number
+          p_description?: string
+          p_reference_id?: string
+        }
+        Returns: undefined
+      }
       check_active_subscription: {
         Args: { p_user_id: string }
         Returns: boolean

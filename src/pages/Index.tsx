@@ -6,7 +6,6 @@ import BottomNavbar from "@/components/BottomNavbar";
 import VideoFeed from "@/components/VideoFeed";
 import Profile from "@/components/Profile";
 import Market from "@/components/Market";
-import Achievements from "@/components/Achievements";
 import TopUsers from "@/components/TopUsers";
 import Tournaments from "@/components/Tournaments";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -16,15 +15,6 @@ const Index = () => {
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
 
-  useEffect(() => {
-    const handleShowAchievements = () => {
-      setActiveTab('achievements');
-    };
-
-    window.addEventListener('showAchievements', handleShowAchievements);
-    return () => window.removeEventListener('showAchievements', handleShowAchievements);
-  }, []);
-
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
@@ -33,8 +23,6 @@ const Index = () => {
         return <TopUsers />;
       case 'tournaments':
         return <Tournaments />;
-      case 'achievements':
-        return <Achievements />;
       case 'market':
         return <Market />;
       case 'profile':
@@ -50,19 +38,7 @@ const Index = () => {
         <main>
           {renderContent()}
         </main>
-        {activeTab !== 'achievements' && (
-          <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-        )}
-        {activeTab === 'achievements' && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
-            >
-              Назад в профиль
-            </button>
-          </div>
-        )}
+        <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </AuthWrapper>
   );

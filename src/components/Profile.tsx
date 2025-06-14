@@ -1,59 +1,35 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Trophy, Video, Trash2, Award, Settings, ArrowUpRight, Crown } from 'lucide-react';
+import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
 import { useDeleteVideo } from '@/hooks/useDeleteVideo';
 import { useAuth } from '@/components/AuthWrapper';
-import { useAchievementStats, useUserAchievements } from '@/hooks/useAchievements';
-import { useAchievementTriggers } from '@/hooks/useAchievementTriggers';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Loader2 } from 'lucide-react';
 import VideoCard from './VideoCard';
 import DeleteVideoDialog from './DeleteVideoDialog';
-import AchievementCard from './AchievementCard';
 import NotificationSettings from './NotificationSettings';
 import WithdrawalModal from './WithdrawalModal';
 import SubscriptionModal from './SubscriptionModal';
 import PremiumBadge from './PremiumBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 const Profile: React.FC = () => {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: userVideos, isLoading: videosLoading } = useUserVideos();
-  const { data: achievementStats } = useAchievementStats();
-  const { data: userAchievements } = useUserAchievements();
   const { isPremium, subscription } = useSubscription();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
   const deleteVideoMutation = useDeleteVideo();
-  const { triggerLikeReceived, triggerViewsReceived, triggerRatingReceived } = useAchievementTriggers();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<{id: string, title: string} | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
-
-  // Update achievements when user stats change
-  useEffect(() => {
-    if (userProfile && user) {
-      // Update achievements based on current stats
-      triggerLikeReceived(userProfile.total_likes || 0);
-      triggerViewsReceived(userProfile.total_views || 0);
-      
-      // Calculate average rating and total ratings
-      if (userVideos && userVideos.length > 0) {
-        const totalRatings = userVideos.reduce((sum, video) => sum + (video.comments_count || 0), 0);
-        const avgRating = userVideos.reduce((sum, video) => sum + (video.average_rating || 0), 0) / userVideos.length;
-        
-        triggerRatingReceived(totalRatings, avgRating);
-      }
-    }
-  }, [userProfile, userVideos, user]);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -134,8 +110,6 @@ const Profile: React.FC = () => {
       </div>
     );
   }
-
-  const recentAchievements = userAchievements?.filter(ua => ua.is_completed).slice(-3) || [];
 
   return (
     <div className="pb-16">
@@ -286,57 +260,40 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          {/* Achievement Section */}
-          {achievementStats && (
-            <div className="bg-white rounded-lg shadow-md p-2 mb-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-base font-semibold flex items-center">
-                  <Award className="w-4 h-4 mr-2 text-purple-500" />
-                  Достижения
-                </h3>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.dispatchEvent(new CustomEvent('showAchievements'))}
-                  className="text-xs"
-                >
-                  Все
-                </Button>
+          {/* Points System Info */}
+          <div className="bg-white rounded-lg shadow-md p-2 mb-3">
+            <h3 className="text-base font-semibold mb-2 flex items-center">
+              <Trophy className="w-4 h-4 mr-2 text-green-500" />
+              Система баллов
+            </h3>
+            
+            <div className="text-xs space-y-1 text-gray-600">
+              <div className="flex justify-between">
+                <span>Загрузка видео:</span>
+                <span className="font-semibold text-green-600">+100 баллов</span>
               </div>
-              
-              <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                <div className="bg-purple-50 rounded-lg p-2">
-                  <div className="text-base font-bold text-purple-600">{achievementStats.completed}</div>
-                  <div className="text-xs text-purple-700">Получено</div>
-                </div>
-                <div className="bg-blue-50 rounded-lg p-2">
-                  <div className="text-base font-bold text-blue-600">{achievementStats.remaining}</div>
-                  <div className="text-xs text-blue-700">Осталось</div>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-2">
-                  <div className="text-base font-bold text-orange-600">{achievementStats.completionRate}%</div>
-                  <div className="text-xs text-orange-700">Прогресс</div>
-                </div>
+              <div className="flex justify-between">
+                <span>Получен лайк:</span>
+                <span className="font-semibold text-green-600">+3 балла</span>
               </div>
-
-              {recentAchievements.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Последние достижения:</h4>
-                  <div className="space-y-1">
-                    {recentAchievements.map(ua => (
-                      <div key={ua.id} className="flex items-center text-xs bg-yellow-50 rounded p-1">
-                        <span className="mr-2">{ua.achievement.icon}</span>
-                        <span className="flex-1 text-gray-700">{ua.achievement.title}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          +{ua.achievement.reward_points}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="flex justify-between">
+                <span>Получен комментарий:</span>
+                <span className="font-semibold text-green-600">+2 балла</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Получен просмотр:</span>
+                <span className="font-semibold text-green-600">+1 балл</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Поставить лайк:</span>
+                <span className="font-semibold text-blue-600">+3 балла</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Написать комментарий:</span>
+                <span className="font-semibold text-blue-600">+2 балла</span>
+              </div>
             </div>
-          )}
+          </div>
 
           {userProfile?.is_premium && (
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-2 mb-3">

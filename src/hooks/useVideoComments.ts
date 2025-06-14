@@ -2,116 +2,33 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
-import { useTelegramNotifications } from './useTelegramNotifications';
-
-interface VideoComment {
-  id: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-  video_id: string;
-  user_id: string;
-  profiles?: {
-    username?: string;
-    telegram_username?: string;
-    avatar_url?: string;
-  };
-}
 
 export const useVideoComments = (videoId: string) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const { sendCommentNotification } = useTelegramNotifications();
-
-  const { data: comments, isLoading } = useQuery({
+  return useQuery({
     queryKey: ['video-comments', videoId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('video_comments')
         .select(`
           *,
-          profiles (
+          profiles:user_id (
             username,
             telegram_username,
             avatar_url
           )
         `)
         .eq('video_id', videoId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as VideoComment[];
-    },
-    enabled: !!videoId,
-  });
-
-  const addCommentMutation = useMutation({
-    mutationFn: async (content: string) => {
-      if (!user?.id) {
-        throw new Error('Необходима авторизация');
-      }
-
-      const { data, error } = await supabase
-        .from('video_comments')
-        .insert({
-          video_id: videoId,
-          user_id: user.id,
-          content,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Отправляем уведомление владельцу видео
-      try {
-        const { data: videoData } = await supabase
-          .from('videos')
-          .select(`
-            title,
-            user_id,
-            profiles!inner(telegram_id, username, telegram_username)
-          `)
-          .eq('id', videoId)
-          .single();
-
-        if (videoData && videoData.profiles && videoData.user_id !== user.id) {
-          const ownerTelegramId = videoData.profiles.telegram_id;
-          const commenterName = user.username || user.telegram_username || 'Пользователь';
-          
-          if (ownerTelegramId) {
-            await sendCommentNotification(
-              videoData.user_id,
-              ownerTelegramId,
-              commenterName,
-              videoData.title,
-              content
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Ошибка отправки уведомления о комментарии:', error);
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
+      return data || [];
     },
   });
-
-  return {
-    comments,
-    isLoading,
-    addComment: addCommentMutation.mutate,
-    isAddingComment: addCommentMutation.isPending,
-  };
 };
 
-export const useAddComment = () => {
+export const useAddVideoComment = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { sendCommentNotification } = useTelegramNotifications();
 
   return useMutation({
     mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
@@ -119,18 +36,16 @@ export const useAddComment = () => {
         throw new Error('Необходима авторизация');
       }
 
-      console.log('Добавляем комментарий:', { videoId, content, userId: user.id });
-
       const { data, error } = await supabase
         .from('video_comments')
         .insert({
           video_id: videoId,
           user_id: user.id,
-          content,
+          content: content.trim(),
         })
         .select(`
           *,
-          profiles (
+          profiles:user_id (
             username,
             telegram_username,
             avatar_url
@@ -138,52 +53,44 @@ export const useAddComment = () => {
         `)
         .single();
 
-      if (error) {
-        console.error('Ошибка вставки комментария:', error);
-        throw error;
-      }
-
-      console.log('Комментарий добавлен в БД:', data);
-
-      // Отправляем уведомление владельцу видео
-      try {
-        const { data: videoData } = await supabase
-          .from('videos')
-          .select(`
-            title,
-            user_id,
-            profiles!inner(telegram_id, username, telegram_username)
-          `)
-          .eq('id', videoId)
-          .single();
-
-        if (videoData && videoData.profiles && videoData.user_id !== user.id) {
-          const ownerTelegramId = videoData.profiles.telegram_id;
-          const commenterName = user.username || user.telegram_username || 'Пользователь';
-          
-          if (ownerTelegramId) {
-            console.log('Отправляем уведомление владельцу видео');
-            await sendCommentNotification(
-              videoData.user_id,
-              ownerTelegramId,
-              commenterName,
-              videoData.title,
-              content
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Ошибка отправки уведомления о комментарии:', error);
-      }
-
+      if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
-      console.log('Комментарий успешно добавлен:', data);
-      queryClient.invalidateQueries({ queryKey: ['video-comments'] });
+      // Инвалидируем кэши для обновления комментариев и баллов
+      queryClient.invalidateQueries({ queryKey: ['video-comments', data.video_id] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
-    onError: (error) => {
-      console.error('Ошибка добавления комментария:', error);
+  });
+};
+
+export const useDeleteVideoComment = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ commentId, videoId }: { commentId: string; videoId: string }) => {
+      if (!user?.id) {
+        throw new Error('Необходима авторизация');
+      }
+
+      const { error } = await supabase
+        .from('video_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return { commentId, videoId };
+    },
+    onSuccess: (data) => {
+      // Инвалидируем кэши для обновления комментариев и баллов
+      queryClient.invalidateQueries({ queryKey: ['video-comments', data.videoId] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };
