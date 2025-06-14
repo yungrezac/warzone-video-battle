@@ -9,12 +9,14 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import PremiumBadge from './PremiumBadge';
 import SubscriptionModal from './SubscriptionModal';
+import { useTranslation } from 'react-i18next';
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
   const { data: userProfile } = useUserProfile();
   const { isPremium } = useSubscription();
   const { webApp, colorScheme } = useTelegramWebApp();
+  const { t } = useTranslation();
 
   // Адаптируемся к теме Telegram
   const isDark = colorScheme === 'dark';
@@ -58,7 +60,7 @@ const Header: React.FC = () => {
                   className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
                 >
                   <Crown className="w-4 h-4 mr-1" />
-                  Premium
+                  {t('header_premium')}
                 </Button>
               </SubscriptionModal>
             )}
@@ -91,8 +93,8 @@ const Header: React.FC = () => {
               onClick={() => {
                 if (webApp) {
                   webApp.showPopup({
-                    title: 'Настройки',
-                    message: 'Настройки профиля доступны в разделе "Профиль"',
+                    title: t('header_settings_popup_title'),
+                    message: t('header_settings_popup_message'),
                     buttons: [{ type: 'ok' }]
                   });
                 }
