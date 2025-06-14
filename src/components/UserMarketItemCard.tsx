@@ -1,8 +1,9 @@
+
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, User, Crown } from 'lucide-react';
+import { ExternalLink, Crown, User } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 
@@ -41,14 +42,13 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
   };
 
   return (
-    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-      {/* Изображение товара */}
+    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
       <AspectRatio ratio={1} className="relative overflow-hidden rounded-t-xl">
         {item.image_url ? (
           <img
             src={item.image_url}
             alt={item.name}
-            className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
@@ -61,58 +61,44 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
           </div>
         )}
         
-        {/* Премиум индикатор */}
-        <div className="absolute top-1.5 right-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+        <div className="absolute top-1.5 right-1.5 bg-white/80 backdrop-blur-sm text-yellow-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
           <Crown className="w-2.5 h-2.5" />
           Premium
         </div>
       </AspectRatio>
 
-      <CardHeader className="pb-2 px-3 pt-3">
-        <div className="flex items-start justify-between gap-1.5 mb-1.5">
-          <CardTitle className="text-xs font-bold line-clamp-2 leading-tight">
+      <div className="p-2 flex flex-col flex-1">
+        <CardHeader className="p-0">
+          <CardTitle className="text-xs font-bold line-clamp-2 leading-tight h-8">
             {item.name}
           </CardTitle>
-          <div className="flex flex-col gap-0.5 flex-shrink-0">
+        </CardHeader>
+        
+        <CardContent className="p-0 mt-auto pt-2">
+          <div className="flex items-center gap-1.5 flex-wrap mb-2">
             <Badge className={`${getAudienceColor()} text-xs font-medium border px-1.5 py-0.5`}>
               {item.target_audience}
             </Badge>
+            <Badge variant="outline" className="text-xs bg-gray-50 px-1.5 py-0.5">
+              {item.category}
+            </Badge>
           </div>
-        </div>
-        
-        <Badge variant="outline" className="text-xs w-fit bg-gray-50 px-1.5 py-0.5">
-          {item.category}
-        </Badge>
-        
-        {item.description && (
-          <CardDescription className="text-xs line-clamp-2 text-gray-600 leading-relaxed">
-            {item.description}
-          </CardDescription>
-        )}
-      </CardHeader>
-      
-      <CardContent className="flex-1 flex flex-col justify-end px-3 pb-3">
-        {/* Цена */}
-        <div className="mb-3">
-          <div className="flex items-center justify-center mb-1.5">
-            <div className="flex items-center gap-0.5">
-              <div className="text-sm font-bold text-green-600 flex items-center gap-0.5">
-                <span className="text-xs">{item.price.toLocaleString()}</span>
-              </div>
-              <span className="text-xs text-gray-500">₽</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Кнопка покупки */}
-        <Button
-          onClick={handlePurchase}
-          className="w-full h-8 font-medium text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <ExternalLink className="w-3 h-3 mr-1" />
-          Перейти к товару
-        </Button>
-      </CardContent>
+          <div className="flex items-center justify-between">
+            <div className="text-lg font-bold text-gray-800">
+              {item.price.toLocaleString()}<span className="text-sm font-normal text-gray-500 ml-0.5">₽</span>
+            </div>
+            <Button
+              size="sm"
+              onClick={handlePurchase}
+              className="h-8 text-xs shrink-0"
+            >
+              <ExternalLink className="w-3.5 h-3.5 mr-1" />
+              Купить
+            </Button>
+          </div>
+        </CardContent>
+      </div>
     </Card>
   );
 };

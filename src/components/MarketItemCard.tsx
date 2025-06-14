@@ -1,8 +1,9 @@
+
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Star, Crown, Gift, Eye, Sparkles } from 'lucide-react';
+import { ShoppingCart, Star, Crown, Gift, Sparkles, Loader2 } from 'lucide-react';
 import { usePurchaseItem, useUserPurchases } from '@/hooks/useMarketItems';
 import { useAuth } from '@/components/AuthWrapper';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -78,7 +79,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
             <img
               src={primaryImage}
               alt={item.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
@@ -118,112 +119,68 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
         )}
       </AspectRatio>
 
-      <CardHeader className="pb-2 px-3 pt-3">
-        <div className="flex items-start justify-between gap-1.5 mb-1.5">
-          <CardTitle className="text-xs font-bold line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">
+      <div className="p-2 flex flex-col flex-1">
+        <CardHeader className="p-0">
+          <CardTitle className="text-xs font-bold line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight h-8">
             {item.title}
           </CardTitle>
-          <div className="flex flex-col gap-0.5 flex-shrink-0">
+        </CardHeader>
+      
+        <CardContent className="p-0 mt-auto pt-2">
+          <div className="flex items-center gap-1.5 flex-wrap mb-2">
             <Badge className={`${getCategoryColor()} text-xs font-medium border px-1.5 py-0.5`}>
               <div className="flex items-center gap-0.5">
                 {getCategoryIcon()}
                 <span className="text-xs">{item.category}</span>
               </div>
             </Badge>
-          </div>
-        </div>
-        
-        {item.subcategory && (
-          <Badge variant="outline" className="text-xs w-fit bg-gray-50 px-1.5 py-0.5">
-            {item.subcategory}
-          </Badge>
-        )}
-        
-        {item.description && (
-          <CardDescription className="text-xs line-clamp-2 text-gray-600 leading-relaxed">
-            {item.description}
-          </CardDescription>
-        )}
-      </CardHeader>
-      
-      <CardContent className="flex-1 flex flex-col justify-end px-3 pb-3">
-        {/* Цена */}
-        <div className="mb-3">
-          <div className="flex items-center justify-center mb-1.5">
-            <div className="flex items-center gap-0.5">
-              <div className="text-sm font-bold text-green-600 flex items-center gap-0.5">
-                <Star className="w-3 h-3 text-amber-500" />
-                <span className="text-xs">{item.price.toLocaleString()}</span>
-              </div>
-              <span className="text-xs text-gray-500">баллов</span>
-            </div>
-          </div>
-          
-          {/* Индикатор доступности покупки */}
-          {!isPurchased && (
-            <div className="w-full h-0.5 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-500 ${
-                  canAfford ? 'bg-green-500' : 'bg-red-400'
-                }`}
-                style={{ width: `${Math.min((userProfile?.total_points || 0) / item.price * 100, 100)}%` }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Кнопки действий */}
-        <div className="space-y-1.5">
-          <Button
-            variant="outline"
-            className="w-full h-7 text-xs border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
-            onClick={handleCardClick}
-          >
-            <Eye className="w-3 h-3 mr-1" />
-            Подробнее
-          </Button>
-          
-          <Button
-            onClick={handlePurchase}
-            disabled={isPurchased || !canAfford || isOutOfStock || purchaseItemMutation.isPending || !user}
-            className={`w-full h-8 font-medium text-xs transition-all duration-200 ${
-              isPurchased 
-                ? "bg-green-100 text-green-700 border border-green-200 hover:bg-green-100" 
-                : isOutOfStock
-                ? "bg-gray-100 text-gray-500"
-                : !canAfford
-                ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-50"
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl"
-            }`}
-            variant={isPurchased ? "secondary" : "default"}
-          >
-            {purchaseItemMutation.isPending ? (
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                Покупаем...
-              </div>
-            ) : isPurchased ? (
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                </div>
-                Куплено
-              </div>
-            ) : isOutOfStock ? (
-              "Нет в наличии"
-            ) : !user ? (
-              "Войти в систему"
-            ) : !canAfford ? (
-              `Нужно еще ${(item.price - (userProfile?.total_points || 0)).toLocaleString()}`
-            ) : (
-              <div className="flex items-center gap-1">
-                <ShoppingCart className="w-3 h-3" />
-                Купить за {item.price.toLocaleString()}
-              </div>
+            {item.subcategory && (
+              <Badge variant="outline" className="text-xs w-fit bg-gray-50 px-1.5 py-0.5">
+                {item.subcategory}
+              </Badge>
             )}
-          </Button>
-        </div>
-      </CardContent>
+          </div>
+        
+          <div className="flex items-center justify-between mt-auto">
+            <div className="flex items-center gap-1 font-bold text-gray-800 text-lg">
+                <Star className="w-4 h-4 text-amber-500" />
+                <span className="leading-none">{item.price.toLocaleString()}</span>
+            </div>
+            
+            <Button
+              onClick={handlePurchase}
+              disabled={isPurchased || !canAfford || isOutOfStock || purchaseItemMutation.isPending || !user}
+              size="sm"
+              className={`h-8 text-xs font-medium transition-all duration-200 shrink-0 ${
+                isPurchased 
+                  ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-not-allowed" 
+                  : isOutOfStock
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : !canAfford
+                  ? "bg-red-100 text-red-600 hover:bg-red-200 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              {purchaseItemMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isPurchased ? (
+                'Куплено'
+              ) : isOutOfStock ? (
+                'Нет'
+              ) : !canAfford ? (
+                'Мало баллов'
+              ) : !user ? (
+                "Войти"
+              ) : (
+                <div className="flex items-center gap-1">
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span>Купить</span>
+                </div>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </div>
     </Card>
   );
 };
