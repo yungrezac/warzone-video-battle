@@ -139,15 +139,6 @@ const Profile: React.FC = () => {
             >
               <Settings className="w-4 h-4" />
             </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 bg-white bg-opacity-20 hover:bg-white hover:bg-opacity-30 rounded-full"
-              onClick={() => setIsWithdrawOpen(true)}
-            >
-              <ArrowUpRight className="w-4 h-4" />
-            </Button>
           </div>
         </div>
         
@@ -179,9 +170,18 @@ const Profile: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
+          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center relative">
             <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
             <div className="text-xs opacity-90">Баллов</div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsWithdrawOpen(true)}
+              className="absolute top-1 right-1 w-6 h-6 p-0 bg-white bg-opacity-20 hover:bg-white hover:bg-opacity-30 rounded-full"
+              title="Вывод средств"
+            >
+              <ArrowUpRight className="w-3 h-3" />
+            </Button>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
             <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
@@ -297,6 +297,25 @@ const Profile: React.FC = () => {
                 <span className="font-semibold text-blue-600">+2 балла</span>
               </div>
             </div>
+            
+            {/* Withdrawal info */}
+            <div className="mt-3 p-2 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg">
+              <h4 className="font-semibold text-gray-700 text-sm mb-1">Вывод USDT:</h4>
+              <div className="text-xs space-y-0.5 text-gray-600">
+                <div className="flex justify-between">
+                  <span>Курс обмена:</span>
+                  <span className="font-semibold text-green-600">1000 баллов = 1 USDT</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Минимум:</span>
+                  <span className="font-semibold text-blue-600">100,000 баллов</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Доступность:</span>
+                  <span className="font-semibold text-purple-600">Только Premium</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {userProfile?.is_premium && (
@@ -388,6 +407,7 @@ const Profile: React.FC = () => {
         isOpen={isWithdrawOpen} 
         onClose={() => setIsWithdrawOpen(false)}
         userPoints={userProfile?.total_points || 0}
+        isPremium={isPremium}
       />
     </div>
   );

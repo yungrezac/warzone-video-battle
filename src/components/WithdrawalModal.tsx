@@ -4,28 +4,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useWithdrawal } from '@/hooks/useWithdrawal';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
-import { Loader2, DollarSign, CreditCard, Phone, User } from 'lucide-react';
+import { Loader2, DollarSign, Wallet, Crown } from 'lucide-react';
 
 interface WithdrawalModalProps {
   isOpen: boolean;
   onClose: () => void;
   userPoints: number;
+  isPremium: boolean;
 }
 
-const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, userPoints }) => {
+const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, userPoints, isPremium }) => {
   const [amount, setAmount] = useState<number>(0);
-  const [recipientName, setRecipientName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [bankName, setBankName] = useState('');
+  const [usdtWallet, setUsdtWallet] = useState('');
   const { createWithdrawalRequest, isCreatingRequest } = useWithdrawal();
   const { user } = useAuth();
 
-  const minWithdrawal = 1000; // Минимум 1000 баллов
-  const pointToRubleRate = 0.1; // 1 балл = 0.1 рубля
+  const minWithdrawal = 100000; // Минимум 100000 баллов
+  const pointToUsdtRate = 0.001; // 1000 баллов = 1 USDT
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +33,13 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
       return;
     }
 
+    if (!isPremium) {
+      toast.error('Вывод средств доступен только для Premium пользователей');
+      return;
+    }
+
     if (amount < minWithdrawal) {
-      toast.error(`Минимальная сумма для вывода: ${minWithdrawal} баллов`);
+      toast.error(`Минимальная сумма для вывода: ${minWithdrawal.toLocaleString()} баллов`);
       return;
     }
 
@@ -45,18 +48,16 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
       return;
     }
 
-    if (!recipientName.trim() || !phoneNumber.trim() || !bankName.trim()) {
-      toast.error('Заполните все поля');
+    if (!usdtWallet.trim()) {
+      toast.error('Введите USDT кошелек');
       return;
     }
 
     try {
       await createWithdrawalRequest.mutateAsync({
         amount_points: amount,
-        amount_rubles: amount * pointToRubleRate,
-        recipient_name: recipientName.trim(),
-        phone_number: phoneNumber.trim(),
-        bank_name: bankName.trim(),
+        amount_usdt: amount * pointToUsdtRate,
+        usdt_wallet: usdtWallet.trim(),
       });
 
       toast.success('Заявка на вывод создана успешно!');
@@ -64,9 +65,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
       
       // Сбрасываем форму
       setAmount(0);
-      setRecipientName('');
-      setPhoneNumber('');
-      setBankName('');
+      setUsdtWallet('');
     } catch (error) {
       console.error('Ошибка создания заявки:', error);
       toast.error('Ошибка при создании заявки на вывод');
@@ -79,23 +78,55 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
     }
   };
 
+  if (!isPremium) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-yellow-500" />
+              Premium требуется
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+              <Crown className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
+              <h3 className="font-semibold text-yellow-800 mb-2">Premium подписка требуется</h3>
+              <p className="text-sm text-yellow-700">
+                Вывод средств доступен только для Premium пользователей
+              </p>
+            </div>
+
+            <Button onClick={handleClose} className="w-full">
+              Понятно
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-green-600" />
-            Вывод средств
+            Вывод USDT
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              <strong>Доступно:</strong> {userPoints} баллов ({(userPoints * pointToRubleRate).toFixed(2)} ₽)
+              <strong>Доступно:</strong> {userPoints.toLocaleString()} баллов ({(userPoints * pointToUsdtRate).toFixed(3)} USDT)
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              Минимум для вывода: {minWithdrawal} баллов
+              Минимум для вывода: {minWithdrawal.toLocaleString()} баллов
+            </p>
+            <p className="text-xs text-blue-600">
+              Курс: 1000 баллов = 1 USDT
             </p>
           </div>
 
@@ -106,56 +137,28 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
               type="number"
               value={amount || ''}
               onChange={(e) => setAmount(Number(e.target.value))}
-              placeholder={`Минимум ${minWithdrawal}`}
+              placeholder={`Минимум ${minWithdrawal.toLocaleString()}`}
               min={minWithdrawal}
               max={userPoints}
               disabled={isCreatingRequest}
             />
             {amount > 0 && (
               <p className="text-xs text-gray-600 mt-1">
-                К выводу: {(amount * pointToRubleRate).toFixed(2)} ₽
+                К выводу: {(amount * pointToUsdtRate).toFixed(3)} USDT
               </p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="recipientName" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              ФИО получателя
+            <Label htmlFor="usdtWallet" className="flex items-center gap-2">
+              <Wallet className="w-4 h-4" />
+              USDT кошелек (TRC20/ERC20)
             </Label>
             <Input
-              id="recipientName"
-              value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
-              placeholder="Иванов Иван Иванович"
-              disabled={isCreatingRequest}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phoneNumber" className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              Номер телефона
-            </Label>
-            <Input
-              id="phoneNumber"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+7 (900) 123-45-67"
-              disabled={isCreatingRequest}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="bankName" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
-              Название банка
-            </Label>
-            <Input
-              id="bankName"
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-              placeholder="Сбербанк, ВТБ, Тинькофф..."
+              id="usdtWallet"
+              value={usdtWallet}
+              onChange={(e) => setUsdtWallet(e.target.value)}
+              placeholder="0x... или T..."
               disabled={isCreatingRequest}
             />
           </div>
@@ -164,8 +167,9 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
             <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Обработка заявки:</h4>
             <ul className="text-xs text-yellow-700 space-y-0.5">
               <li>• Заявки обрабатываются в течение 1-3 рабочих дней</li>
-              <li>• Средства поступают на карту в течение 1-5 рабочих дней</li>
-              <li>• Комиссия банка может составлять 1-3%</li>
+              <li>• USDT поступает на кошелек в течение 24 часов</li>
+              <li>• Поддерживаются сети TRC20 и ERC20</li>
+              <li>• Комиссия сети оплачивается отдельно</li>
             </ul>
           </div>
 
