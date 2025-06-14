@@ -50,7 +50,7 @@ const TopUsers: React.FC = () => {
       
 
       {/* Top 3 Podium */}
-      {topUsers && topUsers.length >= 3 && <div className="p-4 pt-6 pb-6 text-center bg-white border-b border-gray-200 py-[44px]">
+      {topUsers && topUsers.length >= 3 && <div className="p-4 pt-6 pb-6 text-center bg-white border-b border-gray-200 py-[44px] px-[18px]">
           <div className="flex justify-center items-end space-x-2">
             {/* 2nd place */}
             <div className="flex flex-col items-center w-1/4">
@@ -102,7 +102,7 @@ const TopUsers: React.FC = () => {
         </div>}
 
       {/* Full Rankings */}
-      <div className="p-3">
+      <div className="p-3 px-[3px]">
         <div className="bg-white rounded-lg shadow-sm">
           <div className="p-3 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800">Общий рейтинг</h3>
