@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -13,6 +12,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import PremiumBadge from '@/components/PremiumBadge';
 
 interface FullScreenUserProfileModalProps {
   isOpen: boolean;
@@ -202,9 +202,12 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                   className="w-12 h-12 rounded-full border-2 border-white mr-2"
                 />
                 <div className="flex-1">
-                  <h2 className="text-lg font-bold">
-                    {userProfile.username || userProfile.telegram_username || 'Роллер'}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold">
+                      {userProfile.username || userProfile.telegram_username || 'Роллер'}
+                    </h2>
+                    {userProfile.is_premium && <PremiumBadge size="sm" />}
+                  </div>
                   {userProfile.first_name && userProfile.last_name && (
                     <p className="text-blue-100 text-sm">
                       {userProfile.first_name} {userProfile.last_name}
@@ -353,6 +356,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                           userRating: video.user_rating || 0,
                           userId: video.user_id,
                           category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
+                          authorIsPremium: userProfile.is_premium,
                         }}
                         onLike={handleLike}
                         onRate={handleRate}

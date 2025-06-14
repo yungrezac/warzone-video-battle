@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
@@ -13,6 +12,7 @@ import VideoCard from '@/components/VideoCard';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import PremiumBadge from '@/components/PremiumBadge';
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -177,9 +177,12 @@ const UserProfile: React.FC = () => {
             className="w-12 h-12 rounded-full border-2 border-white mr-2"
           />
           <div className="flex-1">
-            <h2 className="text-lg font-bold">
-              {userProfile.username || userProfile.telegram_username || 'Роллер'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold">
+                {userProfile.username || userProfile.telegram_username || 'Роллер'}
+              </h2>
+              {userProfile.is_premium && <PremiumBadge size="sm" />}
+            </div>
             {userProfile.first_name && userProfile.last_name && (
               <p className="text-blue-100 text-sm">
                 {userProfile.first_name} {userProfile.last_name}
@@ -326,6 +329,7 @@ const UserProfile: React.FC = () => {
                     }),
                     userLiked: video.user_liked || false,
                     userRating: video.user_rating || 0,
+                    authorIsPremium: userProfile.is_premium,
                   }}
                   onLike={handleLike}
                   onRate={handleRate}

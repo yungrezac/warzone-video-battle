@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Heart, Star, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Link, useLocation } from 'react-router-dom';
 import VideoPlayer from './VideoPlayer';
 import VideoComments from './VideoComments';
 import CategoryBadge from './CategoryBadge';
+import PremiumBadge from './PremiumBadge';
 
 interface Video {
   id: string;
@@ -25,6 +25,7 @@ interface Video {
   userRating?: number;
   userId?: string;
   category?: 'Rollers' | 'BMX' | 'Skateboard';
+  authorIsPremium?: boolean;
 }
 
 interface VideoCardProps {
@@ -137,7 +138,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
-                  <p className="text-gray-600 text-xs">@{video.author}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-gray-600 text-xs">@{video.author}</p>
+                    {video.authorIsPremium && <PremiumBadge size="sm" />}
+                  </div>
                 </div>
               </Link>
             ) : (
@@ -149,7 +153,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
-                  <p className="text-gray-600 text-xs">@{video.author}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-gray-600 text-xs">@{video.author}</p>
+                    {video.authorIsPremium && <PremiumBadge size="sm" />}
+                  </div>
                 </div>
               </div>
             )}
