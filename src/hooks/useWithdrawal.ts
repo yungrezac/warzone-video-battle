@@ -5,8 +5,10 @@ import { useAuth } from '@/components/AuthWrapper';
 
 interface WithdrawalRequestParams {
   amount_points: number;
-  amount_usdt: number;
-  usdt_wallet: string;
+  amount_rubles: number;
+  recipient_name: string;
+  phone_number: string;
+  bank_name: string;
 }
 
 export const useWithdrawal = () => {
@@ -24,10 +26,10 @@ export const useWithdrawal = () => {
         .insert({
           user_id: user.id,
           amount_points: params.amount_points,
-          amount_rubles: params.amount_usdt, // Используем поле amount_rubles для USDT
-          recipient_name: 'USDT Withdrawal',
-          phone_number: params.usdt_wallet, // Используем поле phone_number для кошелька
-          bank_name: 'USDT',
+          amount_rubles: params.amount_rubles,
+          recipient_name: params.recipient_name,
+          phone_number: params.phone_number,
+          bank_name: params.bank_name,
           status: 'pending'
         })
         .select()
