@@ -75,8 +75,9 @@ const PostFeed: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-16">
       <div className="space-y-4 p-2">
         {posts?.map((post) => {
-          const postUser = post.profiles;
-          const displayName = postUser?.username || postUser?.telegram_username || 'Пользователь';
+          // Убеждаемся, что profiles существует и является объектом
+          const postUser = post.profiles || {};
+          const displayName = postUser.username || postUser.telegram_username || 'Пользователь';
           
           return (
             <PostCard
@@ -85,7 +86,7 @@ const PostFeed: React.FC = () => {
                 id: post.id,
                 content: post.content,
                 author: displayName,
-                authorAvatar: postUser?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                authorAvatar: postUser.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
                 mediaUrls: post.media_urls || [],
                 likes: post.likes_count || 0,
                 comments: post.comments_count || 0,
