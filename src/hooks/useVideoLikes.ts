@@ -85,6 +85,7 @@ export const useLikeVideo = () => {
     },
     onSuccess: (data) => {
       console.log('✅ Мутация лайка успешна, обновляем кэш запросов...');
+      // Инвалидируем все связанные кэши
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
