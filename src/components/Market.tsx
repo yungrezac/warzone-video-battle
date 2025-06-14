@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ShoppingCart, Gift, Star, Crown, Ruble } from 'lucide-react';
+import { Loader2, ShoppingCart, Gift, Star, Crown, RussianRuble } from 'lucide-react';
 import MarketItemCard from './MarketItemCard';
 import UserMarketItemCard from './UserMarketItemCard';
 import MarketItemModal from './MarketItemModal';
@@ -88,7 +88,7 @@ const Market: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="rubles" className="flex items-center gap-2">
               <Crown className="w-4 h-4" />
-              <Ruble className="w-4 h-4" />
+              <RussianRuble className="w-4 h-4" />
               За рубли
             </TabsTrigger>
           </TabsList>
