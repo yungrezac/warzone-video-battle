@@ -149,11 +149,6 @@ const VideoFeed: React.FC = () => {
             const videoUser = video.profiles;
             const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
             
-            // Проверяем и приводим category к правильному типу
-            const validCategory = (video.category === 'Rollers' || video.category === 'BMX' || video.category === 'Skateboard') 
-              ? video.category 
-              : 'Rollers' as const;
-            
             return (
               <div key={video.id} data-video-id={video.id}>
                 <VideoCard
@@ -178,7 +173,6 @@ const VideoFeed: React.FC = () => {
                     userLiked: video.user_liked || false,
                     userRating: video.user_rating || 0,
                     userId: video.user_id,
-                    category: validCategory,
                   }}
                   onLike={handleLike}
                   onRate={handleRate}
