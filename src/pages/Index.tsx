@@ -8,6 +8,7 @@ import Profile from "@/components/Profile";
 import Market from "@/components/Market";
 import Achievements from "@/components/Achievements";
 import TopUsers from "@/components/TopUsers";
+import Tournaments from "@/components/Tournaments";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Index = () => {
@@ -30,6 +31,8 @@ const Index = () => {
         return <VideoFeed />;
       case 'top':
         return <TopUsers />;
+      case 'tournaments':
+        return <Tournaments />;
       case 'achievements':
         return <Achievements />;
       case 'market':
