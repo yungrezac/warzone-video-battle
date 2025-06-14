@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -139,15 +140,6 @@ const Profile: React.FC = () => {
             >
               <Settings className="w-4 h-4" />
             </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 bg-white bg-opacity-20 hover:bg-white hover:bg-opacity-30 rounded-full"
-              onClick={() => setIsWithdrawOpen(true)}
-            >
-              <ArrowUpRight className="w-4 h-4" />
-            </Button>
           </div>
         </div>
         
@@ -179,11 +171,23 @@ const Profile: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-            <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
-            <div className="text-xs opacity-90">Баллов</div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-between">
+            <div>
+              <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
+              <div className="text-xs opacity-90">Баллов</div>
+            </div>
+            {isPremium && (
+                <Button
+                  size="sm"
+                  className="mt-2 bg-green-500 hover:bg-green-600 text-white text-xs py-1"
+                  onClick={() => setIsWithdrawOpen(true)}
+                >
+                  <ArrowUpRight className="w-3 h-3 mr-1" />
+                  Вывод
+                </Button>
+            )}
           </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
+          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-center">
             <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
             <div className="text-xs opacity-90">Побед</div>
           </div>
