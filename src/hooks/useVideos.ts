@@ -11,12 +11,10 @@ interface Video {
   user_id: string;
   category: 'Rollers' | 'BMX' | 'Skateboard';
   views: number;
-  likes_count: number; // This will be overridden by our direct count
+  likes_count: number;
   comments_count: number;
   created_at: string;
-  average_rating: number;
   user_liked: boolean;
-  user_rating: number;
   profiles?: {
     username?: string;
     first_name?: string;
@@ -24,13 +22,7 @@ interface Video {
     telegram_username?: string;
     avatar_url?: string;
   };
-  // This property comes from the videos table, might be used as a fallback or if is_winner logic changes
   is_winner?: boolean; 
-}
-
-interface RateVideoParams {
-  videoId: string;
-  rating: number;
 }
 
 interface UploadVideoParams {
@@ -47,12 +39,11 @@ interface UploadVideoParams {
 export const useVideos = () => {
   const { user } = useAuth();
 
-  return useQuery({
+  return useQuery<Video[], Error>({
     queryKey: ['videos', user?.id],
     queryFn: async () => {
-      console.log('📹 Загружаем видео для ленты...');
+      console.log('📹 Загружаем видео для ленты (без рейтинга)...');
 
-      // Основной запрос видео с профилями пользователей
       const { data: videos, error } = await supabase
         .from('videos')
         .select(`
@@ -78,16 +69,12 @@ export const useVideos = () => {
         return [];
       }
 
-      // Получаем статистику и взаимодействия пользователя
       const videosWithStats = await Promise.all(
         videos.map(async (video) => {
           try {
-            // Проверяем взаимодействия текущего пользователя
             let userLiked = false;
-            let userRating = 0;
 
             if (user?.id) {
-              // Проверяем лайк пользователя
               const { data: userLikeData } = await supabase
                 .from('video_likes')
                 .select('*')
@@ -95,28 +82,17 @@ export const useVideos = () => {
                 .eq('user_id', user.id)
                 .maybeSingle();
               userLiked = !!userLikeData;
-
-              // Получаем рейтинг пользователя
-              const { data: userRatingData } = await supabase
-                .from('video_ratings')
-                .select('rating')
-                .eq('video_id', video.id)
-                .eq('user_id', user.id)
-                .maybeSingle();
-              userRating = userRatingData?.rating || 0;
             }
 
-            // Считаем общее количество лайков для видео
             const { count: totalLikes, error: likesError } = await supabase
               .from('video_likes')
-              .select('*', { count: 'exact', head: true }) // head: true для эффективности
+              .select('*', { count: 'exact', head: true })
               .eq('video_id', video.id);
 
             if (likesError) {
               console.warn(`⚠️ Ошибка загрузки общего количества лайков для видео ${video.id}:`, likesError);
             }
             
-            // Считаем общее количество комментариев для видео
             const { count: totalComments, error: commentsError } = await supabase
               .from('video_comments')
               .select('*', { count: 'exact', head: true })
@@ -126,45 +102,30 @@ export const useVideos = () => {
               console.warn(`⚠️ Ошибка загрузки общего количества комментариев для видео ${video.id}:`, commentsError);
             }
 
-            // Считаем средний рейтинг
-            const { data: ratings } = await supabase
-              .from('video_ratings')
-              .select('rating')
-              .eq('video_id', video.id);
-
-            const averageRating = ratings && ratings.length > 0
-              ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-              : 0;
-
             return {
               ...video,
-              likes_count: totalLikes || video.likes_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
-              comments_count: totalComments || video.comments_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
+              likes_count: totalLikes || video.likes_count || 0,
+              comments_count: totalComments || video.comments_count || 0,
               user_liked: userLiked,
-              user_rating: userRating,
-              average_rating: Number(averageRating.toFixed(1)),
-            };
+            } as Video;
           } catch (statError) {
-            console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id}:`, statError);
+            console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id} (без рейтинга):`, statError);
             return {
-              ...video, // возвращаем оригинальное видео с его значениями по умолчанию
+              ...video,
               user_liked: false,
-              user_rating: 0,
-              average_rating: 0,
-              // likes_count и comments_count остаются из video, если они там есть
-            };
+            } as Video;
           }
         })
       );
 
-      console.log('✅ Видео с обновленной статистикой загружены');
+      console.log('✅ Видео с обновленной статистикой (без рейтинга) загружены');
       return videosWithStats;
     },
   });
 };
 
 export const useVideo = (id: string) => {
-  return useQuery({
+  return useQuery<Video, Error>({
     queryKey: ['videos', id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -176,45 +137,7 @@ export const useVideo = (id: string) => {
       if (error) {
         throw error;
       }
-
-      return data;
-    },
-  });
-};
-
-export const useRateVideo = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ videoId, rating }: RateVideoParams) => {
-      if (!user?.id) {
-        throw new Error('Необходима авторизация');
-      }
-
-      console.log('⭐ Оцениваем видео:', { videoId, rating });
-
-      // Upsert the rating
-      const { error } = await supabase
-        .from('video_ratings')
-        .upsert({ video_id: videoId, user_id: user.id, rating: rating }, { onConflict: 'video_id,user_id' });
-
-      if (error) {
-        console.error('Ошибка рейтинга:', error);
-        throw new Error(error.message);
-      }
-
-      console.log('✅ Рейтинг успешно поставлен');
-    },
-    onSuccess: (_, { videoId }) => {
-      console.log('✅ useRateVideo успешно, инвалидируем кэш...');
-      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-      queryClient.invalidateQueries({ queryKey: ['video-feed'] });
-    },
-    onError: (error) => {
-      console.error('❌ Ошибка мутации рейтинга:', error);
+      return data as Video;
     },
   });
 };
@@ -331,7 +254,6 @@ export const useUploadVideo = () => {
       } catch (error) {
         console.error('Ошибка загрузки видео:', error);
         
-        // Очищаем файлы при ошибке
         try {
           await supabase.storage.from('videos').remove([videoFileName]);
         } catch (cleanupError) {
@@ -342,7 +264,6 @@ export const useUploadVideo = () => {
       }
     },
     onSuccess: () => {
-      // Инвалидируем все связанные кэши для мгновенного обновления
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
