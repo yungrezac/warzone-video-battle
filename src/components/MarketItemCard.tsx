@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { ShoppingCart, Star, Crown, Gift, Eye, Sparkles } from 'lucide-react';
 import { usePurchaseItem, useUserPurchases } from '@/hooks/useMarketItems';
 import { useAuth } from '@/components/AuthWrapper';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface MarketItemCardProps {
   item: {
@@ -68,11 +68,11 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
 
   return (
     <Card 
-      className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group border-0 shadow-lg hover:shadow-2xl hover:-translate-y-1"
+      className="h-full flex flex-col overflow-hidden transition-all duration-300 cursor-pointer group hover:shadow-xl hover:-translate-y-1"
       onClick={handleCardClick}
     >
       {/* Изображение товара */}
-      <div className="relative h-32 overflow-hidden">
+      <AspectRatio ratio={1} className="relative overflow-hidden rounded-t-xl">
         {primaryImage ? (
           <>
             <img
@@ -116,14 +116,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
             </div>
           </div>
         )}
-
-        {/* Иконка просмотра при наведении */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
-            <Eye className="w-4 h-4 text-gray-700" />
-          </div>
-        </div>
-      </div>
+      </AspectRatio>
 
       <CardHeader className="pb-2 px-3 pt-3">
         <div className="flex items-start justify-between gap-1.5 mb-1.5">
