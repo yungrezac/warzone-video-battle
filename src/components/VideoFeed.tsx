@@ -184,11 +184,15 @@ const VideoFeed: React.FC = () => {
               </div>
             );
 
-            // Logic to insert banner once
-            const BANNER_POSITION = 2; // Show banner after the 3rd video (index 2)
+            // Logic to insert banners sequentially every 5 posts
+            const BANNER_FREQUENCY = 5; // Show banner after every 5 videos
             
-            if (index === BANNER_POSITION && banners && banners.length > 0) {
-               const bannerToShow = banners[0]; // Take the first banner from ordered list
+            if ((index + 1) % BANNER_FREQUENCY === 0 && banners && banners.length > 0) {
+               // Calculate which banner to show, cycling through the available banners
+               const bannerCycleIndex = Math.floor((index + 1) / BANNER_FREQUENCY);
+               const bannerIndex = (bannerCycleIndex - 1) % banners.length;
+               const bannerToShow = banners[bannerIndex];
+               
                if (bannerToShow) {
                  acc.push(
                   <InlineBannerCard key={`banner-${bannerToShow.id}`} banner={bannerToShow} />
