@@ -1080,51 +1080,6 @@ export type Database = {
           },
         ]
       }
-      user_market_items: {
-        Row: {
-          category: string
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean
-          name: string
-          price: number
-          product_url: string
-          target_audience: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          name: string
-          price: number
-          product_url: string
-          target_audience: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          name?: string
-          price?: number
-          product_url?: string
-          target_audience?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_points: {
         Row: {
           created_at: string
@@ -1562,10 +1517,6 @@ export type Database = {
       increment_likes_count: {
         Args: { video_id: string }
         Returns: undefined
-      }
-      is_current_user_premium: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
       }
       purchase_item: {
         Args: { p_item_id: string; p_quantity?: number }

@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User as AuthUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -41,76 +40,118 @@ interface AuthWrapperProps {
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log('🚀 AuthWrapper инициализация...');
+    console.log('🚀 AuthWrapper мгновенная инициализация через Telegram API...');
     
     const initializeUser = async () => {
       try {
+        // Проверяем доступность Telegram WebApp
         if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
           const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
-          console.log('⚡ Загрузка из Telegram:', telegramUser.first_name);
+          console.log('⚡ Мгновенная загрузка из Telegram:', telegramUser.first_name);
+          
           await createOrLoginTelegramUser(telegramUser);
         } else {
-          console.log('🌐 Веб-версия - создаем или входим как админ');
-          await createOrLoginAdminUser();
+          // Fallback для веб-версии - создаем админа
+          console.log('🌐 Веб-версия - создаем админа');
+          await createAdminUser();
         }
       } catch (err: any) {
         console.error('❌ Ошибка инициализации:', err);
         createFallbackUser();
-      } finally {
-        setLoading(false);
       }
     };
 
     const createOrLoginTelegramUser = async (telegramUser: any) => {
       const telegramId = telegramUser.id.toString();
-      const email = `${telegramId}@telegram.user`;
-      const password = `tg_user_secret_pwd_!${telegramId}`;
+      console.log('👤 Обрабатываем Telegram пользователя:', telegramId);
+      
+      try {
+        // Быстро проверяем существование пользователя
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id, username, first_name, last_name, avatar_url, telegram_id, telegram_username')
+          .eq('telegram_id', telegramId)
+          .maybeSingle();
 
-      let { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        let profileId = existingProfile?.id;
 
-      if (signInError && signInError.message.includes('Invalid login credentials')) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              username: telegramUser.username || `user_${telegramId.slice(-5)}`,
+        if (!existingProfile) {
+          // Создаем нового пользователя максимально быстро
+          const newUserId = crypto.randomUUID();
+          
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: newUserId,
+              username: telegramUser.username || `user_${telegramUser.id}`,
               first_name: telegramUser.first_name,
               last_name: telegramUser.last_name,
               avatar_url: telegramUser.photo_url,
               telegram_id: telegramId,
               telegram_username: telegramUser.username,
               telegram_photo_url: telegramUser.photo_url,
-            }
-          }
-        });
-        if (signUpError) throw signUpError;
-        authData = signUpData;
-      } else if (signInError) {
-        throw signInError;
-      }
-      
-      const authUser = authData.user;
-      if (!authUser) throw new Error("Не удалось аутентифицировать пользователя Telegram");
+            });
 
-      await fetchAndSetProfile(authUser, telegramId);
+          if (!insertError) {
+            profileId = newUserId;
+            
+            // Создаем user_points асинхронно в фоне
+            setTimeout(async () => {
+              try {
+                await supabase.from('user_points').insert({
+                  user_id: newUserId,
+                  total_points: 0,
+                  wins_count: 0,
+                });
+              } catch (err) {
+                console.error('❌ Error creating points:', err);
+              }
+            }, 0);
+          }
+        }
+
+        // Мгновенно устанавливаем пользователя
+        const userData = {
+          id: profileId!,
+          telegram_id: telegramId,
+          username: telegramUser.username || `user_${telegramUser.id}`,
+          first_name: telegramUser.first_name,
+          last_name: telegramUser.last_name,
+          avatar_url: telegramUser.photo_url,
+          telegram_username: telegramUser.username,
+        };
+
+        console.log('✅ Пользователь готов мгновенно:', userData.username || userData.first_name);
+        setUser(userData);
+
+      } catch (error) {
+        console.error('❌ Ошибка создания Telegram пользователя:', error);
+        await createAdminUser();
+      }
     };
 
-    const createOrLoginAdminUser = async () => {
-      const email = 'admin@trickmaster.app';
-      const password = 'admin_password_trickmaster_web';
+    const createAdminUser = async () => {
+      try {
+        console.log('👑 Создаем админа для веб-версии...');
+        
+        const { data: existingAdmin } = await supabase
+          .from('profiles')
+          .select('id, username, first_name, last_name, avatar_url, telegram_id, telegram_username')
+          .eq('username', 'TrickMaster')
+          .maybeSingle();
 
-      let { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        let adminId = existingAdmin?.id;
 
-      if (signInError && signInError.message.includes('Invalid login credentials')) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
+        if (!existingAdmin) {
+          const newAdminId = crypto.randomUUID();
+          
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: newAdminId,
               username: 'TrickMaster',
               first_name: 'Admin',
               last_name: 'Master',
@@ -118,52 +159,44 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               telegram_id: 'admin_web',
               telegram_username: 'TrickMaster',
               telegram_photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-            }
+            });
+
+          if (!insertError) {
+            adminId = newAdminId;
+            
+            // Создаем user_points асинхронно в фоне
+            setTimeout(async () => {
+              try {
+                await supabase.from('user_points').insert({
+                  user_id: newAdminId,
+                  total_points: 99999,
+                  wins_count: 100,
+                });
+              } catch (err) {
+                console.error('❌ Error creating admin points:', err);
+              }
+            }, 0);
           }
-        });
-        if (signUpError) throw signUpError;
-        authData = signUpData;
-      } else if (signInError) {
-        throw signInError;
-      }
-      
-      const authUser = authData.user;
-      if (!authUser) throw new Error("Не удалось аутентифицировать админа");
-      
-      await fetchAndSetProfile(authUser, 'admin_web');
-    };
-
-    const fetchAndSetProfile = async (authUser: AuthUser, telegramId: string) => {
-      // Профиль должен создаваться триггером. Попробуем его получить.
-      // Иногда бывает задержка, поэтому добавим небольшие повторные попытки.
-      let profile = null;
-      for (let i = 0; i < 3; i++) {
-        const { data } = await supabase.from('profiles').select('*').eq('id', authUser.id).single();
-        if (data) {
-          profile = data;
-          break;
         }
-        await new Promise(res => setTimeout(res, 300));
+
+        const adminData = {
+          id: adminId!,
+          telegram_id: 'admin_web',
+          username: 'TrickMaster',
+          first_name: 'Admin',
+          last_name: 'Master',
+          avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+          telegram_username: 'TrickMaster',
+        };
+
+        console.log('✅ Админ готов:', adminData.username);
+        setUser(adminData);
+
+      } catch (error) {
+        console.error('❌ Ошибка создания админа:', error);
+        createFallbackUser();
       }
-
-      if (!profile) {
-          console.warn("Профиль не найден, возможно задержка. Используем данные из метаданных.");
-          profile = authUser.user_metadata;
-      }
-
-      const userData = {
-        id: authUser.id,
-        telegram_id: telegramId,
-        username: profile.username,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        avatar_url: profile.avatar_url,
-        telegram_username: profile.telegram_username,
-      };
-
-      console.log('✅ Пользователь аутентифицирован:', userData.username || userData.first_name);
-      setUser(userData);
-    }
+    };
 
     const createFallbackUser = () => {
       const fallbackUser = {
@@ -179,6 +212,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       setUser(fallbackUser);
     };
 
+    // Запускаем инициализацию мгновенно
     initializeUser();
   }, []);
 
@@ -187,9 +221,8 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     setUser(userData);
   };
 
-  const signOut = async () => {
+  const signOut = () => {
     console.log('🚪 Выход пользователя');
-    await supabase.auth.signOut();
     setUser(null);
   };
 
