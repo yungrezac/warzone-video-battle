@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -18,25 +18,17 @@ interface VideoCommentsProps {
 const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   
   const { user } = useAuth();
-  const { data: rootComments, isLoading } = useVideoComments(videoId);
+  const { data: comments, isLoading } = useVideoComments(videoId);
   const addCommentMutation = useAddVideoComment();
 
   const totalComments = useMemo(() => {
-    if (isLoading || !rootComments) return commentsCount;
-    let count = 0;
-    const countComments = (comments: Comment[]) => {
-        for (const comment of comments) {
-            count++;
-            if (comment.replies) {
-                countComments(comment.replies);
-            }
-        }
-    }
-    countComments(rootComments);
-    return count;
-  }, [rootComments, commentsCount, isLoading]);
+    if (isLoading || !comments) return commentsCount;
+    return comments.length;
+  }, [comments, commentsCount, isLoading]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) {
@@ -53,9 +45,11 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
       await addCommentMutation.mutateAsync({
         videoId,
         content: newComment.trim(),
+        parentCommentId: replyTo?.id,
       });
       setNewComment('');
-      toast.success('Комментарий добавлен');
+      setReplyTo(null);
+      toast.success(replyTo ? 'Ответ добавлен' : 'Комментарий добавлен');
     } catch (error) {
       console.error('Ошибка добавления комментария:', error);
       toast.error('Ошибка добавления комментария');
@@ -98,9 +92,17 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
             <div className="flex justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
-          ) : rootComments && rootComments.length > 0 ? (
-             rootComments.map((comment) => (
-              <CommentItem key={comment.id} comment={comment} videoId={videoId} />
+          ) : comments && comments.length > 0 ? (
+             comments.map((comment) => (
+              <CommentItem 
+                key={comment.id} 
+                comment={comment} 
+                videoId={videoId} 
+                onReply={(commentToReply) => {
+                  setReplyTo(commentToReply);
+                  textAreaRef.current?.focus();
+                }}
+              />
             ))
           ) : (
             <div className="text-center py-16 text-gray-500">
@@ -113,8 +115,20 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
         
         {user ? (
           <div className="border-t bg-white p-4">
+            {replyTo && (
+              <div className="text-sm text-gray-500 mb-2 flex justify-between items-center bg-gray-100 p-2 rounded-md">
+                <span>
+                  Ответ пользователю: <span className="font-medium text-gray-800">@{replyTo.profiles?.username || replyTo.profiles?.telegram_username}</span>
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => setReplyTo(null)} className="h-6 px-1.5 text-xs">
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  Отменить
+                </Button>
+              </div>
+            )}
             <div className="flex space-x-3">
               <Textarea
+                ref={textAreaRef}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Напишите комментарий..."

@@ -19,6 +19,10 @@ export interface Comment {
   } | null;
   user_liked: boolean;
   replies: Comment[];
+  parent_comment_author?: {
+    username: string | null;
+    telegram_username: string | null;
+  } | null;
 }
 
 export const useVideoComments = (videoId: string) => {
@@ -59,28 +63,29 @@ export const useVideoComments = (videoId: string) => {
           }
       }
 
-      const commentsWithLikeStatus: Comment[] = comments.map(comment => ({
-          ...comment,
-          user_liked: userLikedCommentIds.includes(comment.id),
-          replies: []
+      const commentsWithDetails: (Omit<Comment, 'replies' | 'user_liked' | 'parent_comment_author'> & { user_liked: boolean, replies: Comment[], parent_comment_author?: any })[] = comments.map(comment => ({
+        ...comment,
+        user_liked: userLikedCommentIds.includes(comment.id),
+        replies: [],
       }));
 
-      const commentMap = new Map<string, Comment>();
-      const rootComments: Comment[] = [];
-
-      commentsWithLikeStatus.forEach(comment => {
+      const commentMap = new Map<string, typeof commentsWithDetails[number]>();
+      
+      commentsWithDetails.forEach(comment => {
           commentMap.set(comment.id, comment);
       });
 
-      commentsWithLikeStatus.forEach(comment => {
+      commentsWithDetails.forEach(comment => {
           if (comment.parent_comment_id && commentMap.has(comment.parent_comment_id)) {
-              commentMap.get(comment.parent_comment_id)!.replies!.push(comment);
-          } else {
-              rootComments.push(comment);
+              const parentComment = commentMap.get(comment.parent_comment_id)!;
+              comment.parent_comment_author = parentComment.profiles ? {
+                  username: parentComment.profiles.username,
+                  telegram_username: parentComment.profiles.telegram_username,
+              } : null;
           }
       });
 
-      return rootComments;
+      return commentsWithDetails as Comment[];
     },
   });
 };
