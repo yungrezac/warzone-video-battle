@@ -213,28 +213,34 @@ export const useLikeVideoComment = () => {
                 throw new Error('Необходима авторизация');
             }
             
-            console.log('Attempting to like/unlike comment', { commentId, videoId, isLiked, userId: user.id });
+            console.log('--- Начало операции лайка комментария ---', { commentId, videoId, isLiked, userId: user.id });
 
             if (isLiked) {
-                console.log('Deleting comment like');
+                console.log('Удаляем лайк комментария (DELETE)');
                 const { error } = await supabase
                     .from('video_comment_likes')
                     .delete()
                     .eq('user_id', user.id)
                     .eq('comment_id', commentId);
                 if (error) {
-                    console.error('Error deleting comment like:', error);
+                    console.error('Ошибка supabase при удалении лайка:', error);
                     throw error;
                 }
+                console.log('✅ Лайк комментария успешно удален');
             } else {
-                console.log('Inserting comment like');
-                const { error } = await supabase
+                console.log('Добавляем лайк комментария (INSERT)');
+                const { data, error } = await supabase
                     .from('video_comment_likes')
-                    .insert({ user_id: user.id, comment_id: commentId });
+                    .insert({ user_id: user.id, comment_id: commentId })
+                    .select()
+                    .single();
+
                 if (error) {
-                    console.error('Error inserting comment like:', error);
+                    console.error('Ошибка supabase при добавлении лайка:', error);
                     throw error;
                 }
+                
+                console.log('✅ Лайк комментария успешно добавлен:', data);
                 
                 try {
                     const { data: commentData } = await supabase
@@ -261,11 +267,22 @@ export const useLikeVideoComment = () => {
         onSuccess: (data, variables) => {
             // Оптимистичное обновление не требуется, так как триггер в БД обновит likes_count.
             // Просто инвалидируем кэш, чтобы получить свежие данные (включая user_liked).
+            console.log('Инвалидация кэша комментариев после лайка...');
             queryClient.invalidateQueries({ queryKey: ['video-comments', variables.videoId] });
         },
-        onError: (error, variables) => {
-            console.error('Ошибка при лайке комментария:', error);
-            toast.error('Не удалось обработать лайк');
+        onError: (error: any, variables) => {
+            console.error('Полная ошибка при лайке комментария:', JSON.stringify(error, null, 2));
+
+            let errorMessage = 'Не удалось обработать лайк.';
+            if (error?.code === '23505') { // Unique constraint violation
+                errorMessage = 'Вы уже лайкнули этот комментарий.';
+                console.warn('Обнаружена попытка дублирующего лайка. Возможно, состояние UI не синхронизировано.');
+            } else if (error?.message?.includes('violates row-level security policy')) {
+                errorMessage = 'Ошибка прав доступа. Попробуйте перезайти.';
+                console.error('Сработала блокировка RLS при лайке.');
+            }
+            
+            toast.error(errorMessage);
             // При ошибке откатываем оптимистичное обновление, перезагружая данные
             queryClient.invalidateQueries({ queryKey: ['video-comments', variables.videoId] });
         },
