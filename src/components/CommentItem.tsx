@@ -11,9 +11,10 @@ import { toast } from 'sonner';
 interface CommentItemProps {
   comment: Comment;
   videoId: string;
+  isReply?: boolean;
 }
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId }) => {
+const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, isReply = false }) => {
     const { user } = useAuth();
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [replyContent, setReplyContent] = useState('');
@@ -98,9 +99,9 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId }) => {
                 )}
                 
                 {comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-3 space-y-3 pl-4 border-l-2 border-gray-200">
+                    <div className={`mt-3 space-y-3 ${!isReply ? 'pl-11' : ''}`}>
                         {comment.replies.map(reply => (
-                            <CommentItem key={reply.id} comment={reply} videoId={videoId} />
+                            <CommentItem key={reply.id} comment={reply} videoId={videoId} isReply={true} />
                         ))}
                     </div>
                 )}
