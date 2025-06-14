@@ -96,14 +96,14 @@ const VideoComments: React.FC<VideoCommentsProps> = ({
                   Отменить
                 </Button>
               </div>}
-            <div className="flex space-x-3">
-              <Textarea ref={textAreaRef} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Напишите комментарий..." className="flex-1 min-h-[60px] resize-none" onKeyDown={e => {
+            <div className="flex items-end space-x-3">
+              <Textarea ref={textAreaRef} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Напишите комментарий..." className="flex-1 min-h-[40px] resize-none" onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               handleSubmitComment();
             }
           }} />
-              <Button onClick={handleSubmitComment} disabled={!newComment.trim() || addCommentMutation.isPending} className="self-end">
+              <Button size="icon" onClick={handleSubmitComment} disabled={!newComment.trim() || addCommentMutation.isPending}>
                 {addCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
