@@ -30,7 +30,9 @@ const VideoFeed: React.FC = () => {
           if (entry.isIntersecting) {
             const videoId = entry.target.getAttribute('data-video-id');
             if (videoId && !viewedVideos.has(videoId)) {
-              markVideoAsViewed(videoId);
+              console.log('👁️ Видео попало в область видимости:', videoId);
+              // Добавляем в множество просмотренных, но не засчитываем просмотр
+              // Просмотр будет засчитан только при воспроизведении в VideoPlayer
               setViewedVideos(prev => new Set(prev).add(videoId));
             }
           }
@@ -43,7 +45,7 @@ const VideoFeed: React.FC = () => {
     videoElements.forEach(el => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [videos, markVideoAsViewed, viewedVideos]);
+  }, [videos, viewedVideos]);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -160,7 +162,7 @@ const VideoFeed: React.FC = () => {
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
                     rating: video.average_rating || 0,
-                    views: video.views,
+                    views: video.views || 0,
                     isWinner: video.is_winner,
                     timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
                       day: 'numeric',

@@ -7,6 +7,8 @@ export const useVideoViews = () => {
 
   const markVideoAsViewed = async (videoId: string) => {
     try {
+      console.log('🎬 Увеличиваем счетчик просмотров для видео:', videoId);
+      
       // Сначала получаем текущее количество просмотров
       const { data: currentVideo, error: fetchError } = await supabase
         .from('videos')
@@ -20,9 +22,12 @@ export const useVideoViews = () => {
       }
 
       // Увеличиваем счетчик просмотров на 1
+      const newViewsCount = (currentVideo.views || 0) + 1;
+      console.log('📊 Обновляем счетчик просмотров с', currentVideo.views, 'до', newViewsCount);
+      
       const { error } = await supabase
         .from('videos')
-        .update({ views: (currentVideo.views || 0) + 1 })
+        .update({ views: newViewsCount })
         .eq('id', videoId);
 
       if (error) {
@@ -30,12 +35,13 @@ export const useVideoViews = () => {
         return;
       }
 
+      console.log('✅ Просмотр засчитан для видео:', videoId);
+      
       // Инвалидируем кэши для обновления статистики и баллов
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       
-      console.log('Просмотр засчитан для видео:', videoId);
     } catch (error) {
       console.error('Ошибка при обработке просмотра:', error);
     }

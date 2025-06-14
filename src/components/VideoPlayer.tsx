@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIncrementVideoViews } from '@/hooks/useVideoViews';
+import { useVideoViews } from '@/hooks/useVideoViews';
 import { useVideoPlayback } from '@/contexts/VideoPlaybackContext';
 
 interface VideoPlayerProps {
@@ -16,9 +17,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [hasIncrementedView, setHasIncrementedView] = useState(false);
+  const [hasViewBeenCounted, setHasViewBeenCounted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const incrementViewsMutation = useIncrementVideoViews();
+  const { markVideoAsViewed } = useVideoViews();
   const { currentPlayingVideo, setCurrentPlayingVideo } = useVideoPlayback();
 
   // Останавливаем видео если играет другое видео
@@ -32,12 +33,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     }
   }, [currentPlayingVideo, videoId, isPlaying]);
 
-  const handleVideoPlay = () => {
-    // Увеличиваем просмотры только один раз при первом воспроизведении
-    if (videoId && !hasIncrementedView) {
-      console.log('Первое воспроизведение видео, увеличиваем просмотры');
-      incrementViewsMutation.mutate(videoId);
-      setHasIncrementedView(true);
+  const handleVideoView = async () => {
+    // Засчитываем просмотр только один раз при первом воспроизведении
+    if (videoId && !hasViewBeenCounted) {
+      console.log('🎬 Первое воспроизведение видео, засчитываем просмотр:', videoId);
+      try {
+        await markVideoAsViewed(videoId);
+        setHasViewBeenCounted(true);
+        console.log('✅ Просмотр засчитан для видео:', videoId);
+      } catch (error) {
+        console.error('❌ Ошибка при засчитывании просмотра:', error);
+      }
     }
   };
 
@@ -51,7 +57,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
         if (videoId) {
           setCurrentPlayingVideo(videoId);
         }
-        handleVideoPlay();
+        handleVideoView();
       }
       setIsPlaying(!isPlaying);
     }
@@ -78,6 +84,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
 
   const handleVideoEnd = () => {
     setIsPlaying(false);
+    setCurrentPlayingVideo(null);
   };
 
   const handleMouseEnter = () => {
@@ -95,7 +102,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     if (videoId) {
       setCurrentPlayingVideo(videoId);
     }
-    handleVideoPlay();
+    handleVideoView();
   };
 
   const handleVideoPauseEvent = () => {
