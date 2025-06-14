@@ -177,7 +177,7 @@ const VideoFeed: React.FC = () => {
                     userLiked: video.user_liked || false,
                     userRating: video.user_rating || 0,
                     userId: video.user_id,
-                    category: video.category,
+                    category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
                   }}
                   onLike={handleLike}
                   onRate={handleRate}
