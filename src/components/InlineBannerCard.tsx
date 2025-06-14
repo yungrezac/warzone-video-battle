@@ -24,7 +24,7 @@ const InlineBannerCard: React.FC<InlineBannerCardProps> = ({ banner }) => {
       onClick={handleClick}
     >
       <CardContent className="p-0">
-        <img src={banner.image_url} alt={banner.title} className="w-full h-auto object-cover aspect-[2/1]" />
+        <img src={banner.image_url} alt={banner.title} className="w-full h-auto object-cover" />
       </CardContent>
     </Card>
   );

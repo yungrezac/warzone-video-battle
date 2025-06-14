@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useVideos, useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -185,15 +184,14 @@ const VideoFeed: React.FC = () => {
               </div>
             );
 
-            // Logic to insert banner
-            const BANNER_FREQUENCY = 7; // Show banner after every 7 videos
+            // Logic to insert banner once
+            const BANNER_POSITION = 2; // Show banner after the 3rd video (index 2)
             
-            if ((index + 1) % BANNER_FREQUENCY === 0 && banners && banners.length > 0) {
-               const bannerCycleIndex = Math.floor((index + 1) / BANNER_FREQUENCY);
-               const bannerIndex = (bannerCycleIndex - 1) % banners.length;
-               if (banners[bannerIndex]) {
+            if (index === BANNER_POSITION && banners && banners.length > 0) {
+               const bannerToShow = banners[0]; // Take the first banner from ordered list
+               if (bannerToShow) {
                  acc.push(
-                  <InlineBannerCard key={`banner-${banners[bannerIndex].id}`} banner={banners[bannerIndex]} />
+                  <InlineBannerCard key={`banner-${bannerToShow.id}`} banner={bannerToShow} />
                  );
                }
             }
