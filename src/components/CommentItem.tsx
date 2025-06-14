@@ -50,9 +50,9 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply }) 
             <div className="flex-1">
                 <div className="bg-gray-100 rounded-lg p-2.5">
                     <p className="font-semibold text-sm text-gray-800">{comment.profiles?.username || comment.profiles?.telegram_username || 'Пользователь'}</p>
-                    {comment.parent_comment_author && (
-                        <p className="text-sm text-blue-600 mb-1">
-                            в ответ @{comment.parent_comment_author.username || comment.parent_comment_author.telegram_username}
+                    {comment.parent_comment_author && comment.parent_comment_content && (
+                        <p className="text-xs text-gray-500 mb-1 mt-1">
+                            в ответ <span className="font-medium text-blue-600">@{comment.parent_comment_author.username || comment.parent_comment_author.telegram_username}</span>: <span className="italic">"{comment.parent_comment_content.length > 40 ? `${comment.parent_comment_content.substring(0, 40)}...` : comment.parent_comment_content}"</span>
                         </p>
                     )}
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.content}</p>

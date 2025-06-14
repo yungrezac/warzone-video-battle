@@ -18,11 +18,11 @@ export interface Comment {
     avatar_url: string | null;
   } | null;
   user_liked: boolean;
-  replies: Comment[];
   parent_comment_author?: {
     username: string | null;
     telegram_username: string | null;
   } | null;
+  parent_comment_content?: string | null;
 }
 
 export const useVideoComments = (videoId: string) => {
@@ -63,10 +63,9 @@ export const useVideoComments = (videoId: string) => {
           }
       }
 
-      const commentsWithDetails: (Omit<Comment, 'replies' | 'user_liked' | 'parent_comment_author'> & { user_liked: boolean, replies: Comment[], parent_comment_author?: any })[] = comments.map(comment => ({
+      const commentsWithDetails: (Omit<Comment, 'parent_comment_author' | 'parent_comment_content'> & { user_liked: boolean, parent_comment_author?: any, parent_comment_content?: string | null })[] = comments.map(comment => ({
         ...comment,
         user_liked: userLikedCommentIds.includes(comment.id),
-        replies: [],
       }));
 
       const commentMap = new Map<string, typeof commentsWithDetails[number]>();
@@ -82,6 +81,7 @@ export const useVideoComments = (videoId: string) => {
                   username: parentComment.profiles.username,
                   telegram_username: parentComment.profiles.telegram_username,
               } : null;
+              comment.parent_comment_content = parentComment.content;
           }
       });
 

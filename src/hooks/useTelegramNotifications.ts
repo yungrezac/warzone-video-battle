@@ -41,7 +41,7 @@ export const useTelegramNotifications = () => {
   const sendNotification = async (
     telegramId: string, 
     message: string, 
-    type: 'like' | 'comment' | 'achievement' | 'daily_winner'
+    type: 'like' | 'comment' | 'achievement' | 'daily_winner' | 'comment_like' | 'comment_reply'
   ) => {
     try {
       console.log(`Отправляем Telegram уведомление пользователю ${telegramId}:`, message);
