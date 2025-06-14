@@ -45,7 +45,7 @@ export const useUserVideos = () => {
           }
 
           // Подсчитываем средний рейтинг
-          const { data: ratings, error: ratingsError } = await supabase
+          const { data: ratingsData, error: ratingsError } = await supabase
             .from('video_ratings' as any)
             .select('rating')
             .eq('video_id', video.id);
@@ -53,6 +53,8 @@ export const useUserVideos = () => {
           if (ratingsError) {
             console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id} (useUserVideos):`, ratingsError);
           }
+
+          const ratings = ratingsData as { rating: number }[] | null;
 
           const averageRating = ratings && ratings.length > 0
             ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length

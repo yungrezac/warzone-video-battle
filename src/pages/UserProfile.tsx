@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
@@ -48,10 +47,16 @@ const UserProfile: React.FC = () => {
             .select('*', { count: 'exact' })
             .eq('video_id', video.id);
 
-          const { data: ratings } = await supabase
+          const { data: ratingsData, error: ratingsError } = await supabase
             .from('video_ratings' as any)
             .select('rating')
             .eq('video_id', video.id);
+          
+          if (ratingsError) {
+            console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id} (UserProfile):`, ratingsError);
+          }
+          
+          const ratings = ratingsData as { rating: number }[] | null;
 
           const averageRating = ratings && ratings.length > 0
             ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
