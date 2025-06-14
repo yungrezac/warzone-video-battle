@@ -1,35 +1,26 @@
-
 import React from 'react';
 import { Trophy, Crown, Medal, Award } from 'lucide-react';
 import { useTopUsers } from '@/hooks/useWinnerSystem';
 import { Loader2 } from 'lucide-react';
 import PremiumBadge from './PremiumBadge';
-
 const TopUsers: React.FC = () => {
   const {
     data: topUsers,
     isLoading,
     error
   } = useTopUsers();
-
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px] pb-16 bg-gray-50">
+    return <div className="flex justify-center items-center min-h-[300px] pb-16 bg-gray-50">
         <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
-      </div>
-    );
+      </div>;
   }
-
   if (error) {
-    return (
-      <div className="p-3 pb-16">
+    return <div className="p-3 pb-16">
         <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
           Ошибка загрузки рейтинга пользователей
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const getRankIcon = (index: number) => {
     switch (index) {
       case 0:
@@ -42,7 +33,6 @@ const TopUsers: React.FC = () => {
         return <Trophy className="w-5 h-5 text-gray-400" />;
     }
   };
-
   const getRankColor = (index: number) => {
     switch (index) {
       case 0:
@@ -55,17 +45,12 @@ const TopUsers: React.FC = () => {
         return 'bg-blue-500';
     }
   };
-
-  return (
-    <div className="pb-16 bg-gray-50 min-h-screen">
+  return <div className="pb-16 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="p-4 bg-white border-b border-gray-200 sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-gray-800 text-center">Рейтинг игроков</h1>
-      </div>
+      
 
       {/* Top 3 Podium */}
-      {topUsers && topUsers.length >= 3 && (
-        <div className="p-4 pt-6 pb-6 text-center bg-white border-b border-gray-200">
+      {topUsers && topUsers.length >= 3 && <div className="p-4 pt-6 pb-6 text-center bg-white border-b border-gray-200">
           <div className="flex justify-center items-end space-x-2">
             {/* 2nd place */}
             <div className="flex flex-col items-center w-1/4">
@@ -114,8 +99,7 @@ const TopUsers: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Full Rankings */}
       <div className="p-3">
@@ -125,8 +109,7 @@ const TopUsers: React.FC = () => {
           </div>
           
           <div className="divide-y divide-gray-100">
-            {topUsers?.map((userPoint, index) => (
-              <div key={userPoint.id} className="p-3 flex items-center space-x-3 hover:bg-gray-50 transition-colors">
+            {topUsers?.map((userPoint, index) => <div key={userPoint.id} className="p-3 flex items-center space-x-3 hover:bg-gray-50 transition-colors">
                 <div className="flex-shrink-0">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-base font-bold shadow-inner ${getRankColor(index)}`}>
                     {index < 3 ? getRankIcon(index) : index + 1}
@@ -140,37 +123,28 @@ const TopUsers: React.FC = () => {
                     <span className="truncate">{userPoint.user?.username || userPoint.user?.telegram_username || 'Роллер'}</span>
                     {userPoint.user?.is_premium && <PremiumBadge size="sm" />}
                   </div>
-                  {userPoint.user?.first_name && userPoint.user?.last_name && (
-                    <div className="text-sm text-gray-500 truncate">
+                  {userPoint.user?.first_name && userPoint.user?.last_name && <div className="text-sm text-gray-500 truncate">
                       {userPoint.user.first_name} {userPoint.user.last_name}
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 
                 <div className="text-right">
                   <div className="text-base font-bold text-blue-600">{userPoint.total_points || 0}</div>
                   <div className="text-xs text-gray-500 -mt-1">баллов</div>
-                  {userPoint.wins_count > 0 && (
-                    <div className="text-xs text-yellow-600 font-medium flex items-center justify-end gap-1 mt-1">
+                  {userPoint.wins_count > 0 && <div className="text-xs text-yellow-600 font-medium flex items-center justify-end gap-1 mt-1">
                       <Trophy className="w-3 h-3" />
                       <span>{userPoint.wins_count}</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
           
-          {(!topUsers || topUsers.length === 0) && (
-            <div className="p-6 text-center text-gray-500">
+          {(!topUsers || topUsers.length === 0) && <div className="p-6 text-center text-gray-500">
               <Trophy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p>Пока нет пользователей в рейтинге</p>
-            </div>
-          )}
+            </div>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default TopUsers;
