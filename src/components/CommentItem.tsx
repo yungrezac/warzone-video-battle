@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Comment, useLikeVideoComment } from '@/hooks/useVideoComments';
 import { Button } from '@/components/ui/button';
@@ -26,11 +25,13 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply }) 
             return;
         }
 
-        const newLikedState = !localIsLiked;
+        const currentLikedState = localIsLiked;
+        const newLikedState = !currentLikedState;
+
         setLocalIsLiked(newLikedState);
         setLocalLikesCount(prev => newLikedState ? prev + 1 : prev - 1);
 
-        likeCommentMutation.mutate({ commentId: comment.id, videoId, isLiked: comment.user_liked });
+        likeCommentMutation.mutate({ commentId: comment.id, videoId, isLiked: currentLikedState });
     };
 
     const handleReplyClick = () => {

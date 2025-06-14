@@ -212,19 +212,29 @@ export const useLikeVideoComment = () => {
             if (!user?.id) {
                 throw new Error('Необходима авторизация');
             }
+            
+            console.log('Attempting to like/unlike comment', { commentId, videoId, isLiked, userId: user.id });
 
             if (isLiked) {
+                console.log('Deleting comment like');
                 const { error } = await supabase
                     .from('video_comment_likes')
                     .delete()
                     .eq('user_id', user.id)
                     .eq('comment_id', commentId);
-                if (error) throw error;
+                if (error) {
+                    console.error('Error deleting comment like:', error);
+                    throw error;
+                }
             } else {
+                console.log('Inserting comment like');
                 const { error } = await supabase
                     .from('video_comment_likes')
                     .insert({ user_id: user.id, comment_id: commentId });
-                if (error) throw error;
+                if (error) {
+                    console.error('Error inserting comment like:', error);
+                    throw error;
+                }
                 
                 try {
                     const { data: commentData } = await supabase
@@ -253,9 +263,11 @@ export const useLikeVideoComment = () => {
             // Просто инвалидируем кэш, чтобы получить свежие данные (включая user_liked).
             queryClient.invalidateQueries({ queryKey: ['video-comments', variables.videoId] });
         },
-        onError: (error) => {
+        onError: (error, variables) => {
             console.error('Ошибка при лайке комментария:', error);
             toast.error('Не удалось обработать лайк');
+            // При ошибке откатываем оптимистичное обновление, перезагружая данные
+            queryClient.invalidateQueries({ queryKey: ['video-comments', variables.videoId] });
         },
     });
 };
