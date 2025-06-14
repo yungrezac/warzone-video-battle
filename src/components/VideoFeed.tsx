@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useVideos, useRateVideo } from '@/hooks/useVideos';
+import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
 import { useAuth } from '@/components/AuthWrapper';
 import { useVideoViews } from '@/hooks/useVideoViews';
@@ -19,7 +19,6 @@ const VideoFeed: React.FC = () => {
   const { data: banners } = useHomeBanners();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
-  const rateVideoMutation = useRateVideo();
   const { markVideoAsViewed } = useVideoViews();
 
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
@@ -174,12 +173,10 @@ const VideoFeed: React.FC = () => {
                       minute: '2-digit'
                     }),
                     userLiked: video.user_liked || false,
-                    userRating: video.user_rating || 0,
                     userId: video.user_id,
                     authorIsPremium: videoUser?.is_premium,
                   }}
                   onLike={handleLike}
-                  onRate={handleRate}
                 />
               </div>
             );

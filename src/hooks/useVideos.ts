@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -17,13 +16,13 @@ interface Video {
   created_at: string;
   average_rating: number;
   user_liked: boolean;
-  user_rating: number;
   profiles?: {
     username?: string;
     first_name?: string;
     last_name?: string;
     telegram_username?: string;
     avatar_url?: string;
+    is_premium?: boolean;
   };
   // This property comes from the videos table, might be used as a fallback or if is_winner logic changes
   is_winner?: boolean; 
@@ -86,7 +85,6 @@ export const useVideos = () => {
           try {
             // Проверяем взаимодействия текущего пользователя
             let userLiked = false;
-            let userRating = 0;
 
             if (user?.id) {
               // Проверяем лайк пользователя
@@ -97,15 +95,6 @@ export const useVideos = () => {
                 .eq('user_id', user.id)
                 .maybeSingle();
               userLiked = !!userLikeData;
-
-              // Получаем рейтинг пользователя
-              const { data: userRatingData } = await supabase
-                .from('video_ratings' as any)
-                .select('rating')
-                .eq('video_id', video.id)
-                .eq('user_id', user.id)
-                .maybeSingle();
-              userRating = (userRatingData as unknown as { rating: number } | null)?.rating || 0;
             }
 
             // Считаем общее количество лайков для видео
@@ -149,7 +138,6 @@ export const useVideos = () => {
               likes_count: totalLikes || video.likes_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
               comments_count: totalComments || video.comments_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
               user_liked: userLiked,
-              user_rating: userRating,
               average_rating: Number(averageRating.toFixed(1)),
             };
           } catch (statError) {
@@ -157,7 +145,6 @@ export const useVideos = () => {
             return {
               ...video, // возвращаем оригинальное видео с его значениями по умолчанию
               user_liked: false,
-              user_rating: 0,
               average_rating: 0,
               // likes_count и comments_count остаются из video, если они там есть
             };
