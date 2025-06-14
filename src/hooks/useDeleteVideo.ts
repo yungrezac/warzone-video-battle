@@ -32,7 +32,7 @@ export const useDeleteVideo = () => {
         throw new Error('У вас нет прав на удаление этого видео');
       }
 
-      // Удаляем связанные записи (лайки, комментарии, рейтинги)
+      // Удаляем связанные записи (лайки, комментарии)
       const { error: likesError } = await supabase
         .from('video_likes')
         .delete()
@@ -49,15 +49,6 @@ export const useDeleteVideo = () => {
 
       if (commentsError) {
         console.error('Ошибка удаления комментариев:', commentsError);
-      }
-
-      const { error: ratingsError } = await supabase
-        .from('video_ratings')
-        .delete()
-        .eq('video_id', videoId);
-
-      if (ratingsError) {
-        console.error('Ошибка удаления рейтингов:', ratingsError);
       }
 
       // Удаляем видео из базы данных
