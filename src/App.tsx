@@ -1,4 +1,3 @@
-
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,6 +7,7 @@ import AuthWrapper from "@/components/AuthWrapper";
 import AchievementTracker from "@/components/AchievementTracker";
 import React, { Suspense, lazy } from 'react';
 import FullScreenLoader from "./components/FullScreenLoader";
+import PrefetchBanners from "./components/PrefetchBanners";
 
 const Index = lazy(() => import("./pages/Index"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
@@ -49,6 +49,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthWrapper>
+        <PrefetchBanners />
         <VideoPlaybackProvider>
           <TooltipProvider>
             <Sonner />
