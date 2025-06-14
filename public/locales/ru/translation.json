@@ -103,6 +103,9 @@
   "delete_video_description": "Вы уверены, что хотите удалить видео \"{{videoTitle}}\"? Это действие нельзя отменить. Все лайки, комментарии и рейтинги также будут удалены.",
   "delete_video_cancel": "Отмена",
   "delete_video_deleting": "Удаление...",
-  "delete_video_confirm": "Удалить"
+  "delete_video_confirm": "Удалить",
+  "toast_error_settings_load": "Ошибка загрузки настроек",
+  "toast_error_auth_required": "Необходима авторизация",
+  "toast_error_settings_save": "Ошибка сохранения настроек: {{message}}",
+  "toast_error_settings_save_unknown": "Ошибка сохранения настроек: Неизвестная ошибка"
 }
-

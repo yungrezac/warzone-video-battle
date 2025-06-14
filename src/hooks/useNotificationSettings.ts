@@ -47,7 +47,7 @@ export const useNotificationSettings = () => {
       if (error) {
         console.error('Ошибка загрузки настроек:', error);
         if (error.code !== 'PGRST116') {
-          toast.error('Ошибка загрузки настроек');
+          toast.error(t('toast_error_settings_load'));
         }
         return;
       }
@@ -66,13 +66,13 @@ export const useNotificationSettings = () => {
       }
     } catch (error) {
       console.error('Ошибка загрузки настроек уведомлений:', error);
-      toast.error('Ошибка загрузки настроек');
+      toast.error(t('toast_error_settings_load'));
     }
   };
 
   const updateSettings = async (newSettings: Partial<NotificationSettings>) => {
     if (!user?.id) {
-      toast.error('Необходима авторизация');
+      toast.error(t('toast_error_auth_required'));
       return;
     }
 
@@ -123,7 +123,7 @@ export const useNotificationSettings = () => {
 
       if (saveError) {
         console.error('Ошибка сохранения настроек:', saveError);
-        toast.error(`Ошибка сохранения: ${saveError.message}`);
+        toast.error(t('toast_error_settings_save', { message: saveError.message }));
         return;
       }
 
@@ -132,7 +132,7 @@ export const useNotificationSettings = () => {
       console.log('Настройки успешно сохранены');
     } catch (error: any) {
       console.error('Ошибка обновления настроек:', error);
-      toast.error(`Ошибка сохранения настроек: ${error.message || 'Неизвестная ошибка'}`);
+      toast.error(error.message ? t('toast_error_settings_save', { message: error.message }) : t('toast_error_settings_save_unknown'));
     } finally {
       setLoading(false);
     }

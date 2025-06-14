@@ -103,6 +103,9 @@
   "delete_video_description": "Are you sure you want to delete the video \"{{videoTitle}}\"? This action cannot be undone. All likes, comments, and ratings will also be deleted.",
   "delete_video_cancel": "Cancel",
   "delete_video_deleting": "Deleting...",
-  "delete_video_confirm": "Delete"
+  "delete_video_confirm": "Delete",
+  "toast_error_settings_load": "Error loading settings",
+  "toast_error_auth_required": "Authorization required",
+  "toast_error_settings_save": "Error saving settings: {{message}}",
+  "toast_error_settings_save_unknown": "Error saving settings: Unknown error"
 }
-
