@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -52,7 +51,7 @@ export const useVideos = () => {
     queryFn: async () => {
       console.log('📹 Загружаем видео для ленты...');
 
-      // Основной запрос видео с профилями пользователей и статистикой лайков
+      // Основной запрос видео с профилями пользователей
       const { data: videos, error } = await supabase
         .from('videos')
         .select(`
@@ -78,20 +77,40 @@ export const useVideos = () => {
         return [];
       }
 
+      // Получаем актуальные счетчики лайков для каждого видео
+      const { data: likesData, error: likesError } = await supabase
+        .from('video_likes')
+        .select('video_id')
+        .in('video_id', videos.map(v => v.id));
+
+      if (likesError) {
+        console.error('❌ Ошибка загрузки лайков:', likesError);
+      }
+
+      // Подсчитываем лайки для каждого видео
+      const likesCounts: { [key: string]: number } = {};
+      if (likesData) {
+        likesData.forEach(like => {
+          likesCounts[like.video_id] = (likesCounts[like.video_id] || 0) + 1;
+        });
+      }
+
+      console.log('📊 Подсчитанные лайки:', likesCounts);
+
       // Получаем взаимодействия пользователя для всех видео одним запросом
       let userLikes: { [key: string]: boolean } = {};
       let userRatings: { [key: string]: number } = {};
 
       if (user?.id) {
         // Получаем все лайки пользователя одним запросом
-        const { data: likesData } = await supabase
+        const { data: userLikesData } = await supabase
           .from('video_likes')
           .select('video_id')
           .eq('user_id', user.id)
           .in('video_id', videos.map(v => v.id));
 
         // Создаем объект для быстрого поиска
-        userLikes = (likesData || []).reduce((acc, like) => {
+        userLikes = (userLikesData || []).reduce((acc, like) => {
           acc[like.video_id] = true;
           return acc;
         }, {} as { [key: string]: boolean });
@@ -134,15 +153,20 @@ export const useVideos = () => {
       }
 
       // Объединяем все данные
-      const videosWithStats = videos.map(video => ({
-        ...video,
-        user_liked: userLikes[video.id] || false,
-        user_rating: userRatings[video.id] || 0,
-        average_rating: Number((averageRatings[video.id] || 0).toFixed(1)),
-        // Используем likes_count из базы данных, который обновляется триггерами
-        likes_count: video.likes_count || 0,
-        comments_count: video.comments_count || 0,
-      }));
+      const videosWithStats = videos.map(video => {
+        const actualLikesCount = likesCounts[video.id] || 0;
+        console.log(`🎬 Видео ${video.id}: лайков в БД = ${actualLikesCount}, в таблице = ${video.likes_count}`);
+        
+        return {
+          ...video,
+          user_liked: userLikes[video.id] || false,
+          user_rating: userRatings[video.id] || 0,
+          average_rating: Number((averageRatings[video.id] || 0).toFixed(1)),
+          // Используем актуальный подсчет лайков вместо cached значения
+          likes_count: actualLikesCount,
+          comments_count: video.comments_count || 0,
+        };
+      });
 
       console.log('✅ Видео с обновленной статистикой загружены');
       return videosWithStats;
