@@ -44,11 +44,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   useEffect(() => {
     console.log('🔄 VideoCard синхронизация состояния для видео:', {
       videoId: video.id,
-      likesCount: video.likes,
-      userLiked: video.userLiked,
+      likesFromProps: video.likes,
+      userLikedFromProps: video.userLiked,
       previousLocalUserLiked: localUserLiked,
-      userRating: video.userRating,
-      previousLocalUserRating: localUserRating
+      previousLocalLikesCount: localLikesCount
     });
     
     // Обновляем локальное состояние только если пришли новые данные из props
@@ -184,7 +183,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
               className={`${localUserLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}
             >
               <Heart className={`w-3.5 h-3.5 mr-1 ${localUserLiked ? 'fill-current' : ''}`} />
-              <span className="text-xs">{localLikesCount}</span>
+              <span className="text-xs font-medium">{localLikesCount}</span>
             </Button>
 
             <VideoComments 
