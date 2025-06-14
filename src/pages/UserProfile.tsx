@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
@@ -284,6 +285,8 @@ const UserProfile: React.FC = () => {
                     }),
                     userLiked: video.user_liked || false,
                     authorIsPremium: userProfile.is_premium,
+                    userId: video.user_id,
+                    category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
                   }}
                   onLike={handleLike}
                 />

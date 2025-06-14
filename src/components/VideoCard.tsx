@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Star, Eye } from 'lucide-react';
+import { Heart, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Link, useLocation } from 'react-router-dom';
@@ -124,8 +124,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
             </Button>
 
             <VideoComments videoId={video.id} commentsCount={video.comments} />
-
-            
 
             <Button variant="ghost" size="sm" className="text-gray-600 h-7 px-1.5">
               <Eye className="w-3.5 h-3.5 mr-1" />
