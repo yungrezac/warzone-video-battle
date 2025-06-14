@@ -50,7 +50,7 @@ const TopUsers: React.FC = () => {
       
 
       {/* Top 3 Podium */}
-      {topUsers && topUsers.length >= 3 && <div className="p-4 pt-6 pb-6 text-center bg-white border-b border-gray-200">
+      {topUsers && topUsers.length >= 3 && <div className="p-4 pt-6 pb-6 text-center bg-white border-b border-gray-200 py-[44px]">
           <div className="flex justify-center items-end space-x-2">
             {/* 2nd place */}
             <div className="flex flex-col items-center w-1/4">
