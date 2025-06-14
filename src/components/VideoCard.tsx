@@ -16,7 +16,6 @@ interface Video {
   videoUrl?: string;
   likes: number;
   comments: number;
-  rating: number;
   views: number;
   isWinner?: boolean;
   timestamp: string;

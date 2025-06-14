@@ -2,7 +2,6 @@ import React from 'react';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
 import { useAuth } from '@/components/AuthWrapper';
 import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
@@ -27,7 +26,6 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
 }) => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
-  const rateVideoMutation = useRateVideo();
   
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
 
@@ -56,23 +54,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             .select('*', { count: 'exact' })
             .eq('video_id', video.id);
 
-          const { data: ratingsData, error: ratingsError } = await supabase
-            .from('video_ratings' as any)
-            .select('rating')
-            .eq('video_id', video.id);
-            
-          if (ratingsError) {
-            console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id} (Modal):`, ratingsError);
-          }
-
-          const ratings = ratingsData as unknown as { rating: number }[] | null;
-
-          const averageRating = ratings && ratings.length > 0
-            ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
-            : 0;
-
           let userLiked = false;
-          let userRating = 0;
 
           if (user?.id) {
             const { data: userLike } = await supabase
@@ -83,28 +65,13 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               .maybeSingle();
 
             userLiked = !!userLike;
-
-            const { data: userRatingData, error: userRatingError } = await supabase
-              .from('video_ratings' as any)
-              .select('rating')
-              .eq('video_id', video.id)
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-            if (userRatingError) {
-              console.warn(`⚠️ Ошибка при загрузке рейтинга пользователя для видео ${video.id} (Modal):`, userRatingError);
-            }
-              
-            userRating = (userRatingData as unknown as { rating: number } | null)?.rating || 0;
           }
 
           return {
             ...video,
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
-            average_rating: Number(averageRating.toFixed(1)),
             user_liked: userLiked,
-            user_rating: userRating,
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         })
@@ -130,21 +97,6 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
         console.error('Ошибка при обработке лайка:', error);
         toast.error('Ошибка при обработке лайка');
       }
-    }
-  };
-
-  const handleRate = async (videoId: string, rating: number) => {
-    if (!user) {
-      toast.error('Войдите в систему, чтобы ставить оценки');
-      return;
-    }
-
-    try {
-      await rateVideoMutation.mutateAsync({ videoId, rating });
-      toast.success(`Оценка ${rating} поставлена`);
-    } catch (error) {
-      console.error('Ошибка при выставлении оценки:', error);
-      toast.error('Ошибка при выставлении оценки');
     }
   };
 
@@ -343,7 +295,6 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                           videoUrl: video.video_url,
                           likes: video.likes_count || 0,
                           comments: video.comments_count || 0,
-                          rating: video.average_rating || 0,
                           views: video.views,
                           isWinner: video.is_winner,
                           timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
@@ -353,13 +304,11 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                             minute: '2-digit'
                           }),
                           userLiked: video.user_liked || false,
-                          userRating: video.user_rating || 0,
                           userId: video.user_id,
                           category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
                           authorIsPremium: userProfile.is_premium,
                         }}
                         onLike={handleLike}
-                        onRate={handleRate}
                       />
                     ))}
                   </div>
