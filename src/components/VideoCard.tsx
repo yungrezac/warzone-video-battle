@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Heart, Eye } from 'lucide-react';
+import { Heart, Star, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Link, useLocation } from 'react-router-dom';
@@ -16,10 +17,12 @@ interface Video {
   videoUrl?: string;
   likes: number;
   comments: number;
+  rating: number;
   views: number;
   isWinner?: boolean;
   timestamp: string;
   userLiked?: boolean;
+  userRating?: number;
   userId?: string;
   category?: 'Rollers' | 'BMX' | 'Skateboard';
 }
@@ -27,24 +30,36 @@ interface Video {
 interface VideoCardProps {
   video: Video;
   onLike: (id: string) => void;
+  onRate: (id: string, rating: number) => void;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ video, onLike }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
+  const [showRating, setShowRating] = useState(false);
   const [localUserLiked, setLocalUserLiked] = useState(video.userLiked || false);
+  const [localUserRating, setLocalUserRating] = useState(video.userRating || 0);
   const location = useLocation();
 
+  // Синхронизируем локальное состояние с props при каждом изменении
   useEffect(() => {
-    console.log('🔄 VideoCard синхронизация состояния для видео (без рейтинга):', {
+    console.log('🔄 VideoCard синхронизация состояния для видео:', {
       videoId: video.id,
       userLiked: video.userLiked,
       previousLocalUserLiked: localUserLiked,
+      userRating: video.userRating,
+      previousLocalUserRating: localUserRating
     });
     
+    // Обновляем локальное состояние только если пришли новые данные из props
     if (video.userLiked !== localUserLiked) {
       console.log('📝 Обновляем localUserLiked с', localUserLiked, 'на', video.userLiked);
       setLocalUserLiked(video.userLiked || false);
     }
-  }, [video.userLiked, video.id, localUserLiked]);
+    
+    if (video.userRating !== localUserRating) {
+      console.log('📝 Обновляем localUserRating с', localUserRating, 'на', video.userRating);
+      setLocalUserRating(video.userRating || 0);
+    }
+  }, [video.userLiked, video.userRating, video.id]);
 
   const handleLike = () => {
     console.log('💖 VideoCard handleLike вызван для видео:', {
@@ -53,13 +68,24 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike }) => {
       propsUserLiked: video.userLiked
     });
     
+    // Мгновенно обновляем локальное состояние для лучшего UX
     const newLikedState = !localUserLiked;
     setLocalUserLiked(newLikedState);
     console.log('✨ Мгновенно изменили localUserLiked на:', newLikedState);
     
+    // Вызываем родительский обработчик
     onLike(video.id);
   };
 
+  const handleRate = (rating: number) => {
+    console.log('⭐ VideoCard handleRate вызван для видео:', video.id, 'рейтинг:', rating);
+    // Мгновенно обновляем локальное состояние
+    setLocalUserRating(rating);
+    onRate(video.id, rating);
+    setShowRating(false);
+  };
+
+  // Не показываем ссылку если уже находимся на странице профиля этого пользователя
   const isOnUserProfile = location.pathname === `/user/${video.userId}`;
 
   return (
@@ -156,6 +182,16 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike }) => {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setShowRating(!showRating)}
+              className="text-gray-600 hover:text-yellow-500 h-7 px-1.5"
+            >
+              <Star className="w-3.5 h-3.5 mr-1" />
+              <span className="text-xs">{video.rating.toFixed(1)}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
               className="text-gray-600 h-7 px-1.5"
             >
               <Eye className="w-3.5 h-3.5 mr-1" />
@@ -163,6 +199,27 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike }) => {
             </Button>
           </div>
         </div>
+
+        {showRating && (
+          <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Оцените видео:</p>
+            <div className="flex space-x-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Button
+                  key={star}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRate(star)}
+                  className="p-1 h-auto"
+                >
+                  <Star 
+                    className={`w-4 h-4 ${star <= localUserRating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+                  />
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

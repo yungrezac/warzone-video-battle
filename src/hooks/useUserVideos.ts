@@ -27,7 +27,7 @@ export const useUserVideos = () => {
           // Подсчитываем лайки для каждого видео
           const { count: likesCount, error: likesError } = await supabase
             .from('video_likes')
-            .select('*', { count: 'exact', head: true })
+            .select('*', { count: 'exact', head: true }) // Добавлено head: true
             .eq('video_id', video.id);
 
           if (likesError) {
@@ -37,17 +37,32 @@ export const useUserVideos = () => {
           // Подсчитываем комментарии для каждого видео
           const { count: commentsCount, error: commentsError } = await supabase
             .from('video_comments')
-            .select('*', { count: 'exact', head: true })
+            .select('*', { count: 'exact', head: true }) // Добавлено head: true
             .eq('video_id', video.id);
 
           if (commentsError) {
             console.warn(`⚠️ Ошибка при загрузке комментариев для видео ${video.id} (useUserVideos):`, commentsError);
           }
 
-          // Лайкнул ли текущий пользователь
-          let userLiked = false;
+          // Подсчитываем средний рейтинг
+          const { data: ratings, error: ratingsError } = await supabase
+            .from('video_ratings')
+            .select('rating')
+            .eq('video_id', video.id);
+            
+          if (ratingsError) {
+            console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id} (useUserVideos):`, ratingsError);
+          }
 
-          // Этот запрос выполняется только если пользователь авторизован, что уже проверено в начале queryFn
+          const averageRating = ratings && ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+            : 0;
+
+          // Лайкнул ли текущий пользователь и его рейтинг
+          let userLiked = false;
+          let userRating = 0;
+
+          // Эти запросы выполняются только если пользователь авторизован, что уже проверено в начале queryFn
           const { data: userLikeData } = await supabase
             .from('video_likes')
             .select('*')
@@ -56,24 +71,35 @@ export const useUserVideos = () => {
             .maybeSingle();
           userLiked = !!userLikeData;
 
+          const { data: userRatingData } = await supabase
+            .from('video_ratings')
+            .select('rating')
+            .eq('video_id', video.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          userRating = userRatingData?.rating || 0;
+
           console.log(`Статистика видео ${video.id}:`, {
             likes: likesCount,
             comments: commentsCount,
+            avgRating: averageRating,
             userLiked: userLiked,
+            userRating: userRating
           });
 
           return {
             ...video,
-            likes_count: likesCount || video.likes_count || 0,
-            comments_count: commentsCount || video.comments_count || 0,
+            likes_count: likesCount || video.likes_count || 0, // Используем актуальное, затем из таблицы, затем 0
+            comments_count: commentsCount || video.comments_count || 0, // Используем актуальное, затем из таблицы, затем 0
+            average_rating: Number(averageRating.toFixed(1)),
             user_liked: userLiked,
-            // average_rating и user_rating удалены
+            user_rating: userRating,
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         })
       );
 
-      console.log('Видео пользователя с обновленной статистикой (без рейтинга):', videosWithStats);
+      console.log('Видео пользователя с обновленной статистикой:', videosWithStats);
       return videosWithStats;
     },
     enabled: !!user,

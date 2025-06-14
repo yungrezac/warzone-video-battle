@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import { useVideos } from '@/hooks/useVideos';
+import { useVideos, useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
 import { useAuth } from '@/components/AuthWrapper';
-import { VideoCard } from './VideoCard';
+import { useVideoViews } from '@/hooks/useVideoViews';
+import VideoCard from './VideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
 import BannerRotation from './BannerRotation';
 import AdminWinnerControl from './AdminWinnerControl';
@@ -15,6 +17,8 @@ const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error } = useVideos();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
+  const rateVideoMutation = useRateVideo();
+  const { markVideoAsViewed } = useVideoViews();
 
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -26,7 +30,9 @@ const VideoFeed: React.FC = () => {
           if (entry.isIntersecting) {
             const videoId = entry.target.getAttribute('data-video-id');
             if (videoId && !viewedVideos.has(videoId)) {
-              console.log('👁️ Видео попало в область видимости (без рейтинга):', videoId);
+              console.log('👁️ Видео попало в область видимости:', videoId);
+              // Добавляем в множество просмотренных, но не засчитываем просмотр
+              // Просмотр будет засчитан только при воспроизведении в VideoPlayer
               setViewedVideos(prev => new Set(prev).add(videoId));
             }
           }
@@ -61,6 +67,22 @@ const VideoFeed: React.FC = () => {
         console.error('❌ VideoFeed: Ошибка при обработке лайка:', error);
         toast.error('Ошибка при обработке лайка');
       }
+    }
+  };
+
+  const handleRate = async (videoId: string, rating: number) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить оценки');
+      return;
+    }
+
+    console.log('⭐ VideoFeed: Ставим оценку видео:', videoId, 'рейтинг:', rating);
+    try {
+      await rateVideoMutation.mutateAsync({ videoId, rating });
+      toast.success(`Оценка ${rating} поставлена`);
+    } catch (error) {
+      console.error('❌ VideoFeed: Ошибка при выставлении оценки:', error);
+      toast.error('Ошибка при выставлении оценки');
     }
   };
 
@@ -104,6 +126,7 @@ const VideoFeed: React.FC = () => {
       
       <BannerRotation />
 
+      {/* Кнопка загрузки трюка под банерами */}
       <div className="px-3 mb-4">
         <Button
           onClick={handleUploadClick}
@@ -138,6 +161,7 @@ const VideoFeed: React.FC = () => {
                     videoUrl: video.video_url,
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
+                    rating: video.average_rating || 0,
                     views: video.views || 0,
                     isWinner: video.is_winner,
                     timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
@@ -147,10 +171,11 @@ const VideoFeed: React.FC = () => {
                       minute: '2-digit'
                     }),
                     userLiked: video.user_liked || false,
+                    userRating: video.user_rating || 0,
                     userId: video.user_id,
-                    category: video.category,
                   }}
                   onLike={handleLike}
+                  onRate={handleRate}
                 />
               </div>
             );

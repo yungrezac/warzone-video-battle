@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-// useRateVideo удален
+import { useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
 import { useAuth } from '@/components/AuthWrapper';
 import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
@@ -17,12 +18,13 @@ const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
-  // rateVideoMutation удален
+  const rateVideoMutation = useRateVideo();
 
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || '');
 
+  // Получаем видео пользователя
   const { data: userVideos, isLoading: videosLoading } = useQuery({
-    queryKey: ['user-videos', userId], // Query key остается прежним, но данные внутри будут без рейтинга
+    queryKey: ['user-videos', userId],
     queryFn: async () => {
       if (!userId) throw new Error('User ID is required');
 
@@ -38,18 +40,25 @@ const UserProfile: React.FC = () => {
         (videos || []).map(async (video) => {
           const { count: likesCount } = await supabase
             .from('video_likes')
-            .select('*', { count: 'exact', head: true }) // Добавил head: true
+            .select('*', { count: 'exact' })
             .eq('video_id', video.id);
 
           const { count: commentsCount } = await supabase
             .from('video_comments')
-            .select('*', { count: 'exact', head: true }) // Добавил head: true
+            .select('*', { count: 'exact' })
             .eq('video_id', video.id);
 
-          // Логика получения average_rating удалена
+          const { data: ratings } = await supabase
+            .from('video_ratings')
+            .select('rating')
+            .eq('video_id', video.id);
+
+          const averageRating = ratings && ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+            : 0;
 
           let userLiked = false;
-          // Логика получения user_rating удалена
+          let userRating = 0;
 
           if (user?.id) {
             const { data: userLike } = await supabase
@@ -58,15 +67,26 @@ const UserProfile: React.FC = () => {
               .eq('video_id', video.id)
               .eq('user_id', user.id)
               .maybeSingle();
+
             userLiked = !!userLike;
+
+            const { data: userRatingData } = await supabase
+              .from('video_ratings')
+              .select('rating')
+              .eq('video_id', video.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            userRating = userRatingData?.rating || 0;
           }
 
           return {
             ...video,
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
-            // average_rating и user_rating удалены
+            average_rating: Number(averageRating.toFixed(1)),
             user_liked: userLiked,
+            user_rating: userRating,
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         })
@@ -78,7 +98,6 @@ const UserProfile: React.FC = () => {
   });
 
   const handleLike = async (videoId: string) => {
-    // ... keep existing code (handleLike function)
     if (!user) {
       toast.error('Войдите в систему, чтобы ставить лайки');
       return;
@@ -96,10 +115,22 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  // handleRate удален
+  const handleRate = async (videoId: string, rating: number) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить оценки');
+      return;
+    }
+
+    try {
+      await rateVideoMutation.mutateAsync({ videoId, rating });
+      toast.success(`Оценка ${rating} поставлена`);
+    } catch (error) {
+      console.error('Ошибка при выставлении оценки:', error);
+      toast.error('Ошибка при выставлении оценки');
+    }
+  };
 
   if (profileLoading) {
-    // ... keep existing code (loading display)
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <Loader2 className="w-6 h-6 animate-spin" />
@@ -108,7 +139,6 @@ const UserProfile: React.FC = () => {
   }
 
   if (!userProfile) {
-    // ... keep existing code (profile not found display)
     return (
       <div className="min-h-screen bg-gray-50 p-3">
         <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
@@ -120,7 +150,7 @@ const UserProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ... keep existing code (Header, Profile Header, Stats Section, Achievements Section, Premium status) */}
+      {/* Header with back button */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 sticky top-0 z-40">
         <div className="flex items-center">
           <Link to="/">
@@ -132,6 +162,7 @@ const UserProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* Profile Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3">
         <div className="flex items-center mb-2">
           <img
@@ -169,6 +200,7 @@ const UserProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* Stats Section */}
       <div className="p-3">
         <div className="bg-white rounded-lg shadow-md p-3 mb-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
@@ -203,6 +235,7 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
+        {/* Achievements Section */}
         <div className="bg-white rounded-lg shadow-md p-3 mb-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
             <Award className="w-4 h-4 mr-2 text-purple-500" />
@@ -247,7 +280,7 @@ const UserProfile: React.FC = () => {
           </div>
         )}
 
-
+        {/* Video Feed Section */}
         <div className="bg-white rounded-lg shadow-md p-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
             <Video className="w-4 h-4 mr-2 text-purple-500" />
@@ -255,12 +288,10 @@ const UserProfile: React.FC = () => {
           </h3>
           
           {videosLoading ? (
-            // ... keep existing code (loading display for videos)
             <div className="flex justify-center py-3">
               <Loader2 className="w-5 h-5 animate-spin" />
             </div>
           ) : (userProfile?.total_videos || 0) === 0 ? (
-            // ... keep existing code (no videos display)
             <div className="text-center py-4 text-gray-500">
               <p className="text-sm">У пользователя пока нет загруженных трюков</p>
             </div>
@@ -278,7 +309,7 @@ const UserProfile: React.FC = () => {
                     videoUrl: video.video_url,
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
-                    // rating и userRating удалены
+                    rating: video.average_rating || 0,
                     views: video.views,
                     isWinner: video.is_winner,
                     timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
@@ -288,11 +319,10 @@ const UserProfile: React.FC = () => {
                       minute: '2-digit'
                     }),
                     userLiked: video.user_liked || false,
-                    userId: video.user_id, // Добавил userId
-                    category: video.category, // Добавил category
+                    userRating: video.user_rating || 0,
                   }}
                   onLike={handleLike}
-                  // onRate удален
+                  onRate={handleRate}
                 />
               ))}
             </div>
