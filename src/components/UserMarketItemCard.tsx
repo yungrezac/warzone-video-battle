@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, User, Star, Crown } from 'lucide-react';
+import { ExternalLink, User, Crown } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface UserMarketItemCardProps {
   item: {
@@ -41,9 +41,9 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
   };
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 border-0 shadow-lg hover:shadow-2xl hover:-translate-y-1">
+    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
       {/* Изображение товара */}
-      <div className="relative h-32 overflow-hidden">
+      <AspectRatio ratio={1} className="relative overflow-hidden rounded-t-xl">
         {item.image_url ? (
           <img
             src={item.image_url}
@@ -66,7 +66,7 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
           <Crown className="w-2.5 h-2.5" />
           Premium
         </div>
-      </div>
+      </AspectRatio>
 
       <CardHeader className="pb-2 px-3 pt-3">
         <div className="flex items-start justify-between gap-1.5 mb-1.5">
