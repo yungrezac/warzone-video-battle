@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Video, X, Edit, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,19 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({ isOpen, o
   const uploadMutation = useOptimizedVideoUpload();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (isOpen && !selectedFile && fileInputRef.current) {
+      // Automatically trigger file selection when modal opens for a streamlined experience.
+      const timer = setTimeout(() => {
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+      }, 100); // A small delay can help ensure the UI is ready.
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, selectedFile]);
 
   // Функция для генерации превью локально для отображения
   const generatePreviewFromVideo = (videoFile: File): Promise<string> => {

@@ -7,17 +7,19 @@ import VideoCard from './VideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
 import BannerRotation from './BannerRotation';
 import AdminWinnerControl from './AdminWinnerControl';
-import MinimalUploadForm from './MinimalUploadForm';
+import FullScreenUploadModal from './FullScreenUploadModal';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHomeBanners } from '@/hooks/useHomeBanners';
 import InlineBannerCard from './InlineBannerCard';
+
 const VideoFeed: React.FC = () => {
   const {
     data: videos,
     isLoading,
-    error
+    error,
+    refetch
   } = useVideos();
   const {
     data: banners
@@ -30,7 +32,8 @@ const VideoFeed: React.FC = () => {
     markVideoAsViewed
   } = useVideoViews();
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
-  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -51,6 +54,7 @@ const VideoFeed: React.FC = () => {
     videoElements.forEach(el => observer.observe(el));
     return () => observer.disconnect();
   }, [videos, viewedVideos]);
+
   const handleLike = async (videoId: string) => {
     if (!user) {
       toast.error('Войдите в систему, чтобы ставить лайки');
@@ -72,6 +76,7 @@ const VideoFeed: React.FC = () => {
       }
     }
   };
+
   const handleViewWinner = (videoId: string) => {
     const videoElement = document.querySelector(`[data-video-id="${videoId}"]`);
     if (videoElement) {
@@ -81,19 +86,21 @@ const VideoFeed: React.FC = () => {
       });
     }
   };
+
   const handleUploadClick = () => {
     if (!user) {
       toast.error('Войдите в систему для загрузки трюков');
       return;
     }
-    setShowUploadForm(true);
+    setIsUploadModalOpen(true);
   };
-  const handleUploadSuccess = () => {
-    setShowUploadForm(false);
+
+  const handleUploadModalClose = () => {
+    setIsUploadModalOpen(false);
+    // После закрытия модального окна обновляем ленту видео
+    refetch();
   };
-  if (showUploadForm) {
-    return <MinimalUploadForm onSuccess={handleUploadSuccess} />;
-  }
+
   if (error) {
     return <div className="flex justify-center items-center min-h-[300px] pb-16">
         <div className="text-center">
@@ -102,7 +109,9 @@ const VideoFeed: React.FC = () => {
         </div>
       </div>;
   }
+
   return <div className="min-h-screen bg-gray-50 pb-16">
+      <FullScreenUploadModal isOpen={isUploadModalOpen} onClose={handleUploadModalClose} />
       <AdminWinnerControl />
       
       <BannerRotation />
@@ -164,4 +173,5 @@ const VideoFeed: React.FC = () => {
         </div>}
     </div>;
 };
+
 export default VideoFeed;
