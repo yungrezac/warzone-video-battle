@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,7 +27,7 @@ export const useYesterdayWinner = () => {
         `)
         .eq('is_winner', true)
         .eq('winner_date', yesterdayStr)
-        .maybeSingle();
+        .single();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Ошибка загрузки победителя:', error);
@@ -35,36 +36,38 @@ export const useYesterdayWinner = () => {
 
       if (winner) {
         // Загружаем актуальную статистику видео
-        const { count: likesCount, error: likesError } = await supabase
+        const { count: likesCount } = await supabase
           .from('video_likes')
-          .select('*', { count: 'exact', head: true })
+          .select('*', { count: 'exact' })
           .eq('video_id', winner.id);
-        
-        if (likesError) console.warn('Ошибка загрузки лайков победителя:', likesError);
 
-        const { count: commentsCount, error: commentsError } = await supabase
+        const { count: commentsCount } = await supabase
           .from('video_comments')
-          .select('*', { count: 'exact', head: true })
+          .select('*', { count: 'exact' })
           .eq('video_id', winner.id);
-        
-        if (commentsError) console.warn('Ошибка загрузки комментов победителя:', commentsError);
-        
-        // Логика получения averageRating удалена
+
+        const { data: ratings } = await supabase
+          .from('video_ratings')
+          .select('rating')
+          .eq('video_id', winner.id);
+
+        const averageRating = ratings && ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+          : 0;
 
         // Создаем новый объект с обновленной статистикой
         const updatedWinner = {
           ...winner,
-          likes_count: likesCount || winner.likes_count || 0,
-          comments_count: commentsCount || winner.comments_count || 0,
-          // average_rating: Number(averageRating.toFixed(1)) // Удалено
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          average_rating: Number(averageRating.toFixed(1))
         };
 
         console.log('Победитель найден с обновленной статистикой:', updatedWinner);
         return updatedWinner;
       }
 
-      console.log('Победитель за вчера не найден или произошла ошибка (не PGRST116).');
-      return null; // Возвращаем null если победитель не найден
+      return winner;
     },
   });
 };
@@ -129,9 +132,7 @@ export const useCalculateWinner = () => {
       }
 
       if (!videos || videos.length === 0) {
-        console.log('Нет видео для расчета победителя за вчера.');
-        // throw new Error('Нет видео для расчета победителя'); // Не бросаем ошибку, просто выходим
-        return null; 
+        throw new Error('Нет видео для расчета победителя');
       }
 
       console.log('Найдено видео для расчета:', videos.length);
@@ -141,11 +142,12 @@ export const useCalculateWinner = () => {
       let bestScore = -1;
 
       for (const video of videos) {
-        // Формула: лайки * 3 + просмотры * 0.1 (рейтинг удален)
+        // Формула: лайки * 3 + рейтинг * 10 + просмотры * 0.1
         const score = (video.likes_count || 0) * 3 + 
+                     (video.average_rating || 0) * 10 + 
                      (video.views || 0) * 0.1;
 
-        console.log(`Видео ${video.id}: лайки=${video.likes_count}, просмотры=${video.views}, балл=${score}`);
+        console.log(`Видео ${video.id}: лайки=${video.likes_count}, рейтинг=${video.average_rating}, просмотры=${video.views}, балл=${score}`);
 
         if (score > bestScore) {
           bestScore = score;
@@ -154,32 +156,12 @@ export const useCalculateWinner = () => {
       }
 
       if (!bestVideo) {
-        console.log('Не удалось определить победителя.');
-        // throw new Error('Не удалось определить победителя');
-        return null;
+        throw new Error('Не удалось определить победителя');
       }
 
       console.log('Определен победитель:', bestVideo.id, 'с баллом:', bestScore);
 
       // Устанавливаем победителя
-      // Сначала проверяем, нет ли уже победителя за эту дату
-      const { data: existingWinner, error: existingWinnerError } = await supabase
-        .from('videos')
-        .select('id')
-        .eq('winner_date', yesterday.toISOString().split('T')[0])
-        .eq('is_winner', true)
-        .maybeSingle();
-
-      if (existingWinnerError && existingWinnerError.code !== 'PGRST116') {
-        console.error('Ошибка проверки существующего победителя:', existingWinnerError);
-        throw existingWinnerError;
-      }
-
-      if (existingWinner) {
-        console.log(`Победитель за ${yesterday.toISOString().split('T')[0]} уже существует: ${existingWinner.id}. Новый расчет не требуется.`);
-        return bestVideo; // Или null, если не хотим возвращать "старого" победителя
-      }
-      
       const { error: updateError } = await supabase
         .from('videos')
         .update({
@@ -194,21 +176,20 @@ export const useCalculateWinner = () => {
       }
 
       // Начисляем баллы пользователю и обновляем достижения
-      // ... keep existing code (points and achievements update logic)
       const { data: currentPoints, error: pointsSelectError } = await supabase
         .from('user_points')
         .select('total_points, wins_count')
         .eq('user_id', bestVideo.user_id)
         .single();
 
-      if (pointsSelectError && pointsSelectError.code !== 'PGRST116') { // PGRST116 - no rows found, это ок
-        console.warn('Ошибка получения текущих баллов (или пользователь без баллов):', pointsSelectError.message);
+      if (pointsSelectError) {
+        console.error('Ошибка получения текущих баллов:', pointsSelectError);
         // Создаем запись если её нет
         const { error: insertError } = await supabase
           .from('user_points')
           .insert({
             user_id: bestVideo.user_id,
-            total_points: 100, // Баллы за победу
+            total_points: 100,
             wins_count: 1
           });
         
@@ -220,7 +201,7 @@ export const useCalculateWinner = () => {
         const { error: pointsUpdateError } = await supabase
           .from('user_points')
           .update({
-            total_points: (currentPoints?.total_points || 0) + 100, // Баллы за победу
+            total_points: (currentPoints?.total_points || 0) + 100,
             wins_count: (currentPoints?.wins_count || 0) + 1
           })
           .eq('user_id', bestVideo.user_id);
@@ -228,30 +209,18 @@ export const useCalculateWinner = () => {
         if (pointsUpdateError) {
           console.error('Ошибка обновления баллов:', pointsUpdateError);
         }
-      }
 
-      // Обновляем достижения связанные с победами (вне зависимости от того, была ли запись user_points)
-      try {
-        // Получаем обновленное/созданное количество побед
-        const { data: updatedUserPoints, error: fetchUpdatedPointsError } = await supabase
-          .from('user_points')
-          .select('wins_count')
-          .eq('user_id', bestVideo.user_id)
-          .single();
-
-        if (fetchUpdatedPointsError) {
-          console.error('Ошибка получения обновленных побед для достижений:', fetchUpdatedPointsError);
-        } else if (updatedUserPoints) {
+        // Обновляем достижения связанные с победами
+        try {
           await supabase.rpc('update_achievement_progress', {
             p_user_id: bestVideo.user_id,
             p_category: 'wins',
-            p_new_value: updatedUserPoints.wins_count
+            p_new_value: (currentPoints?.wins_count || 0) + 1
           });
+        } catch (achievementError) {
+          console.error('Ошибка обновления достижений:', achievementError);
         }
-      } catch (achievementError) {
-        console.error('Ошибка обновления достижений:', achievementError);
       }
-
 
       console.log('Победитель установлен и баллы начислены');
       return bestVideo;
@@ -260,9 +229,8 @@ export const useCalculateWinner = () => {
       queryClient.invalidateQueries({ queryKey: ['yesterday-winner'] });
       queryClient.invalidateQueries({ queryKey: ['top-users'] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] }); // Для обновления статы победителя
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       queryClient.invalidateQueries({ queryKey: ['user-achievements'] });
-      // queryClient.invalidateQueries({ queryKey: ['video_ratings'] }); // Удалено
     },
   });
 };

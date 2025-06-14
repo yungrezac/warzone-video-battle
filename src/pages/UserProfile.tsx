@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
 import { useAuth } from '@/components/AuthWrapper';
 import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
@@ -16,7 +18,7 @@ const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
-  const queryClient = useQueryClient();
+  const rateVideoMutation = useRateVideo();
 
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || '');
 
@@ -36,19 +38,27 @@ const UserProfile: React.FC = () => {
 
       const videosWithStats = await Promise.all(
         (videos || []).map(async (video) => {
-          const { count: likesCount, error: likesError } = await supabase
+          const { count: likesCount } = await supabase
             .from('video_likes')
-            .select('*', { count: 'exact', head: true })
+            .select('*', { count: 'exact' })
             .eq('video_id', video.id);
-          if(likesError) console.warn(`Error fetching likes for video ${video.id}:`, likesError);
 
-          const { count: commentsCount, error: commentsError } = await supabase
+          const { count: commentsCount } = await supabase
             .from('video_comments')
-            .select('*', { count: 'exact', head: true })
+            .select('*', { count: 'exact' })
             .eq('video_id', video.id);
-          if(commentsError) console.warn(`Error fetching comments for video ${video.id}:`, commentsError);
+
+          const { data: ratings } = await supabase
+            .from('video_ratings')
+            .select('rating')
+            .eq('video_id', video.id);
+
+          const averageRating = ratings && ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+            : 0;
 
           let userLiked = false;
+          let userRating = 0;
 
           if (user?.id) {
             const { data: userLike } = await supabase
@@ -59,13 +69,24 @@ const UserProfile: React.FC = () => {
               .maybeSingle();
 
             userLiked = !!userLike;
+
+            const { data: userRatingData } = await supabase
+              .from('video_ratings')
+              .select('rating')
+              .eq('video_id', video.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            userRating = userRatingData?.rating || 0;
           }
 
           return {
             ...video,
-            likes_count: likesCount || video.likes_count || 0,
-            comments_count: commentsCount || video.comments_count || 0,
+            likes_count: likesCount || 0,
+            comments_count: commentsCount || 0,
+            average_rating: Number(averageRating.toFixed(1)),
             user_liked: userLiked,
+            user_rating: userRating,
             thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
           };
         })
@@ -87,11 +108,25 @@ const UserProfile: React.FC = () => {
       try {
         await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
-        queryClient.invalidateQueries({ queryKey: ['user-videos', userId] });
       } catch (error) {
         console.error('Ошибка при обработке лайка:', error);
         toast.error('Ошибка при обработке лайка');
       }
+    }
+  };
+
+  const handleRate = async (videoId: string, rating: number) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить оценки');
+      return;
+    }
+
+    try {
+      await rateVideoMutation.mutateAsync({ videoId, rating });
+      toast.success(`Оценка ${rating} поставлена`);
+    } catch (error) {
+      console.error('Ошибка при выставлении оценки:', error);
+      toast.error('Ошибка при выставлении оценки');
     }
   };
 
@@ -274,10 +309,20 @@ const UserProfile: React.FC = () => {
                     videoUrl: video.video_url,
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
-                    userId: video.user_id,
-                    category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
+                    rating: video.average_rating || 0,
+                    views: video.views,
+                    isWinner: video.is_winner,
+                    timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }),
+                    userLiked: video.user_liked || false,
+                    userRating: video.user_rating || 0,
                   }}
                   onLike={handleLike}
+                  onRate={handleRate}
                 />
               ))}
             </div>
