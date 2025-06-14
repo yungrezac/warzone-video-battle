@@ -16,9 +16,11 @@ import PremiumBadge from './PremiumBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
-
 const Profile: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const {
+    t,
+    i18n
+  } = useTranslation();
   const {
     data: userProfile,
     isLoading: profileLoading
@@ -136,7 +138,12 @@ const Profile: React.FC = () => {
             <div className="flex items-center mt-0.5 text-blue-100">
               <Calendar className="w-3 h-3 mr-1" />
               <span className="text-xs">
-                {t('in_tricks_since', { date: new Date(userProfile?.created_at || Date.now()).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' }) })}
+                {t('in_tricks_since', {
+                date: new Date(userProfile?.created_at || Date.now()).toLocaleDateString(i18n.language, {
+                  month: 'long',
+                  year: 'numeric'
+                })
+              })}
               </span>
             </div>
           </div>
@@ -170,7 +177,9 @@ const Profile: React.FC = () => {
                   {t('premium_active')}
                 </h3>
                 <p className="text-sm opacity-90">
-                  {subscription && t('premium_until', { date: new Date(subscription.expires_at).toLocaleDateString(i18n.language) })}
+                  {subscription && t('premium_until', {
+                date: new Date(subscription.expires_at).toLocaleDateString(i18n.language)
+              })}
                 </p>
               </div>
               <PremiumBadge size="md" />
@@ -193,7 +202,7 @@ const Profile: React.FC = () => {
           </div>}
 
         {/* Stats Section */}
-        <div className="p-2">
+        <div className="p-2 px-[3px]">
           <div className="bg-white rounded-lg shadow-md p-2 mb-3">
             <h3 className="text-base font-semibold mb-2 flex items-center">
               <Trophy className="w-4 h-4 mr-2 text-yellow-500" />
@@ -271,7 +280,9 @@ const Profile: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-2">
             <h3 className="text-base font-semibold mb-2 flex items-center">
               <Video className="w-4 h-4 mr-2 text-purple-500" />
-              {t('my_tricks', { count: userProfile?.total_videos || 0 })}
+              {t('my_tricks', {
+              count: userProfile?.total_videos || 0
+            })}
             </h3>
             
             {videosLoading ? <div className="flex justify-center py-3">
