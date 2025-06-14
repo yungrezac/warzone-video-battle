@@ -1,25 +1,24 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthWrapper';
-import { useTelegramNotifications } from './useTelegramNotifications';
+import { toast } from 'sonner';
 
 export const useLikeVideo = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const { sendLikeNotification } = useTelegramNotifications();
 
   return useMutation({
     mutationFn: async ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) => {
-      if (!user?.id) {
-        throw new Error('Необходима авторизация');
-      }
+      console.log('🎯 useLikeVideo: Обрабатываем лайк', { videoId, isLiked });
 
-      console.log('🔄 Обрабатываем лайк:', { videoId, isLiked, userId: user.id });
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Пользователь не авторизован');
+      }
 
       if (isLiked) {
         // Убираем лайк
-        console.log('❌ Убираем лайк...');
+        console.log('📤 useLikeVideo: Убираем лайк');
         const { error } = await supabase
           .from('video_likes')
           .delete()
@@ -27,70 +26,42 @@ export const useLikeVideo = () => {
           .eq('user_id', user.id);
 
         if (error) {
-          console.error('Ошибка при удалении лайка:', error);
+          console.error('❌ useLikeVideo: Ошибка при удалении лайка:', error);
           throw error;
         }
-
-        console.log('✅ Лайк убран');
       } else {
         // Ставим лайк
-        console.log('❤️ Ставим лайк...');
+        console.log('💖 useLikeVideo: Ставим лайк');
         const { error } = await supabase
           .from('video_likes')
           .insert({
             video_id: videoId,
-            user_id: user.id,
+            user_id: user.id
           });
 
         if (error) {
-          console.error('Ошибка при добавлении лайка:', error);
+          console.error('❌ useLikeVideo: Ошибка при постановке лайка:', error);
           throw error;
-        }
-
-        console.log('✅ Лайк поставлен');
-
-        // Отправляем уведомление владельцу видео
-        try {
-          const { data: videoData } = await supabase
-            .from('videos')
-            .select(`
-              title,
-              user_id,
-              profiles!inner(telegram_id, username, telegram_username)
-            `)
-            .eq('id', videoId)
-            .single();
-
-          if (videoData && videoData.profiles && videoData.user_id !== user.id) {
-            const ownerTelegramId = videoData.profiles.telegram_id;
-            const likerName = user.username || user.telegram_username || 'Пользователь';
-            
-            if (ownerTelegramId) {
-              await sendLikeNotification(
-                videoData.user_id,
-                ownerTelegramId,
-                likerName,
-                videoData.title
-              );
-            }
-          }
-        } catch (error) {
-          console.error('Ошибка отправки уведомления о лайке:', error);
         }
       }
 
-      const newIsLiked = !isLiked;
-      console.log('🏁 Завершили обработку лайка. Новое состояние:', newIsLiked);
-      return { videoId, isLiked: newIsLiked };
+      console.log('✅ useLikeVideo: Лайк успешно обработан');
+      return { videoId, isLiked: !isLiked };
     },
     onSuccess: (data) => {
-      console.log('✅ Мутация лайка успешна, обновляем кэш запросов...');
+      console.log('🔄 useLikeVideo: Обновляем кэш после успешного лайка');
+      
+      // Обновляем кэш видео
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      
+      // Также обновляем кэш профиля пользователя
+      queryClient.invalidateQueries({ queryKey: ['other-user-profile'] });
     },
     onError: (error) => {
-      console.error('❌ Ошибка при обработке лайка:', error);
-    },
+      console.error('❌ useLikeVideo: Ошибка мутации лайка:', error);
+      toast.error('Ошибка при обработке лайка');
+    }
   });
 };

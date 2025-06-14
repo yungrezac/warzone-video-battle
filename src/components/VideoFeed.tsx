@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useVideos, useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -171,6 +170,7 @@ const VideoFeed: React.FC = () => {
                     userLiked: video.user_liked || false,
                     userRating: video.user_rating || 0,
                     userId: video.user_id,
+                    category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
                   }}
                   onLike={handleLike}
                   onRate={handleRate}
