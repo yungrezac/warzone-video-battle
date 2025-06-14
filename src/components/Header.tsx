@@ -31,10 +31,10 @@ const Header: React.FC = () => {
           {/* Логотип и название */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">RT</span>
+              <span className="text-white font-bold text-sm">TR</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold">RollerTricks</h1>
+              <h1 className="text-lg font-bold">TRICKS</h1>
               {isPremium && (
                 <PremiumBadge size="sm" />
               )}
