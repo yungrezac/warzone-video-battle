@@ -11,7 +11,7 @@ interface Video {
   user_id: string;
   category: 'Rollers' | 'BMX' | 'Skateboard';
   views: number;
-  likes_count: number;
+  likes_count: number; // This will be overridden by our direct count
   comments_count: number;
   created_at: string;
   average_rating: number;
@@ -24,6 +24,7 @@ interface Video {
     telegram_username?: string;
     avatar_url?: string;
   };
+  // This property comes from the videos table, might be used as a fallback or if is_winner logic changes
   is_winner?: boolean; 
 }
 
@@ -83,6 +84,7 @@ export const useVideos = () => {
           try {
             // Проверяем взаимодействия текущего пользователя
             let userLiked = false;
+            let userRating = 0;
 
             if (user?.id) {
               // Проверяем лайк пользователя
@@ -93,12 +95,21 @@ export const useVideos = () => {
                 .eq('user_id', user.id)
                 .maybeSingle();
               userLiked = !!userLikeData;
+
+              // Получаем рейтинг пользователя
+              const { data: userRatingData } = await supabase
+                .from('video_ratings')
+                .select('rating')
+                .eq('video_id', video.id)
+                .eq('user_id', user.id)
+                .maybeSingle();
+              userRating = userRatingData?.rating || 0;
             }
 
             // Считаем общее количество лайков для видео
             const { count: totalLikes, error: likesError } = await supabase
               .from('video_likes')
-              .select('*', { count: 'exact', head: true })
+              .select('*', { count: 'exact', head: true }) // head: true для эффективности
               .eq('video_id', video.id);
 
             if (likesError) {
@@ -115,21 +126,32 @@ export const useVideos = () => {
               console.warn(`⚠️ Ошибка загрузки общего количества комментариев для видео ${video.id}:`, commentsError);
             }
 
+            // Считаем средний рейтинг
+            const { data: ratings } = await supabase
+              .from('video_ratings')
+              .select('rating')
+              .eq('video_id', video.id);
+
+            const averageRating = ratings && ratings.length > 0
+              ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+              : 0;
+
             return {
               ...video,
-              likes_count: totalLikes || video.likes_count || 0,
-              comments_count: totalComments || video.comments_count || 0,
+              likes_count: totalLikes || video.likes_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
+              comments_count: totalComments || video.comments_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
               user_liked: userLiked,
-              user_rating: 0, // No individual ratings stored
-              average_rating: Number((video.average_rating || 0).toFixed(1)),
+              user_rating: userRating,
+              average_rating: Number(averageRating.toFixed(1)),
             };
           } catch (statError) {
             console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id}:`, statError);
             return {
-              ...video,
+              ...video, // возвращаем оригинальное видео с его значениями по умолчанию
               user_liked: false,
               user_rating: 0,
-              average_rating: Number((video.average_rating || 0).toFixed(1)),
+              average_rating: 0,
+              // likes_count и comments_count остаются из video, если они там есть
             };
           }
         })
@@ -172,11 +194,10 @@ export const useRateVideo = () => {
 
       console.log('⭐ Оцениваем видео:', { videoId, rating });
 
-      // Update the average rating in the videos table directly
+      // Upsert the rating
       const { error } = await supabase
-        .from('videos')
-        .update({ average_rating: rating })
-        .eq('id', videoId);
+        .from('video_ratings')
+        .upsert({ video_id: videoId, user_id: user.id, rating: rating }, { onConflict: 'video_id,user_id' });
 
       if (error) {
         console.error('Ошибка рейтинга:', error);
