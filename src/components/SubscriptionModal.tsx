@@ -117,7 +117,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-md mx-auto">
+      <DialogContent className="max-w-md !rounded-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crown className="w-6 h-6 text-yellow-500" />
