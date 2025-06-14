@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
 import { useAuth } from '@/components/AuthWrapper';
@@ -32,7 +33,8 @@ const VideoFeed: React.FC = () => {
     markVideoAsViewed
   } = useVideoViews();
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
@@ -92,11 +94,22 @@ const VideoFeed: React.FC = () => {
       toast.error('Войдите в систему для загрузки трюков');
       return;
     }
-    setIsUploadModalOpen(true);
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setFileToUpload(file);
+    }
+    // Reset file input to allow selecting the same file again
+    if (event.target) {
+        event.target.value = '';
+    }
   };
 
   const handleUploadModalClose = () => {
-    setIsUploadModalOpen(false);
+    setFileToUpload(null);
     // После закрытия модального окна обновляем ленту видео
     refetch();
   };
@@ -111,10 +124,24 @@ const VideoFeed: React.FC = () => {
   }
 
   return <div className="min-h-screen bg-gray-50 pb-16">
-      <FullScreenUploadModal isOpen={isUploadModalOpen} onClose={handleUploadModalClose} />
+      {fileToUpload && (
+        <FullScreenUploadModal 
+          isOpen={!!fileToUpload} 
+          onClose={handleUploadModalClose} 
+          initialFile={fileToUpload}
+        />
+      )}
       <AdminWinnerControl />
       
       <BannerRotation />
+      
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleFileSelected}
+        className="hidden"
+      />
 
       {/* Кнопка загрузки трюка под банерами */}
       <div className="mb-4 px-[8px]">
