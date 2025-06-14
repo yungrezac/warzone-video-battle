@@ -15,6 +15,7 @@ interface Video {
   likes_count: number;
   comments_count: number;
   created_at: string;
+  is_winner?: boolean;
   average_rating: number;
   user_liked: boolean;
   user_rating: number;
@@ -51,7 +52,7 @@ export const useVideos = () => {
     queryFn: async () => {
       console.log('📹 Загружаем видео для ленты...');
 
-      // Основной запрос видео с профилями пользователей
+      // Основной запрос видео с профилями пользователей и статистикой лайков
       const { data: videos, error } = await supabase
         .from('videos')
         .select(`
@@ -77,63 +78,71 @@ export const useVideos = () => {
         return [];
       }
 
-      // Получаем статистику и взаимодействия пользователя
-      const videosWithStats = await Promise.all(
-        videos.map(async (video) => {
-          try {
-            // Проверяем взаимодействия текущего пользователя
-            let userLiked = false;
-            let userRating = 0;
+      // Получаем взаимодействия пользователя для всех видео одним запросом
+      let userLikes: { [key: string]: boolean } = {};
+      let userRatings: { [key: string]: number } = {};
 
-            if (user?.id) {
-              // Проверяем лайк пользователя
-              const { data: userLike } = await supabase
-                .from('video_likes')
-                .select('*')
-                .eq('video_id', video.id)
-                .eq('user_id', user.id)
-                .maybeSingle();
+      if (user?.id) {
+        // Получаем все лайки пользователя одним запросом
+        const { data: likesData } = await supabase
+          .from('video_likes')
+          .select('video_id')
+          .eq('user_id', user.id)
+          .in('video_id', videos.map(v => v.id));
 
-              userLiked = !!userLike;
+        // Создаем объект для быстрого поиска
+        userLikes = (likesData || []).reduce((acc, like) => {
+          acc[like.video_id] = true;
+          return acc;
+        }, {} as { [key: string]: boolean });
 
-              // Получаем рейтинг пользователя
-              const { data: userRatingData } = await supabase
-                .from('video_ratings')
-                .select('rating')
-                .eq('video_id', video.id)
-                .eq('user_id', user.id)
-                .maybeSingle();
+        // Получаем все рейтинги пользователя одним запросом
+        const { data: ratingsData } = await supabase
+          .from('video_ratings')
+          .select('video_id, rating')
+          .eq('user_id', user.id)
+          .in('video_id', videos.map(v => v.id));
 
-              userRating = userRatingData?.rating || 0;
-            }
+        // Создаем объект для быстрого поиска
+        userRatings = (ratingsData || []).reduce((acc, rating) => {
+          acc[rating.video_id] = rating.rating;
+          return acc;
+        }, {} as { [key: string]: number });
+      }
 
-            // Считаем средний рейтинг
-            const { data: ratings } = await supabase
-              .from('video_ratings')
-              .select('rating')
-              .eq('video_id', video.id);
+      // Получаем средние рейтинги для всех видео одним запросом
+      const { data: allRatings } = await supabase
+        .from('video_ratings')
+        .select('video_id, rating')
+        .in('video_id', videos.map(v => v.id));
 
-            const averageRating = ratings && ratings.length > 0
-              ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-              : 0;
-
-            return {
-              ...video,
-              user_liked: userLiked,
-              user_rating: userRating,
-              average_rating: Number(averageRating.toFixed(1)),
-            };
-          } catch (error) {
-            console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id}:`, error);
-            return {
-              ...video,
-              user_liked: false,
-              user_rating: 0,
-              average_rating: 0,
-            };
+      // Вычисляем средние рейтинги
+      const averageRatings: { [key: string]: number } = {};
+      if (allRatings) {
+        const ratingsByVideo = allRatings.reduce((acc, rating) => {
+          if (!acc[rating.video_id]) {
+            acc[rating.video_id] = [];
           }
-        })
-      );
+          acc[rating.video_id].push(rating.rating);
+          return acc;
+        }, {} as { [key: string]: number[] });
+
+        Object.keys(ratingsByVideo).forEach(videoId => {
+          const ratings = ratingsByVideo[videoId];
+          averageRatings[videoId] = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+        });
+      }
+
+      // Объединяем все данные
+      const videosWithStats = videos.map(video => ({
+        ...video,
+        user_liked: userLikes[video.id] || false,
+        user_rating: userRatings[video.id] || 0,
+        average_rating: Number((averageRatings[video.id] || 0).toFixed(1)),
+        // Используем likes_count из базы данных, который обновляется триггерами
+        likes_count: video.likes_count || 0,
+        comments_count: video.comments_count || 0,
+      }));
 
       console.log('✅ Видео с обновленной статистикой загружены');
       return videosWithStats;
