@@ -26,11 +26,12 @@ export const useLikeVideo = () => {
           .eq('video_id', videoId)
           .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Ошибка при удалении лайка:', error);
+          throw error;
+        }
 
-        // Уменьшаем счетчик
-        await supabase.rpc('decrement_likes_count', { video_id: videoId });
-        console.log('✅ Лайк убран, счетчик уменьшен');
+        console.log('✅ Лайк убран');
       } else {
         // Ставим лайк
         console.log('❤️ Ставим лайк...');
@@ -41,11 +42,12 @@ export const useLikeVideo = () => {
             user_id: user.id,
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Ошибка при добавлении лайка:', error);
+          throw error;
+        }
 
-        // Увеличиваем счетчик
-        await supabase.rpc('increment_likes_count', { video_id: videoId });
-        console.log('✅ Лайк поставлен, счетчик увеличен');
+        console.log('✅ Лайк поставлен');
 
         // Отправляем уведомление владельцу видео
         try {
@@ -85,6 +87,7 @@ export const useLikeVideo = () => {
       console.log('✅ Мутация лайка успешна, обновляем кэш запросов...');
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error) => {
       console.error('❌ Ошибка при обработке лайка:', error);
