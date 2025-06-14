@@ -263,19 +263,19 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
       <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none" hideCloseButton>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-4 flex items-center">
+          <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-4 flex items-center py-[4px]">
             <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20 mr-3 p-2" disabled={isUploading}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Загрузить трюк</h1>
-              <p className="opacity-90 text-sm">Поделитесь своим лучшим трюком!</p>
+              <h1 className="text-xl font-bold py-0">Загрузить трюк</h1>
+              
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-4 overflow-y-auto">
-            <div className="max-w-md mx-auto space-y-4">
+          <div className="flex-1 p-0 overflow-y-auto py-0 px-0 ">
+            <div className="max-w-screen-md max-w-screen-md max-w-screen-md max-w-screen-md max-w-screen-md mx-0 px-[8px]">
               <input ref={fileInputRef} type="file" accept="video/*" onChange={handleFileSelect} className="hidden" disabled={isUploading} />
               {!selectedFile ? <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center flex justify-center items-center h-48">
                   <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
