@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,61 +14,37 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retry: 1, // Уменьшаем количество попыток для быстрой загрузки
+      retryDelay: 500, // Уменьшаем задержку
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   },
 });
 
-console.log('🚀 App компонент загружается...');
-console.log('🌐 Window объект:', typeof window !== 'undefined' ? 'доступен' : 'недоступен');
-console.log('📱 Telegram объект:', typeof window !== 'undefined' && window.Telegram ? 'найден' : 'не найден');
+console.log('🚀 App загружается мгновенно...');
 
-if (typeof window !== 'undefined') {
-  console.log('🔍 Проверяем Telegram WebApp...');
-  if (window.Telegram) {
-    console.log('✅ window.Telegram существует');
-    if (window.Telegram.WebApp) {
-      console.log('✅ window.Telegram.WebApp существует');
-      console.log('📊 WebApp данные:', {
-        initDataUnsafe: window.Telegram.WebApp.initDataUnsafe,
-        готов: typeof window.Telegram.WebApp.ready === 'function',
-        версия: (window.Telegram.WebApp as any).version || 'неизвестно'
-      });
-      
-      // Принудительно вызываем ready() если еще не вызван
-      if (typeof window.Telegram.WebApp.ready === 'function') {
-        try {
-          window.Telegram.WebApp.ready();
-          console.log('✅ WebApp.ready() вызван принудительно');
-        } catch (error) {
-          console.log('⚠️ Ошибка при вызове WebApp.ready():', error);
-        }
-      }
-    } else {
-      console.log('❌ window.Telegram.WebApp НЕ существует');
+// Простая инициализация Telegram WebApp если доступно
+if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+  try {
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    if (typeof tg.expand === 'function') {
+      tg.expand();
     }
-  } else {
-    console.log('❌ window.Telegram НЕ существует');
+    console.log('✅ Telegram WebApp инициализирован');
+  } catch (error) {
+    console.log('⚠️ Telegram WebApp ошибка:', error);
   }
 }
 
 const App = () => {
-  console.log('🎯 App рендерится...');
+  console.log('🎯 App рендерится мгновенно...');
   
   return (
     <QueryClientProvider client={queryClient}>
       <AuthWrapper>
         {({ user, loading }) => {
-          console.log('🔄 App render состояние:', { 
-            user: user ? `${user.id} (${user.username})` : 'null', 
-            loading,
-            timestamp: new Date().toISOString()
-          });
-          
-          // Убираем экран загрузки - показываем приложение сразу
-          console.log('🏠 Показываем основное приложение для пользователя:', user?.id || 'гостевой пользователь');
+          console.log('🏠 Приложение готово для пользователя:', user?.id || 'guest');
           
           return (
             <VideoPlaybackProvider>
