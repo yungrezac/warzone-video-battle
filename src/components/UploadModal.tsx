@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useUploadVideo } from '@/hooks/useVideos';
+import { useOptimizedVideoUpload } from '@/hooks/useOptimizedVideoUpload';
 import { useToast } from '@/hooks/use-toast';
 import CategorySelector from './CategorySelector';
 import VideoEditor from './VideoEditor';
@@ -26,7 +26,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadMutation = useUploadVideo();
+  const uploadMutation = useOptimizedVideoUpload();
   const { toast } = useToast();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,8 +87,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
         videoFile: selectedFile,
         category: category,
         thumbnailBlob: thumbnailBlob || undefined,
-        trimStart: trimStart > 0 ? trimStart : undefined,
-        trimEnd: trimEnd > 0 ? trimEnd : undefined,
       });
 
       // Очищаем форму после успешной загрузки
@@ -111,7 +109,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
       });
       
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка загрузки:', error);
       toast({
         title: "Ошибка",

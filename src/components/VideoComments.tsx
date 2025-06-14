@@ -11,20 +11,17 @@ import { toast } from 'sonner';
 
 interface VideoCommentsProps {
   videoId: string;
-  commentsCount: number;
 }
 
-const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount }) => {
+const VideoComments: React.FC<VideoCommentsProps> = ({ videoId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
   
   const { user } = useAuth();
-  const { data: commentsData, isLoading } = useVideoComments(videoId);
+  const { data: comments, isLoading } = useVideoComments(videoId);
   const addCommentMutation = useAddVideoComment();
 
-  const comments = commentsData?.comments || [];
-
-  console.log('VideoComments рендер:', { videoId, commentsCount, comments, isLoading, user: user?.id });
+  console.log('VideoComments рендер:', { videoId, comments, isLoading, user: user?.id });
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) {
@@ -62,7 +59,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
           className="text-gray-600 hover:text-blue-500 h-7 px-1.5"
         >
           <MessageCircle className="w-3.5 h-3.5 mr-1" />
-          <span className="text-xs">{comments?.length || commentsCount}</span>
+          <span className="text-xs">{comments?.length || 0}</span>
         </Button>
       </DialogTrigger>
       
@@ -72,7 +69,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
       >
         <DialogHeader className="p-4 border-b bg-white">
           <div className="flex items-center justify-between">
-            <DialogTitle>Комментарии ({comments?.length || commentsCount})</DialogTitle>
+            <DialogTitle>Комментарии ({comments?.length || 0})</DialogTitle>
             <Button
               variant="ghost"
               size="sm"

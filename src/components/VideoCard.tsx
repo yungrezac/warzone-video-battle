@@ -12,20 +12,22 @@ interface VideoCardProps {
   video: {
     id: string;
     title: string;
-    author: string;
-    authorAvatar: string;
-    thumbnail: string;
-    videoUrl: string;
-    likes: number;
-    comments: number;
-    rating: number;
-    views?: number;
-    isWinner?: boolean;
-    timestamp: string;
-    userLiked: boolean;
-    userRating: number;
-    userId?: string;
+    video_url: string;
+    thumbnail_url?: string;
+    user_id: string;
     category?: 'Rollers' | 'BMX' | 'Skateboard';
+    created_at: string;
+    views?: number;
+    likes_count: number;
+    comments_count: number;
+    average_rating: number;
+    user_liked: boolean;
+    user_rating: number;
+    profiles?: {
+      username?: string;
+      telegram_username?: string;
+      avatar_url?: string;
+    };
   };
   onLike: (videoId: string) => void;
   onRate: (videoId: string, rating: number) => void;
@@ -34,7 +36,6 @@ interface VideoCardProps {
 const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   const { user } = useAuth();
   const [showPlayer, setShowPlayer] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
   const handleLikeClick = () => {
@@ -48,10 +49,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   };
 
   const handleAuthorClick = () => {
-    if (video.userId && video.userId !== user?.id) {
+    if (video.user_id && video.user_id !== user?.id) {
       setShowUserProfile(true);
     }
   };
+
+  // Определяем автора и аватар
+  const author = video.profiles?.username || video.profiles?.telegram_username || 'Пользователь';
+  const authorAvatar = video.profiles?.avatar_url || '/placeholder.svg';
+  const thumbnail = video.thumbnail_url || '/placeholder.svg';
 
   return (
     <>
@@ -61,8 +67,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img
-                src={video.authorAvatar}
-                alt={video.author}
+                src={authorAvatar}
+                alt={author}
                 className="w-8 h-8 rounded-full mr-2 cursor-pointer"
                 onClick={handleAuthorClick}
               />
@@ -71,19 +77,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
                   className="font-semibold text-sm cursor-pointer hover:text-blue-600"
                   onClick={handleAuthorClick}
                 >
-                  {video.author}
+                  {author}
                 </h3>
-                <p className="text-xs text-gray-500">{video.timestamp}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(video.created_at).toLocaleString('ru-RU')}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {video.category && <CategoryBadge category={video.category} />}
-              {video.isWinner && (
-                <div className="flex items-center bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                  <Trophy className="w-3 h-3 mr-1" />
-                  <span className="text-xs font-semibold">Победитель</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -91,7 +93,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
         {/* Video Thumbnail */}
         <div className="relative">
           <img
-            src={video.thumbnail}
+            src={thumbnail}
             alt={video.title}
             className="w-full aspect-video object-cover cursor-pointer"
             onClick={() => setShowPlayer(true)}
@@ -122,20 +124,14 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
               <button
                 onClick={handleLikeClick}
                 className={`flex items-center space-x-1 ${
-                  video.userLiked ? 'text-red-500' : 'text-gray-600'
+                  video.user_liked ? 'text-red-500' : 'text-gray-600'
                 } hover:text-red-500 transition-colors`}
               >
-                <Heart className={`w-5 h-5 ${video.userLiked ? 'fill-current' : ''}`} />
-                <span className="text-sm font-medium">{video.likes}</span>
+                <Heart className={`w-5 h-5 ${video.user_liked ? 'fill-current' : ''}`} />
+                <span className="text-sm font-medium">{video.likes_count}</span>
               </button>
 
-              <button
-                onClick={() => setShowComments(!showComments)}
-                className="flex items-center space-x-1 text-gray-600 hover:text-blue-500 transition-colors"
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span className="text-sm font-medium">{video.comments}</span>
-              </button>
+              <VideoComments videoId={video.id} />
             </div>
 
             {/* Rating Stars */}
@@ -145,42 +141,35 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
                   key={star}
                   onClick={() => handleStarClick(star)}
                   className={`${
-                    star <= video.userRating ? 'text-yellow-400' : 'text-gray-300'
+                    star <= video.user_rating ? 'text-yellow-400' : 'text-gray-300'
                   } hover:text-yellow-400 transition-colors`}
                 >
-                  <Star className={`w-4 h-4 ${star <= video.userRating ? 'fill-current' : ''}`} />
+                  <Star className={`w-4 h-4 ${star <= video.user_rating ? 'fill-current' : ''}`} />
                 </button>
               ))}
               <span className="text-sm text-gray-600 ml-1">
-                {video.rating > 0 ? video.rating.toFixed(1) : '—'}
+                {video.average_rating > 0 ? video.average_rating.toFixed(1) : '—'}
               </span>
             </div>
           </div>
         </div>
-
-        {/* Comments Section */}
-        {showComments && (
-          <div className="border-t bg-gray-50">
-            <VideoComments videoId={video.id} />
-          </div>
-        )}
       </div>
 
       {/* Video Player Modal */}
       {showPlayer && (
         <VideoPlayer
-          videoUrl={video.videoUrl}
+          url={video.video_url}
           title={video.title}
           onClose={() => setShowPlayer(false)}
         />
       )}
 
       {/* User Profile Modal */}
-      {showUserProfile && video.userId && (
+      {showUserProfile && video.user_id && (
         <FullScreenUserProfileModal
           isOpen={showUserProfile}
           onClose={() => setShowUserProfile(false)}
-          userId={video.userId}
+          userId={video.user_id}
         />
       )}
     </>
