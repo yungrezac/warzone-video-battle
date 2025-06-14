@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -95,12 +96,12 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
   };
 
   const premiumFeatures = [
-    'Неограниченная загрузка видео',
-    'Приоритетное размещение в ленте',
-    'Эксклюзивные стикеры и значки',
-    'Доступ к премиум контестам',
-    'Персональная поддержка',
-    'Расширенная статистика профиля'
+    'Эксклюзивные скидки у партнёров TRICKS',
+    'Участие в онлайн и офлайн турнирах',
+    'Приглашения на закрытые мероприятия',
+    'Вывод баллов в USDT',
+    'Специальный значок премиум-пользователя',
+    'Возможность добавлять свой товар в маркет',
   ];
 
   const formatDate = (dateString: string) => {
