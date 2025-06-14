@@ -191,7 +191,7 @@ const UserProfile: React.FC = () => {
             <div className="flex items-center mt-0.5 text-blue-100">
               <Calendar className="w-3 h-3 mr-1" />
               <span className="text-xs">
-                В Roller Tricks с {new Date(userProfile?.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                В TRICKS с {new Date(userProfile?.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
               </span>
             </div>
           </div>
