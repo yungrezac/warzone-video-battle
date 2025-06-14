@@ -99,7 +99,7 @@ const Market: React.FC = () => {
       <BannerCarousel />
 
       {/* Market Type Tabs */}
-      <div className="p-3">
+      <div className="p-3 px-[4px]">
         <Tabs value={marketType} onValueChange={value => setMarketType(value as 'points' | 'rubles')}>
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="points" className="flex items-center gap-2">
