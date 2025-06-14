@@ -37,12 +37,14 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
   const [showRating, setShowRating] = useState(false);
   const [localUserLiked, setLocalUserLiked] = useState(video.userLiked || false);
   const [localUserRating, setLocalUserRating] = useState(video.userRating || 0);
+  const [localLikesCount, setLocalLikesCount] = useState(video.likes || 0);
   const location = useLocation();
 
   // Синхронизируем локальное состояние с props при каждом изменении
   useEffect(() => {
     console.log('🔄 VideoCard синхронизация состояния для видео:', {
       videoId: video.id,
+      likesCount: video.likes,
       userLiked: video.userLiked,
       previousLocalUserLiked: localUserLiked,
       userRating: video.userRating,
@@ -59,19 +61,30 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
       console.log('📝 Обновляем localUserRating с', localUserRating, 'на', video.userRating);
       setLocalUserRating(video.userRating || 0);
     }
-  }, [video.userLiked, video.userRating, video.id]);
+    
+    if (video.likes !== localLikesCount) {
+      console.log('📝 Обновляем localLikesCount с', localLikesCount, 'на', video.likes);
+      setLocalLikesCount(video.likes || 0);
+    }
+  }, [video.userLiked, video.userRating, video.likes, video.id]);
 
   const handleLike = () => {
     console.log('💖 VideoCard handleLike вызван для видео:', {
       videoId: video.id,
       currentLocalUserLiked: localUserLiked,
-      propsUserLiked: video.userLiked
+      propsUserLiked: video.userLiked,
+      currentLikes: localLikesCount
     });
     
     // Мгновенно обновляем локальное состояние для лучшего UX
     const newLikedState = !localUserLiked;
     setLocalUserLiked(newLikedState);
-    console.log('✨ Мгновенно изменили localUserLiked на:', newLikedState);
+    
+    // Оптимистично обновляем счетчик лайков
+    setLocalLikesCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
+    
+    console.log('✨ Мгновенно изменили localUserLiked на:', newLikedState, 'и localLikesCount на:', 
+      newLikedState ? localLikesCount + 1 : Math.max(0, localLikesCount - 1));
     
     // Вызываем родительский обработчик
     onLike(video.id);
@@ -171,7 +184,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike, onRate }) => {
               className={`${localUserLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}
             >
               <Heart className={`w-3.5 h-3.5 mr-1 ${localUserLiked ? 'fill-current' : ''}`} />
-              <span className="text-xs">{video.likes}</span>
+              <span className="text-xs">{localLikesCount}</span>
             </Button>
 
             <VideoComments 

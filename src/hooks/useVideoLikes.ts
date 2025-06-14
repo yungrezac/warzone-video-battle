@@ -37,6 +37,7 @@ export const useLikeVideo = () => {
 
         if (updateError) {
           console.error('Ошибка при обновлении счетчика лайков:', updateError);
+          throw updateError;
         }
 
         console.log('✅ Лайк убран');
@@ -61,6 +62,7 @@ export const useLikeVideo = () => {
 
         if (updateError) {
           console.error('Ошибка при обновлении счетчика лайков:', updateError);
+          throw updateError;
         }
 
         console.log('✅ Лайк поставлен');
@@ -104,6 +106,7 @@ export const useLikeVideo = () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['video', data.videoId] });
     },
     onError: (error) => {
       console.error('❌ Ошибка при обработке лайка:', error);
