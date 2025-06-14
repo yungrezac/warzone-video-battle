@@ -46,21 +46,12 @@ export const useYesterdayWinner = () => {
           .select('*', { count: 'exact' })
           .eq('video_id', winner.id);
 
-        const { data: ratings } = await supabase
-          .from('video_ratings')
-          .select('rating')
-          .eq('video_id', winner.id);
-
-        const averageRating = ratings && ratings.length > 0
-          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-          : 0;
-
         // Создаем новый объект с обновленной статистикой
         const updatedWinner = {
           ...winner,
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
-          average_rating: Number(averageRating.toFixed(1))
+          average_rating: winner.average_rating || 0
         };
 
         console.log('Победитель найден с обновленной статистикой:', updatedWinner);
@@ -68,39 +59,6 @@ export const useYesterdayWinner = () => {
       }
 
       return winner;
-    },
-  });
-};
-
-export const useTopUsers = () => {
-  return useQuery({
-    queryKey: ['top-users'],
-    queryFn: async () => {
-      console.log('Загружаем топ пользователей...');
-
-      const { data: topUsers, error } = await supabase
-        .from('user_points')
-        .select(`
-          *,
-          user:profiles!user_id(
-            id,
-            username,
-            telegram_username,
-            avatar_url,
-            first_name,
-            last_name
-          )
-        `)
-        .order('total_points', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('Ошибка загрузки топа пользователей:', error);
-        throw error;
-      }
-
-      console.log('Топ пользователи загружены:', topUsers);
-      return topUsers;
     },
   });
 };
