@@ -46,7 +46,7 @@ export const useUserVideos = () => {
 
           // Подсчитываем средний рейтинг
           const { data: ratings, error: ratingsError } = await supabase
-            .from('video_ratings')
+            .from('video_ratings' as any)
             .select('rating')
             .eq('video_id', video.id);
             
@@ -55,7 +55,7 @@ export const useUserVideos = () => {
           }
 
           const averageRating = ratings && ratings.length > 0
-            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+            ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
             : 0;
 
           // Лайкнул ли текущий пользователь и его рейтинг
@@ -72,12 +72,12 @@ export const useUserVideos = () => {
           userLiked = !!userLikeData;
 
           const { data: userRatingData } = await supabase
-            .from('video_ratings')
+            .from('video_ratings' as any)
             .select('rating')
             .eq('video_id', video.id)
             .eq('user_id', user.id)
             .maybeSingle();
-          userRating = userRatingData?.rating || 0;
+          userRating = (userRatingData as { rating: number } | null)?.rating || 0;
 
           console.log(`Статистика видео ${video.id}:`, {
             likes: likesCount,

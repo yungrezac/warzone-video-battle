@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -52,7 +51,7 @@ export const useDeleteVideo = () => {
       }
 
       const { error: ratingsError } = await supabase
-        .from('video_ratings')
+        .from('video_ratings' as any)
         .delete()
         .eq('video_id', videoId);
 

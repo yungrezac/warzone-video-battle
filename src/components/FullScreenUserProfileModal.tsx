@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -57,12 +56,12 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             .eq('video_id', video.id);
 
           const { data: ratings } = await supabase
-            .from('video_ratings')
+            .from('video_ratings' as any)
             .select('rating')
             .eq('video_id', video.id);
 
           const averageRating = ratings && ratings.length > 0
-            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+            ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
             : 0;
 
           let userLiked = false;
@@ -79,13 +78,13 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             userLiked = !!userLike;
 
             const { data: userRatingData } = await supabase
-              .from('video_ratings')
+              .from('video_ratings' as any)
               .select('rating')
               .eq('video_id', video.id)
               .eq('user_id', user.id)
               .maybeSingle();
 
-            userRating = userRatingData?.rating || 0;
+            userRating = (userRatingData as { rating: number } | null)?.rating || 0;
           }
 
           return {
