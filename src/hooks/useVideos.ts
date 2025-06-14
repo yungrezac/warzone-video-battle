@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -12,7 +11,7 @@ interface Video {
   user_id: string;
   category: 'Rollers' | 'BMX' | 'Skateboard';
   views: number;
-  likes_count: number;
+  likes_count: number; // This will be overridden by our direct count
   comments_count: number;
   created_at: string;
   average_rating: number;
@@ -25,6 +24,8 @@ interface Video {
     telegram_username?: string;
     avatar_url?: string;
   };
+  // This property comes from the videos table, might be used as a fallback or if is_winner logic changes
+  is_winner?: boolean; 
 }
 
 interface RateVideoParams {
@@ -71,7 +72,7 @@ export const useVideos = () => {
         throw error;
       }
 
-      console.log('✅ Загружено видео:', videos?.length);
+      console.log('✅ Загружено видео (начальное количество):', videos?.length);
 
       if (!videos || videos.length === 0) {
         return [];
@@ -87,14 +88,13 @@ export const useVideos = () => {
 
             if (user?.id) {
               // Проверяем лайк пользователя
-              const { data: userLike } = await supabase
+              const { data: userLikeData } = await supabase
                 .from('video_likes')
                 .select('*')
                 .eq('video_id', video.id)
                 .eq('user_id', user.id)
                 .maybeSingle();
-
-              userLiked = !!userLike;
+              userLiked = !!userLikeData;
 
               // Получаем рейтинг пользователя
               const { data: userRatingData } = await supabase
@@ -103,8 +103,27 @@ export const useVideos = () => {
                 .eq('video_id', video.id)
                 .eq('user_id', user.id)
                 .maybeSingle();
-
               userRating = userRatingData?.rating || 0;
+            }
+
+            // Считаем общее количество лайков для видео
+            const { count: totalLikes, error: likesError } = await supabase
+              .from('video_likes')
+              .select('*', { count: 'exact', head: true }) // head: true для эффективности
+              .eq('video_id', video.id);
+
+            if (likesError) {
+              console.warn(`⚠️ Ошибка загрузки общего количества лайков для видео ${video.id}:`, likesError);
+            }
+            
+            // Считаем общее количество комментариев для видео
+            const { count: totalComments, error: commentsError } = await supabase
+              .from('video_comments')
+              .select('*', { count: 'exact', head: true })
+              .eq('video_id', video.id);
+
+            if (commentsError) {
+              console.warn(`⚠️ Ошибка загрузки общего количества комментариев для видео ${video.id}:`, commentsError);
             }
 
             // Считаем средний рейтинг
@@ -119,17 +138,20 @@ export const useVideos = () => {
 
             return {
               ...video,
+              likes_count: totalLikes || video.likes_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
+              comments_count: totalComments || video.comments_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
               user_liked: userLiked,
               user_rating: userRating,
               average_rating: Number(averageRating.toFixed(1)),
             };
-          } catch (error) {
-            console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id}:`, error);
+          } catch (statError) {
+            console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id}:`, statError);
             return {
-              ...video,
+              ...video, // возвращаем оригинальное видео с его значениями по умолчанию
               user_liked: false,
               user_rating: 0,
               average_rating: 0,
+              // likes_count и comments_count остаются из video, если они там есть
             };
           }
         })
