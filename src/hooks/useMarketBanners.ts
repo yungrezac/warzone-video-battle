@@ -40,6 +40,7 @@ export const useMarketBanners = () => {
       console.log('Банеры маркета загружены:', data);
       return data;
     },
+    staleTime: Infinity,
   });
 };
 

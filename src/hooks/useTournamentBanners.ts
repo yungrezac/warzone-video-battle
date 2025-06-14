@@ -39,5 +39,6 @@ export const useTournamentBanners = () => {
       console.log('Баннеры турниров загружены:', banners);
       return banners;
     },
+    staleTime: Infinity,
   });
 };

@@ -40,6 +40,7 @@ export const useUserMarketItems = () => {
       console.log('Пользовательские товары загружены:', data);
       return data;
     },
+    staleTime: Infinity,
   });
 };
 

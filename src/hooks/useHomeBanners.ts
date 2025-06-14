@@ -39,5 +39,6 @@ export const useHomeBanners = () => {
   return useQuery({
     queryKey,
     queryFn: fetchHomeBanners,
+    staleTime: Infinity,
   });
 };
