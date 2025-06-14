@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Video, X, Edit, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,10 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({ isOpen, o
       }
 
       setSelectedFile(initialFile);
+      // Сброс всех состояний при выборе нового файла
+      setTitle('');
+      setDescription('');
+      setCategory('Rollers');
       setShowEditor(false);
       setThumbnailBlob(null);
       setTrimStart(0);
@@ -153,7 +158,8 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({ isOpen, o
       });
       return;
     }
-
+    
+    // Этот код вызывается, когда пользователь меняет файл уже внутри модального окна
     setSelectedFile(file);
     setShowEditor(false);
     setThumbnailBlob(null);
@@ -281,7 +287,7 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({ isOpen, o
   const isUploading = uploadMutation.isPending;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none" hideCloseButton>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           {/* Header */}
