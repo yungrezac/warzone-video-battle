@@ -151,7 +151,7 @@ const VideoFeed: React.FC = () => {
             const videoUser = video.profiles;
             const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
             
-            console.log(`Rendering video ${video.id} with ${video.likes_count} likes`);
+            console.log(`🎬 Рендерим видео ${video.id} с ${video.likes_count} лайками, user_liked: ${video.user_liked}`);
             
             return (
               <div key={video.id} data-video-id={video.id}>
