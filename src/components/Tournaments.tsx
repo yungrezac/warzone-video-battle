@@ -1,31 +1,24 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Wifi, WifiOff } from 'lucide-react';
 import TournamentBannerCarousel from './TournamentBannerCarousel';
 import { Button } from './ui/button';
 import TournamentDetailsModal from './TournamentDetailsModal';
-
 const Tournaments: React.FC = () => {
   const [modalType, setModalType] = useState<'online' | 'offline' | null>(null);
-
-  const renderContent = (type: 'online' | 'offline') => (
-    <div className="text-center p-8 border-2 border-dashed rounded-xl bg-gray-50">
+  const renderContent = (type: 'online' | 'offline') => <div className="text-center p-8 border-2 border-dashed rounded-xl bg-gray-50">
       <p className="text-gray-500 mb-4">Пока нет турниров</p>
       <Button onClick={() => setModalType(type)}>
         Подробнее
       </Button>
-    </div>
-  );
-
-  return (
-    <>
+    </div>;
+  return <>
       <div className="pb-16 p-4">
         <TournamentBannerCarousel />
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Турниры</h1>
-          <p className="text-gray-600 text-sm">Соревнования по роллерам, BMX и скейтбордингу</p>
+          
         </div>
 
         <Tabs defaultValue="online" className="w-full">
@@ -49,13 +42,7 @@ const Tournaments: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-      <TournamentDetailsModal 
-        isOpen={modalType !== null}
-        onClose={() => setModalType(null)}
-        type={modalType}
-      />
-    </>
-  );
+      <TournamentDetailsModal isOpen={modalType !== null} onClose={() => setModalType(null)} type={modalType} />
+    </>;
 };
-
 export default Tournaments;
