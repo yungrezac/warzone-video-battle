@@ -1,20 +1,12 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, MessageCircle, Trophy, Award, Settings, Languages } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Trophy, Award, Settings } from 'lucide-react';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface NotificationSettingsProps {
   isOpen: boolean;
@@ -23,14 +15,10 @@ interface NotificationSettingsProps {
 
 const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings, loading } = useNotificationSettings();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const handleToggle = (key: keyof typeof settings) => {
     updateSettings({ [key]: !settings[key] });
-  };
-
-  const handleLanguageChange = (lang: string) => {
-    i18n.changeLanguage(lang);
   };
 
   return (
@@ -103,24 +91,6 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
               disabled={loading}
             />
           </div>
-        </div>
-
-        <Separator className="my-4" />
-
-        <div>
-          <h3 className="mb-4 text-sm font-medium flex items-center gap-2">
-            <Languages className="w-5 h-5" />
-            {t('separator_language')}
-          </h3>
-          <Select value={i18n.language} onValueChange={handleLanguageChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('select_language')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ru">{t('russian')}</SelectItem>
-              <SelectItem value="en">{t('english')}</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
         
         <div className="flex justify-end mt-6">
