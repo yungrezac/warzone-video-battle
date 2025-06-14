@@ -29,12 +29,18 @@ export const useLikePost = () => {
           throw error;
         }
 
-        // Обновляем счетчик лайков
+        // Обновляем счетчик лайков (уменьшаем на 1, но не ниже 0)
+        const { data: currentPost } = await supabase
+          .from('posts')
+          .select('likes_count')
+          .eq('id', postId)
+          .single();
+
+        const newLikesCount = Math.max((currentPost?.likes_count || 0) - 1, 0);
+
         const { error: updateError } = await supabase
           .from('posts')
-          .update({ 
-            likes_count: supabase.raw('GREATEST(COALESCE(likes_count, 0) - 1, 0)') 
-          })
+          .update({ likes_count: newLikesCount })
           .eq('id', postId);
 
         if (updateError) {
@@ -57,12 +63,18 @@ export const useLikePost = () => {
           throw error;
         }
 
-        // Обновляем счетчик лайков
+        // Обновляем счетчик лайков (увеличиваем на 1)
+        const { data: currentPost } = await supabase
+          .from('posts')
+          .select('likes_count')
+          .eq('id', postId)
+          .single();
+
+        const newLikesCount = (currentPost?.likes_count || 0) + 1;
+
         const { error: updateError } = await supabase
           .from('posts')
-          .update({ 
-            likes_count: supabase.raw('COALESCE(likes_count, 0) + 1') 
-          })
+          .update({ likes_count: newLikesCount })
           .eq('id', postId);
 
         if (updateError) {
