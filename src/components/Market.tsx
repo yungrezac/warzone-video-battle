@@ -116,12 +116,7 @@ const Market: React.FC = () => {
           {/* Points Market */}
           <TabsContent value="points">
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-              <TabsList className="grid w-full grid-cols-3">
-                {categories.map(category => {
-                const IconComponent = category.icon;
-                return;
-              })}
-              </TabsList>
+              
 
               {categories.map(category => <TabsContent key={category.id} value={category.id} className="mt-3">
                   {filteredItems && filteredItems.length > 0 ? <div className="grid grid-cols-2 gap-3">
