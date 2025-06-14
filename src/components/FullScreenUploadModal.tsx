@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Video, X, Edit, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -103,7 +102,10 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({ isOpen, o
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      onClose(); // Закрываем модальное окно, если файл не выбран
+      return;
+    }
 
     if (!file.type.startsWith('video/')) {
       toast({
