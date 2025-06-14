@@ -1335,6 +1335,41 @@ export type Database = {
           },
         ]
       }
+      video_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_ratings_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           average_rating: number | null
@@ -1401,41 +1436,35 @@ export type Database = {
         Row: {
           admin_comment: string | null
           amount_points: number
-          amount_rubles: number
-          bank_name: string
+          amount_usdt: number | null
           created_at: string
           id: string
-          phone_number: string
           processed_at: string | null
-          recipient_name: string
           status: string
           user_id: string
+          wallet_address: string | null
         }
         Insert: {
           admin_comment?: string | null
           amount_points: number
-          amount_rubles: number
-          bank_name: string
+          amount_usdt?: number | null
           created_at?: string
           id?: string
-          phone_number: string
           processed_at?: string | null
-          recipient_name: string
           status?: string
           user_id: string
+          wallet_address?: string | null
         }
         Update: {
           admin_comment?: string | null
           amount_points?: number
-          amount_rubles?: number
-          bank_name?: string
+          amount_usdt?: number | null
           created_at?: string
           id?: string
-          phone_number?: string
           processed_at?: string | null
-          recipient_name?: string
           status?: string
           user_id?: string
+          wallet_address?: string | null
         }
         Relationships: []
       }
