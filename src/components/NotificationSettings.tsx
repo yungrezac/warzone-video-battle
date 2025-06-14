@@ -1,11 +1,20 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, MessageCircle, Trophy, Award, Settings } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Trophy, Award, Settings, Languages } from 'lucide-react';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface NotificationSettingsProps {
   isOpen: boolean;
@@ -14,9 +23,14 @@ interface NotificationSettingsProps {
 
 const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings, loading } = useNotificationSettings();
+  const { t, i18n } = useTranslation();
 
   const handleToggle = (key: keyof typeof settings) => {
     updateSettings({ [key]: !settings[key] });
+  };
+
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
   };
 
   return (
@@ -25,15 +39,15 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bell className="w-5 h-5" />
-            Настройки уведомлений
+            {t('notification_settings_title')}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 text-red-500" />
-              <span className="text-sm">Лайки</span>
+              <span className="text-sm">{t('likes')}</span>
             </div>
             <Switch
               checked={settings.likes_notifications}
@@ -45,7 +59,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4 text-blue-500" />
-              <span className="text-sm">Комментарии</span>
+              <span className="text-sm">{t('comments')}</span>
             </div>
             <Switch
               checked={settings.comments_notifications}
@@ -57,7 +71,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm">Достижения</span>
+              <span className="text-sm">{t('achievements')}</span>
             </div>
             <Switch
               checked={settings.achievements_notifications}
@@ -69,7 +83,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-orange-500" />
-              <span className="text-sm">Победитель дня</span>
+              <span className="text-sm">{t('winner_of_the_day')}</span>
             </div>
             <Switch
               checked={settings.winners_notifications}
@@ -81,7 +95,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Settings className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">Системные</span>
+              <span className="text-sm">{t('system')}</span>
             </div>
             <Switch
               checked={settings.system_notifications}
@@ -90,11 +104,29 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
             />
           </div>
         </div>
+
+        <Separator className="my-4" />
+
+        <div>
+          <h3 className="mb-4 text-sm font-medium flex items-center gap-2">
+            <Languages className="w-5 h-5" />
+            {t('separator_language')}
+          </h3>
+          <Select value={i18n.language} onValueChange={handleLanguageChange}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('select_language')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ru">{t('russian')}</SelectItem>
+              <SelectItem value="en">{t('english')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         
         <div className="flex justify-end mt-6">
           <Button onClick={onClose} disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Закрыть
+            {t('close')}
           </Button>
         </div>
       </DialogContent>

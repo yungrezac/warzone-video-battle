@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export interface NotificationSettings {
   likes_notifications: boolean;
@@ -14,6 +15,7 @@ export interface NotificationSettings {
 
 export const useNotificationSettings = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<NotificationSettings>({
     likes_notifications: true,
     comments_notifications: true,
@@ -126,7 +128,7 @@ export const useNotificationSettings = () => {
       }
 
       setSettings(updatedSettings);
-      toast.success('Настройки сохранены');
+      toast.success(t('toast_success_settings_saved'));
       console.log('Настройки успешно сохранены');
     } catch (error: any) {
       console.error('Ошибка обновления настроек:', error);
