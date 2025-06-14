@@ -2,19 +2,18 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ShoppingCart, Gift, Star } from 'lucide-react';
+import { Loader2, ShoppingCart, Gift, Star, CreditCard } from 'lucide-react';
 import MarketItemCard from './MarketItemCard';
 import MarketItemModal from './MarketItemModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BannerCarousel from './BannerCarousel';
-import { useSubscription } from '@/hooks/useSubscription';
+import UserMarketplace from './UserMarketplace';
 
 const Market: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { isPremium } = useSubscription();
-
-  const { data: items, isLoading } = useQuery({
+  
+  const { data: items, isLoading: isLoadingPointsItems } = useQuery({
     queryKey: ['market-items'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -42,21 +41,8 @@ const Market: React.FC = () => {
     setSelectedItem(item);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px] pb-16">
-        <Loader2 className="w-6 h-6 animate-spin" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="pb-16 p-1">
-      {/* Banner Carousel */}
-      <BannerCarousel />
-
-      {/* Category Tabs */}
-      <div className="p-3">
+  const PointsMarketplace = () => (
+    <div className="p-3">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
           <TabsList className="grid w-full grid-cols-3">
             {categories.map(category => {
@@ -76,7 +62,11 @@ const Market: React.FC = () => {
 
           {categories.map(category => (
             <TabsContent key={category.id} value={category.id} className="mt-3">
-              {filteredItems && filteredItems.length > 0 ? (
+               {isLoadingPointsItems ? (
+                  <div className="flex justify-center items-center min-h-[200px]">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : filteredItems && filteredItems.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
                   {filteredItems.map(item => (
                     <MarketItemCard 
@@ -99,8 +89,31 @@ const Market: React.FC = () => {
           ))}
         </Tabs>
       </div>
+  );
 
-      {/* Item Modal */}
+  return (
+    <div className="pb-16 p-1">
+      <BannerCarousel />
+      
+      <Tabs defaultValue="points" className="w-full p-2">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="points" className="flex items-center gap-1.5">
+            <Star className="w-4 h-4 text-yellow-500"/>
+            За баллы
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-1.5">
+            <CreditCard className="w-4 h-4 text-green-500"/>
+            От пользователей
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="points">
+          <PointsMarketplace />
+        </TabsContent>
+        <TabsContent value="users" className="p-1 mt-2">
+          <UserMarketplace />
+        </TabsContent>
+      </Tabs>
+
       {selectedItem && (
         <MarketItemModal
           item={selectedItem}
