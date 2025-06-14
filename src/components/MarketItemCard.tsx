@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
       onClick={handleCardClick}
     >
       {/* Изображение товара */}
-      <AspectRatio ratio={1} className="relative overflow-hidden rounded-t-xl">
+      <AspectRatio ratio={1} className="relative overflow-hidden rounded-t-lg">
         {primaryImage ? (
           <>
             <img
@@ -121,7 +120,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
 
       <div className="p-2 flex flex-col flex-1">
         <CardHeader className="p-0">
-          <CardTitle className="text-xs font-bold line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight h-8">
+          <CardTitle className="text-sm font-semibold line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight h-10">
             {item.title}
           </CardTitle>
         </CardHeader>
@@ -141,44 +140,38 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item, onItemClick }) =>
             )}
           </div>
         
-          <div className="flex items-center justify-between mt-auto">
-            <div className="flex items-center gap-1 font-bold text-gray-800 text-lg">
+          <Button
+            onClick={handlePurchase}
+            disabled={isPurchased || !canAfford || isOutOfStock || purchaseItemMutation.isPending || !user}
+            size="sm"
+            className={`w-full h-9 text-sm font-medium transition-all duration-200 mt-2 ${
+              isPurchased 
+                ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-not-allowed" 
+                : isOutOfStock
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : !canAfford
+                ? "bg-red-100 text-red-600 hover:bg-red-200 cursor-not-allowed"
+                : ""
+            }`}
+          >
+            {purchaseItemMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isPurchased ? (
+              'Куплено'
+            ) : isOutOfStock ? (
+              'Нет в наличии'
+            ) : !canAfford ? (
+              'Недостаточно баллов'
+            ) : !user ? (
+              "Войти"
+            ) : (
+              <div className="flex items-center justify-center gap-1.5">
+                <ShoppingCart className="w-4 h-4" />
+                <span>Купить за {item.price.toLocaleString()}</span>
                 <Star className="w-4 h-4 text-amber-500" />
-                <span className="leading-none">{item.price.toLocaleString()}</span>
-            </div>
-            
-            <Button
-              onClick={handlePurchase}
-              disabled={isPurchased || !canAfford || isOutOfStock || purchaseItemMutation.isPending || !user}
-              size="sm"
-              className={`h-8 text-xs font-medium transition-all duration-200 shrink-0 ${
-                isPurchased 
-                  ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-not-allowed" 
-                  : isOutOfStock
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : !canAfford
-                  ? "bg-red-100 text-red-600 hover:bg-red-200 cursor-not-allowed"
-                  : ""
-              }`}
-            >
-              {purchaseItemMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : isPurchased ? (
-                'Куплено'
-              ) : isOutOfStock ? (
-                'Нет'
-              ) : !canAfford ? (
-                'Мало баллов'
-              ) : !user ? (
-                "Войти"
-              ) : (
-                <div className="flex items-center gap-1">
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                  <span>Купить</span>
-                </div>
-              )}
-            </Button>
-          </div>
+              </div>
+            )}
+          </Button>
         </CardContent>
       </div>
     </Card>

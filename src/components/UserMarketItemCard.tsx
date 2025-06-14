@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,8 +41,8 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
   };
 
   return (
-    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
-      <AspectRatio ratio={1} className="relative overflow-hidden rounded-t-xl">
+    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg group border rounded-lg">
+      <AspectRatio ratio={1} className="overflow-hidden rounded-t-lg">
         {item.image_url ? (
           <img
             src={item.image_url}
@@ -61,7 +60,7 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
           </div>
         )}
         
-        <div className="absolute top-1.5 right-1.5 bg-white/80 backdrop-blur-sm text-yellow-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
+        <div className="absolute top-1.5 right-1.5 bg-white/80 backdrop-blur-sm text-yellow-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium">
           <Crown className="w-2.5 h-2.5" />
           Premium
         </div>
@@ -69,7 +68,7 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
 
       <div className="p-2 flex flex-col flex-1">
         <CardHeader className="p-0">
-          <CardTitle className="text-xs font-bold line-clamp-2 leading-tight h-8">
+          <CardTitle className="text-sm font-semibold line-clamp-2 leading-tight h-10">
             {item.name}
           </CardTitle>
         </CardHeader>
@@ -84,19 +83,14 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
             </Badge>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-lg font-bold text-gray-800">
-              {item.price.toLocaleString()}<span className="text-sm font-normal text-gray-500 ml-0.5">₽</span>
-            </div>
-            <Button
-              size="sm"
-              onClick={handlePurchase}
-              className="h-8 text-xs shrink-0"
-            >
-              <ExternalLink className="w-3.5 h-3.5 mr-1" />
-              Купить
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={handlePurchase}
+            className="w-full h-9 text-sm font-semibold mt-2"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Купить за {item.price.toLocaleString()}&nbsp;₽
+          </Button>
         </CardContent>
       </div>
     </Card>
