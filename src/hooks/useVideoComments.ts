@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useTelegramNotifications } from './useTelegramNotifications';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export interface Comment {
   id: string;
@@ -27,9 +28,27 @@ export interface Comment {
 
 export const useVideoComments = (videoId: string) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ['video-comments', videoId];
+  
+  useEffect(() => {
+    const channel = supabase
+      .channel(`video-comments-changes-${videoId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comments', filter: `video_id=eq.${videoId}` }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comment_likes' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [videoId, queryClient]);
   
   return useQuery({
-    queryKey: ['video-comments', videoId],
+    queryKey,
     queryFn: async () => {
       const { data: comments, error } = await supabase
         .from('video_comments')

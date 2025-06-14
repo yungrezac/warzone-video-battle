@@ -1,10 +1,25 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 
 export const useYesterdayWinner = () => {
+  const queryClient = useQueryClient();
+  const queryKey = ['yesterday-winner'];
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('winner-changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'videos' }, (payload) => {
+        if (payload.new.is_winner) {
+          queryClient.invalidateQueries({ queryKey });
+        }
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [queryClient]);
+
   return useQuery({
-    queryKey: ['yesterday-winner'],
+    queryKey,
     queryFn: async () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -73,8 +88,24 @@ export const useYesterdayWinner = () => {
 };
 
 export const useTopUsers = () => {
+  const queryClient = useQueryClient();
+  const queryKey = ['top-users'];
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('top-users-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [queryClient]);
+
   return useQuery({
-    queryKey: ['top-users'],
+    queryKey,
     queryFn: async () => {
       console.log('Загружаем топ пользователей...');
 

@@ -1,12 +1,25 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export const useUserMarketItems = () => {
+  const queryClient = useQueryClient();
+  const queryKey = ['user-market-items'];
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('user-market-items-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_market_items' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [queryClient]);
+
   return useQuery({
-    queryKey: ['user-market-items'],
+    queryKey,
     queryFn: async () => {
       console.log('Загружаем пользовательские товары...');
       

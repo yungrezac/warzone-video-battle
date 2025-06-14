@@ -1,12 +1,40 @@
-import { useQuery } from '@tanstack/react-query';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
+import { useEffect } from 'react';
 
 export const useUserProfile = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ['user-profile', user?.id];
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`user-profile-changes-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${user.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${user.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_likes' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   return useQuery({
-    queryKey: ['user-profile', user?.id],
+    queryKey,
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 

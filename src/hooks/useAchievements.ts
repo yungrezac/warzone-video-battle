@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
+import { useEffect } from 'react';
 
 export interface Achievement {
   id: string;
@@ -27,8 +28,24 @@ export interface UserAchievement {
 }
 
 export const useAchievements = () => {
+  const queryClient = useQueryClient();
+  const queryKey = ['achievements'];
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('achievements-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'achievements' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
-    queryKey: ['achievements'],
+    queryKey,
     queryFn: async () => {
       console.log('🏆 Загружаем все активные достижения...');
       
@@ -52,9 +69,29 @@ export const useAchievements = () => {
 
 export const useUserAchievements = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ['user-achievements', user?.id];
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`user-achievements-changes-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_achievements', filter: `user_id=eq.${user.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'achievements' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, user?.id]);
 
   return useQuery({
-    queryKey: ['user-achievements', user?.id],
+    queryKey,
     queryFn: async () => {
       if (!user?.id) {
         console.log('❌ Пользователь не авторизован для загрузки достижений');

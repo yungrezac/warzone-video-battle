@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { generateQuickThumbnail } from '@/utils/videoOptimization';
+import { useEffect } from 'react';
 
 interface Video {
   id: string;
@@ -40,9 +41,31 @@ interface UploadVideoParams {
 
 export const useVideos = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ['videos', user?.id];
+
+  useEffect(() => {
+    console.log('Realtime enabled for video feed');
+    const channel = supabase
+      .channel('videos-feed-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_likes' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comments' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, user?.id]);
 
   return useQuery({
-    queryKey: ['videos', user?.id],
+    queryKey,
     queryFn: async () => {
       console.log('📹 Загружаем видео для ленты...');
 

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 // Type for the purchase function response
 interface PurchaseResponse {
@@ -12,8 +13,21 @@ interface PurchaseResponse {
 }
 
 export const useMarketItems = () => {
+  const queryClient = useQueryClient();
+  const queryKey = ['market-items'];
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('market-items-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'market_items' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [queryClient]);
+
   return useQuery({
-    queryKey: ['market-items'],
+    queryKey,
     queryFn: async () => {
       console.log('Загружаем товары маркета...');
       
@@ -141,9 +155,22 @@ export const useCreateMarketItem = () => {
 
 export const useUserPurchases = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ['user-purchases', user?.id];
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`user-purchases-changes-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_purchases', filter: `user_id=eq.${user.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [queryClient, user?.id]);
 
   return useQuery({
-    queryKey: ['user-purchases', user?.id],
+    queryKey,
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 

@@ -1,12 +1,25 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export const useMarketBanners = () => {
+  const queryClient = useQueryClient();
+  const queryKey = ['market-banners'];
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('market-banners-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'market_banners' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [queryClient]);
+
   return useQuery({
-    queryKey: ['market-banners'],
+    queryKey,
     queryFn: async () => {
       console.log('Загружаем банеры маркета...');
       

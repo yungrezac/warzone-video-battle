@@ -1,12 +1,41 @@
-import { useQuery } from '@tanstack/react-query';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
+import { useEffect } from 'react';
 
 export const useUserVideos = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ['user-videos', user?.id];
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`user-videos-changes-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${user.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_likes' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comments' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_ratings' }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, user?.id]);
+
 
   return useQuery({
-    queryKey: ['user-videos', user?.id],
+    queryKey,
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
