@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
@@ -56,7 +57,7 @@ const UserProfile: React.FC = () => {
             console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id} (UserProfile):`, ratingsError);
           }
           
-          const ratings = ratingsData as { rating: number }[] | null;
+          const ratings = ratingsData as unknown as { rating: number }[] | null;
 
           const averageRating = ratings && ratings.length > 0
             ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
@@ -82,7 +83,7 @@ const UserProfile: React.FC = () => {
               .eq('user_id', user.id)
               .maybeSingle();
 
-            userRating = (userRatingData as { rating: number } | null)?.rating || 0;
+            userRating = (userRatingData as unknown as { rating: number } | null)?.rating || 0;
           }
 
           return {

@@ -54,7 +54,7 @@ export const useUserVideos = () => {
             console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id} (useUserVideos):`, ratingsError);
           }
 
-          const ratings = ratingsData as { rating: number }[] | null;
+          const ratings = ratingsData as unknown as { rating: number }[] | null;
 
           const averageRating = ratings && ratings.length > 0
             ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
@@ -79,7 +79,7 @@ export const useUserVideos = () => {
             .eq('video_id', video.id)
             .eq('user_id', user.id)
             .maybeSingle();
-          userRating = (userRatingData as { rating: number } | null)?.rating || 0;
+          userRating = (userRatingData as unknown as { rating: number } | null)?.rating || 0;
 
           console.log(`Статистика видео ${video.id}:`, {
             likes: likesCount,

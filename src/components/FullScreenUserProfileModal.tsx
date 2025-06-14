@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -55,10 +56,16 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             .select('*', { count: 'exact' })
             .eq('video_id', video.id);
 
-          const { data: ratings } = await supabase
+          const { data: ratingsData, error: ratingsError } = await supabase
             .from('video_ratings' as any)
             .select('rating')
             .eq('video_id', video.id);
+            
+          if (ratingsError) {
+            console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id} (Modal):`, ratingsError);
+          }
+
+          const ratings = ratingsData as unknown as { rating: number }[] | null;
 
           const averageRating = ratings && ratings.length > 0
             ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
@@ -77,14 +84,18 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
 
             userLiked = !!userLike;
 
-            const { data: userRatingData } = await supabase
+            const { data: userRatingData, error: userRatingError } = await supabase
               .from('video_ratings' as any)
               .select('rating')
               .eq('video_id', video.id)
               .eq('user_id', user.id)
               .maybeSingle();
 
-            userRating = (userRatingData as { rating: number } | null)?.rating || 0;
+            if (userRatingError) {
+              console.warn(`⚠️ Ошибка при загрузке рейтинга пользователя для видео ${video.id} (Modal):`, userRatingError);
+            }
+              
+            userRating = (userRatingData as unknown as { rating: number } | null)?.rating || 0;
           }
 
           return {
