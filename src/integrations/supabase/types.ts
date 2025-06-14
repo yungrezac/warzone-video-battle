@@ -1365,6 +1365,13 @@ export type Database = {
             referencedRelation: "video_comments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "video_comment_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       video_comments: {
