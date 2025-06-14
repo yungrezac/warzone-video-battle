@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useVideos, useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -140,13 +141,13 @@ const VideoFeed: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="space-y-4 p-2">
+        <div className="space-y-4 px-2">
           {[...Array(3)].map((_, index) => (
             <VideoCardSkeleton key={index} />
           ))}
         </div>
       ) : (
-        <div className="space-y-4 p-2">
+        <div className="space-y-4 px-2">
           {videos?.reduce((acc, video, index) => {
             const videoUser = video.profiles;
             const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';

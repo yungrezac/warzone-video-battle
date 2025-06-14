@@ -25,6 +25,7 @@ declare global {
         setHeaderColor?: (color: string) => void;
         setBackgroundColor?: (color: string) => void;
         enableClosingConfirmation?: () => void;
+        openLink?: (url: string) => void;
       };
     };
   }

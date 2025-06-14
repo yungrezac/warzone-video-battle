@@ -10,7 +10,7 @@ interface InlineBannerCardProps {
 const InlineBannerCard: React.FC<InlineBannerCardProps> = ({ banner }) => {
   const handleClick = () => {
     if (banner.link_url) {
-      if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
+      if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
         window.Telegram.WebApp.openLink(banner.link_url);
       } else {
         window.open(banner.link_url, '_blank', 'noopener,noreferrer');
