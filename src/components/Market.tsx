@@ -138,15 +138,7 @@ const Market: React.FC = () => {
             <AddUserItemForm />
 
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-              <TabsList className="grid w-full grid-cols-3 overflow-x-auto">
-                {userCategories.slice(0, 3).map(category => {
-                const IconComponent = category.icon;
-                return <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-1 text-xs">
-                      <IconComponent className="w-3 h-3" />
-                      {category.name}
-                    </TabsTrigger>;
-              })}
-              </TabsList>
+              
 
               {userCategories.map(category => <TabsContent key={category.id} value={category.id} className="mt-3">
                   {filteredUserItems && filteredUserItems.length > 0 ? <div className="grid grid-cols-2 gap-3">
