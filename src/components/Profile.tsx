@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
-import { useLikeVideo, useRateVideo } from '@/hooks/useVideos';
+import { useLikeVideo } from '@/hooks/useVideoLikes';
+import { useRateVideo } from '@/hooks/useVideos';
 import { useDeleteVideo } from '@/hooks/useDeleteVideo';
 import { useAuth } from '@/components/AuthWrapper';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -39,12 +39,16 @@ const Profile: React.FC = () => {
 
     const video = userVideos?.find(v => v.id === videoId);
     if (video) {
-      console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
+      console.log('🎯 Profile: Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
       try {
-        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
+        await likeVideoMutation.mutateAsync({ 
+          videoId, 
+          isLiked: video.user_liked || false 
+        });
+        console.log('✅ Profile: Лайк успешно обработан');
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
       } catch (error) {
-        console.error('Ошибка при обработке лайка:', error);
+        console.error('❌ Profile: Ошибка при обработке лайка:', error);
         toast.error('Ошибка при обработке лайка');
       }
     }
@@ -56,12 +60,12 @@ const Profile: React.FC = () => {
       return;
     }
 
-    console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
+    console.log('⭐ Profile: Ставим оценку видео:', videoId, 'рейтинг:', rating);
     try {
       await rateVideoMutation.mutateAsync({ videoId, rating });
       toast.success(`Оценка ${rating} поставлена`);
     } catch (error) {
-      console.error('Ошибка при выставлении оценки:', error);
+      console.error('❌ Profile: Ошибка при выставлении оценки:', error);
       toast.error('Ошибка при выставлении оценки');
     }
   };

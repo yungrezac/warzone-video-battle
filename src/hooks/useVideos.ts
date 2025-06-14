@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -24,11 +25,6 @@ interface Video {
     telegram_username?: string;
     avatar_url?: string;
   };
-}
-
-interface LikeVideoParams {
-  videoId: string;
-  isLiked: boolean;
 }
 
 interface RateVideoParams {
@@ -160,56 +156,6 @@ export const useVideo = (id: string) => {
       }
 
       return data;
-    },
-  });
-};
-
-export const useLikeVideo = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ videoId, isLiked }: LikeVideoParams) => {
-      if (!user?.id) {
-        throw new Error('Необходима авторизация');
-      }
-
-      console.log('💖 useLikeVideo мутация:', { videoId, isLiked });
-
-      if (isLiked) {
-        // Unlike the video
-        const { error } = await supabase
-          .from('video_likes')
-          .delete()
-          .eq('video_id', videoId)
-          .eq('user_id', user.id);
-
-        if (error) {
-          throw new Error(error.message);
-        }
-      } else {
-        // Like the video
-        const { error } = await supabase
-          .from('video_likes')
-          .insert({ video_id: videoId, user_id: user.id });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-      }
-
-      return { videoId, isLiked: !isLiked };
-    },
-    onSuccess: (_, { videoId }) => {
-      console.log('✅ useLikeVideo успешно, инвалидируем кэш...');
-      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-      queryClient.invalidateQueries({ queryKey: ['video-feed'] });
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-    },
-    onError: (error) => {
-      console.error('❌ Ошибка мутации лайка в useVideos:', error);
     },
   });
 };

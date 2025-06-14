@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { useVideos, useLikeVideo, useRateVideo } from '@/hooks/useVideos';
+import { useVideos, useRateVideo } from '@/hooks/useVideos';
+import { useLikeVideo } from '@/hooks/useVideoLikes';
 import { useAuth } from '@/components/AuthWrapper';
 import { useVideoViews } from '@/hooks/useVideoViews';
 import VideoCard from './VideoCard';
@@ -51,12 +53,16 @@ const VideoFeed: React.FC = () => {
 
     const video = videos?.find(v => v.id === videoId);
     if (video) {
-      console.log('Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
+      console.log('🎯 VideoFeed: Обрабатываем лайк для видео:', videoId, 'текущий статус:', video.user_liked);
       try {
-        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
+        await likeVideoMutation.mutateAsync({ 
+          videoId, 
+          isLiked: video.user_liked || false 
+        });
+        console.log('✅ VideoFeed: Лайк успешно обработан');
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
       } catch (error) {
-        console.error('Ошибка при обработке лайка:', error);
+        console.error('❌ VideoFeed: Ошибка при обработке лайка:', error);
         toast.error('Ошибка при обработке лайка');
       }
     }
@@ -68,12 +74,12 @@ const VideoFeed: React.FC = () => {
       return;
     }
 
-    console.log('Ставим оценку видео:', videoId, 'рейтинг:', rating);
+    console.log('⭐ VideoFeed: Ставим оценку видео:', videoId, 'рейтинг:', rating);
     try {
       await rateVideoMutation.mutateAsync({ videoId, rating });
       toast.success(`Оценка ${rating} поставлена`);
     } catch (error) {
-      console.error('Ошибка при выставлении оценки:', error);
+      console.error('❌ VideoFeed: Ошибка при выставлении оценки:', error);
       toast.error('Ошибка при выставлении оценки');
     }
   };
