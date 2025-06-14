@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -110,7 +109,6 @@ const VideoFeed: React.FC = () => {
         
         <div className="space-y-4">
           {isLoading ? (
-            // Показываем скелетоны при загрузке
             Array.from({ length: 5 }).map((_, index) => (
               <VideoCardSkeleton key={index} />
             ))
