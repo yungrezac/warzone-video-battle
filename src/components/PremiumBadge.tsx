@@ -13,9 +13,9 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   variant = 'default' 
 }) => {
   const sizeClasses = {
-    sm: 'px-1.5 py-0.5 text-xs',
-    md: 'px-2 py-1 text-sm',
-    lg: 'px-3 py-1.5 text-base'
+    sm: 'p-1',
+    md: 'p-1.5',
+    lg: 'p-2'
   };
 
   const iconSizes = {
@@ -29,12 +29,11 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
       variant={variant}
       className={`
         bg-gradient-to-r from-yellow-400 to-orange-500 
-        text-white border-0 font-medium
+        text-white border-0
         ${sizeClasses[size]}
       `}
     >
-      <Crown className={`${iconSizes[size]} mr-1`} />
-      Premium
+      <Crown className={`${iconSizes[size]}`} />
     </Badge>
   );
 };
