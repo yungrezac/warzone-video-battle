@@ -14,27 +14,32 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1, // Уменьшаем количество попыток для быстрой загрузки
-      retryDelay: 500, // Уменьшаем задержку
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+      retryDelay: 500,
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
 
 console.log('🚀 App загружается мгновенно...');
 
-// Простая инициализация Telegram WebApp если доступно
+// Мгновенная инициализация Telegram WebApp
 if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-  try {
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    if (typeof tg.expand === 'function') {
-      tg.expand();
-    }
-    console.log('✅ Telegram WebApp инициализирован');
-  } catch (error) {
-    console.log('⚠️ Telegram WebApp ошибка:', error);
+  const tg = window.Telegram.WebApp;
+  console.log('⚡ Мгновенная инициализация Telegram WebApp');
+  
+  // Вызываем ready сразу
+  tg.ready();
+  
+  // Расширяем приложение
+  if (typeof tg.expand === 'function') {
+    tg.expand();
   }
+  
+  console.log('✅ Telegram WebApp готов мгновенно:', {
+    user: tg.initDataUnsafe?.user?.first_name || 'none',
+    platform: tg.platform || 'unknown'
+  });
 }
 
 const App = () => {
@@ -44,7 +49,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthWrapper>
         {({ user, loading }) => {
-          console.log('🏠 Приложение готово для пользователя:', user?.id || 'guest');
+          console.log('🏠 Приложение готово для пользователя:', user?.first_name || 'guest');
           
           return (
             <VideoPlaybackProvider>
