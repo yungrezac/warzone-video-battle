@@ -13,11 +13,13 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PremiumBadge from '@/components/PremiumBadge';
+import { useTranslation } from 'react-i18next';
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
+  const { t, i18n } = useTranslation();
 
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || '');
 
@@ -77,7 +79,7 @@ const UserProfile: React.FC = () => {
 
   const handleLike = async (videoId: string) => {
     if (!user) {
-      toast.error('Войдите в систему, чтобы ставить лайки');
+      toast.error(t('login_to_like'));
       return;
     }
 
@@ -85,10 +87,10 @@ const UserProfile: React.FC = () => {
     if (video) {
       try {
         await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
-        toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
+        toast.success(video.user_liked ? t('like_removed') : t('like_added'));
       } catch (error) {
         console.error('Ошибка при обработке лайка:', error);
-        toast.error('Ошибка при обработке лайка');
+        toast.error(t('like_error'));
       }
     }
   };
@@ -105,7 +107,7 @@ const UserProfile: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 p-3">
         <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-          Профиль не найден
+          {t('user_profile_profile_not_found')}
         </div>
       </div>
     );
@@ -121,7 +123,7 @@ const UserProfile: React.FC = () => {
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
-          <h1 className="text-lg font-bold">Профиль</h1>
+          <h1 className="text-lg font-bold">{t('user_profile_title')}</h1>
         </div>
       </div>
 
@@ -130,13 +132,13 @@ const UserProfile: React.FC = () => {
         <div className="flex items-center mb-2">
           <img
             src={userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
-            alt={userProfile.username || 'Роллер'}
+            alt={userProfile.username || t('skater')}
             className="w-12 h-12 rounded-full border-2 border-white mr-2"
           />
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold">
-                {userProfile.username || userProfile.telegram_username || 'Роллер'}
+                {userProfile.username || userProfile.telegram_username || t('skater')}
               </h2>
               {userProfile.is_premium && <PremiumBadge size="sm" />}
             </div>
@@ -148,7 +150,7 @@ const UserProfile: React.FC = () => {
             <div className="flex items-center mt-0.5 text-blue-100">
               <Calendar className="w-3 h-3 mr-1" />
               <span className="text-xs">
-                В TRICKS с {new Date(userProfile?.created_at || Date.now()).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                {t('in_tricks_since', { date: new Date(userProfile?.created_at || Date.now()).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' }) })}
               </span>
             </div>
           </div>
@@ -157,11 +159,11 @@ const UserProfile: React.FC = () => {
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
             <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
-            <div className="text-xs opacity-90">Баллов</div>
+            <div className="text-xs opacity-90">{t('points')}</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
             <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
-            <div className="text-xs opacity-90">Побед</div>
+            <div className="text-xs opacity-90">{t('wins')}</div>
           </div>
         </div>
       </div>
@@ -171,31 +173,31 @@ const UserProfile: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-3 mb-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
             <Trophy className="w-4 h-4 mr-2 text-yellow-500" />
-            Статистика
+            {t('statistics')}
           </h3>
           
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
               <div className="text-base font-bold text-blue-600">{userProfile?.total_videos || 0}</div>
-              <div className="text-xs text-gray-600">Трюков</div>
+              <div className="text-xs text-gray-600">{t('tricks')}</div>
             </div>
             <div>
               <div className="text-base font-bold text-red-500">{userProfile?.total_likes || 0}</div>
-              <div className="text-xs text-gray-600">Лайков</div>
+              <div className="text-xs text-gray-600">{t('likes_count')}</div>
             </div>
             <div>
               <div className="text-base font-bold text-green-500">{userProfile?.total_views || 0}</div>
-              <div className="text-xs text-gray-600">Просмотров</div>
+              <div className="text-xs text-gray-600">{t('views')}</div>
             </div>
           </div>
 
           <div className="mt-2 p-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-gray-700 text-sm">Уровень:</span>
+              <span className="font-semibold text-gray-700 text-sm">{t('level')}</span>
               <span className="font-bold text-orange-600 text-sm">
-                {(userProfile?.total_points || 0) < 100 ? 'Новичок' :
-                 (userProfile?.total_points || 0) < 500 ? 'Любитель' :
-                 (userProfile?.total_points || 0) < 1000 ? 'Мастер' : 'Профи'}
+                {(userProfile?.total_points || 0) < 100 ? t('level_beginner') :
+                 (userProfile?.total_points || 0) < 500 ? t('level_amateur') :
+                 (userProfile?.total_points || 0) < 1000 ? t('level_master') : t('level_pro')}
               </span>
             </div>
           </div>
@@ -205,23 +207,23 @@ const UserProfile: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-3 mb-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
             <Award className="w-4 h-4 mr-2 text-purple-500" />
-            Достижения
+            {t('achievements')}
           </h3>
           
           <div className="grid grid-cols-2 gap-2 text-center mb-3">
             <div className="bg-purple-50 rounded-lg p-2">
               <div className="text-base font-bold text-purple-600">{userProfile?.total_achievements || 0}</div>
-              <div className="text-xs text-purple-700">Получено</div>
+              <div className="text-xs text-purple-700">{t('user_profile_achievements_received')}</div>
             </div>
             <div className="bg-blue-50 rounded-lg p-2">
               <div className="text-base font-bold text-blue-600">{userProfile?.total_points || 0}</div>
-              <div className="text-xs text-blue-700">Очков за достижения</div>
+              <div className="text-xs text-blue-700">{t('user_profile_achievements_points')}</div>
             </div>
           </div>
 
           {userProfile.recent_achievements && userProfile.recent_achievements.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Последние достижения:</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">{t('user_profile_recent_achievements')}</h4>
               <div className="space-y-1">
                 {userProfile.recent_achievements.map((ua: any) => (
                   <div key={ua.id} className="flex items-center text-xs bg-yellow-50 rounded p-1">
@@ -239,9 +241,9 @@ const UserProfile: React.FC = () => {
 
         {userProfile?.is_premium && (
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-3 mb-3">
-            <h3 className="text-base font-bold mb-1">⭐ Premium статус</h3>
+            <h3 className="text-base font-bold mb-1">{t('premium_status_title')}</h3>
             <p className="text-sm opacity-90">
-              У пользователя есть доступ к эксклюзивным функциям!
+              {t('user_profile_premium_status_desc_other')}
             </p>
           </div>
         )}
@@ -250,7 +252,7 @@ const UserProfile: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-3">
           <h3 className="text-base font-semibold mb-2 flex items-center">
             <Video className="w-4 h-4 mr-2 text-purple-500" />
-            Трюки ({userProfile?.total_videos || 0})
+            {t('user_profile_tricks_count', { count: userProfile?.total_videos || 0 })}
           </h3>
           
           {videosLoading ? (
@@ -259,7 +261,7 @@ const UserProfile: React.FC = () => {
             </div>
           ) : (userProfile?.total_videos || 0) === 0 ? (
             <div className="text-center py-4 text-gray-500">
-              <p className="text-sm">У пользователя пока нет загруженных трюков</p>
+              <p className="text-sm">{t('user_profile_no_tricks')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -269,7 +271,7 @@ const UserProfile: React.FC = () => {
                   video={{
                     id: video.id,
                     title: video.title,
-                    author: userProfile.username || userProfile.telegram_username || 'Роллер',
+                    author: userProfile.username || userProfile.telegram_username || t('skater'),
                     authorAvatar: userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
                     thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
                     videoUrl: video.video_url,
@@ -277,7 +279,7 @@ const UserProfile: React.FC = () => {
                     comments: video.comments_count || 0,
                     views: video.views,
                     isWinner: video.is_winner,
-                    timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                    timestamp: new Date(video.created_at).toLocaleString(i18n.language, {
                       day: 'numeric',
                       month: 'short',
                       hour: '2-digit',

@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useTranslation } from 'react-i18next';
 
 interface DeleteVideoDialogProps {
   isOpen: boolean;
@@ -26,26 +27,26 @@ const DeleteVideoDialog: React.FC<DeleteVideoDialogProps> = ({
   isDeleting,
   videoTitle,
 }) => {
+  const { t } = useTranslation();
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Удалить видео?</AlertDialogTitle>
+          <AlertDialogTitle>{t('delete_video_title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Вы уверены, что хотите удалить видео "{videoTitle}"? 
-            Это действие нельзя отменить. Все лайки, комментарии и рейтинги также будут удалены.
+            {t('delete_video_description', { videoTitle })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>
-            Отмена
+            {t('delete_video_cancel')}
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm}
             disabled={isDeleting}
             className="bg-red-600 hover:bg-red-700"
           >
-            {isDeleting ? 'Удаление...' : 'Удалить'}
+            {isDeleting ? t('delete_video_deleting') : t('delete_video_confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

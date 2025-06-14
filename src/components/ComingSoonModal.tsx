@@ -3,6 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Coins, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ComingSoonModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ComingSoonModalProps {
 }
 
 const ComingSoonModal: React.FC<ComingSoonModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-sm text-center" hideCloseButton>
@@ -24,14 +26,14 @@ const ComingSoonModal: React.FC<ComingSoonModalProps> = ({ isOpen, onClose }) =>
           </div>
           
           <div className="space-y-2">
-            <h3 className="text-xl font-bold text-gray-800">Скоро!</h3>
+            <h3 className="text-xl font-bold text-gray-800">{t('coming_soon_title')}</h3>
             <p className="text-gray-600 text-sm">
-              Функция вывода средств будет доступна в ближайшее время
+              {t('coming_soon_description')}
             </p>
           </div>
           
           <Button onClick={onClose} className="w-full mt-4">
-            Понятно
+            {t('coming_soon_button')}
           </Button>
         </div>
       </DialogContent>

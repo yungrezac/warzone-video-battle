@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface CategorySelectorProps {
   selectedCategory: 'Rollers' | 'BMX' | 'Skateboard';
@@ -13,16 +14,17 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   onCategoryChange,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const categories = [
-    { value: 'Rollers' as const, label: 'Роллеры', emoji: '⛸️' },
-    { value: 'BMX' as const, label: 'BMX', emoji: '🚴' },
-    { value: 'Skateboard' as const, label: 'Скейтборд', emoji: '🛹' },
+    { value: 'Rollers' as const, label: t('category_rollers'), emoji: '⛸️' },
+    { value: 'BMX' as const, label: t('category_bmx'), emoji: '🚴' },
+    { value: 'Skateboard' as const, label: t('category_skateboard'), emoji: '🛹' },
   ];
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        Направление *
+        {t('category_selector_label')}
       </label>
       <div className="grid grid-cols-3 gap-2">
         {categories.map((category) => (
