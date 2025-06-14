@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Crown, User } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-
 interface UserMarketItemCardProps {
   item: {
     id: string;
@@ -19,14 +18,15 @@ interface UserMarketItemCardProps {
     user_id: string;
   };
 }
-
-const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
-  const { user } = useAuth();
-
+const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({
+  item
+}) => {
+  const {
+    user
+  } = useAuth();
   const handlePurchase = () => {
     window.open(item.product_url, '_blank');
   };
-
   const getAudienceColor = () => {
     switch (item.target_audience) {
       case 'роллеры':
@@ -39,26 +39,15 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-
-  return (
-    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg group border rounded-lg">
+  return <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg group border rounded-lg">
       <AspectRatio ratio={1} className="overflow-hidden rounded-t-lg">
-        {item.image_url ? (
-          <img
-            src={item.image_url}
-            alt={item.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="h-full bg-gradient-to-br from-gray-100 via-gray-50 to-white flex items-center justify-center">
+        {item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => {
+        e.currentTarget.style.display = 'none';
+      }} /> : <div className="h-full bg-gradient-to-br from-gray-100 via-gray-50 to-white flex items-center justify-center">
             <div className="p-3 rounded-full bg-white shadow-lg">
               <User className="w-4 h-4 text-gray-600" />
             </div>
-          </div>
-        )}
+          </div>}
         
         <div className="absolute top-1.5 right-1.5 bg-white/80 backdrop-blur-sm text-yellow-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium">
           <Crown className="w-2.5 h-2.5" />
@@ -83,18 +72,12 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({ item }) => {
             </Badge>
           </div>
 
-          <Button
-            size="sm"
-            onClick={handlePurchase}
-            className="w-full h-9 text-sm font-semibold mt-2"
-          >
+          <Button size="sm" onClick={handlePurchase} className="w-full h-9 mt-2 text-xs font-extralight">
             <ExternalLink className="w-4 h-4 mr-2" />
             Купить за {item.price.toLocaleString()}&nbsp;₽
           </Button>
         </CardContent>
       </div>
-    </Card>
-  );
+    </Card>;
 };
-
 export default UserMarketItemCard;
