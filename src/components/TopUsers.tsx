@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Trophy, Crown, Medal, Award } from 'lucide-react';
-import { useTopUsers } from '@/hooks/useTopUsers';
+import { useTopUsers } from '@/hooks/useWinnerSystem';
 import { Loader2 } from 'lucide-react';
 
 const TopUsers: React.FC = () => {
