@@ -81,20 +81,6 @@ export const useVideos = () => {
       const videosWithStats = await Promise.all(
         videos.map(async (video) => {
           try {
-            // Подсчитываем лайки напрямую из таблицы video_likes
-            const { count: actualLikesCount } = await supabase
-              .from('video_likes')
-              .select('*', { count: 'exact' })
-              .eq('video_id', video.id);
-
-            console.log(`💖 Видео ${video.id} имеет ${actualLikesCount} лайков`);
-
-            // Подсчитываем комментарии
-            const { count: commentsCount } = await supabase
-              .from('video_comments')
-              .select('*', { count: 'exact' })
-              .eq('video_id', video.id);
-
             // Проверяем взаимодействия текущего пользователя
             let userLiked = false;
             let userRating = 0;
@@ -133,8 +119,6 @@ export const useVideos = () => {
 
             return {
               ...video,
-              likes_count: actualLikesCount || 0, // Используем реальный подсчет лайков
-              comments_count: commentsCount || 0,
               user_liked: userLiked,
               user_rating: userRating,
               average_rating: Number(averageRating.toFixed(1)),
@@ -143,8 +127,6 @@ export const useVideos = () => {
             console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id}:`, error);
             return {
               ...video,
-              likes_count: 0,
-              comments_count: 0,
               user_liked: false,
               user_rating: 0,
               average_rating: 0,
