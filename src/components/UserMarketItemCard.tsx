@@ -49,10 +49,7 @@ const UserMarketItemCard: React.FC<UserMarketItemCardProps> = ({
             </div>
           </div>}
         
-        <div className="absolute top-1.5 right-1.5 bg-white/80 backdrop-blur-sm text-yellow-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium">
-          <Crown className="w-2.5 h-2.5" />
-          Premium
-        </div>
+        
       </AspectRatio>
 
       <div className="p-2 flex flex-col flex-1">
