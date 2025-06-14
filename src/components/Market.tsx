@@ -51,7 +51,7 @@ const Market: React.FC = () => {
   }
 
   return (
-    <div className="pb-16">
+    <div className="pb-16 p-1">
       {/* Banner Carousel */}
       <BannerCarousel />
 
