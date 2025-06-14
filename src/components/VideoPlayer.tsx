@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVideoViews } from '@/hooks/useVideoViews';
@@ -18,31 +18,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [hasViewBeenCounted, setHasViewBeenCounted] = useState(false);
-  const [isIntersecting, setIsIntersecting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const { markVideoAsViewed } = useVideoViews();
   const { currentPlayingVideo, setCurrentPlayingVideo } = useVideoPlayback();
-
-  // Intersection Observer для ленивой загрузки
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
 
   // Останавливаем видео если играет другое видео
   useEffect(() => {
     if (currentPlayingVideo && currentPlayingVideo !== videoId && isPlaying) {
+      console.log(`Останавливаем видео ${videoId}, играет ${currentPlayingVideo}`);
       if (videoRef.current) {
         videoRef.current.pause();
       }
@@ -50,18 +33,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     }
   }, [currentPlayingVideo, videoId, isPlaying]);
 
-  const handleVideoView = useCallback(async () => {
+  const handleVideoView = async () => {
+    // Засчитываем просмотр только один раз при первом воспроизведении
     if (videoId && !hasViewBeenCounted) {
+      console.log('🎬 Первое воспроизведение видео, засчитываем просмотр:', videoId);
       try {
         await markVideoAsViewed(videoId);
         setHasViewBeenCounted(true);
+        console.log('✅ Просмотр засчитан для видео:', videoId);
       } catch (error) {
         console.error('❌ Ошибка при засчитывании просмотра:', error);
       }
     }
-  }, [videoId, hasViewBeenCounted, markVideoAsViewed]);
+  };
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -75,84 +61,76 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
       }
       setIsPlaying(!isPlaying);
     }
-  }, [isPlaying, videoId, setCurrentPlayingVideo, handleVideoView]);
+  };
 
-  const toggleMute = useCallback(() => {
+  const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
     }
-  }, [isMuted]);
+  };
 
-  const toggleFullscreen = useCallback(() => {
-    if (videoRef.current && videoRef.current.requestFullscreen) {
-      videoRef.current.requestFullscreen();
+  const toggleFullscreen = () => {
+    if (videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      }
     }
-  }, []);
+  };
 
-  const handleVideoEnd = useCallback(() => {
+  const handleVideoClick = () => {
+    togglePlay();
+  };
+
+  const handleVideoEnd = () => {
     setIsPlaying(false);
     setCurrentPlayingVideo(null);
-  }, [setCurrentPlayingVideo]);
+  };
 
-  const handleMouseEnter = useCallback(() => {
+  const handleMouseEnter = () => {
     setShowControls(true);
-  }, []);
+  };
 
-  const handleMouseLeave = useCallback(() => {
+  const handleMouseLeave = () => {
     if (isPlaying) {
       setShowControls(false);
     }
-  }, [isPlaying]);
+  };
+
+  const handleVideoPlayEvent = () => {
+    setIsPlaying(true);
+    if (videoId) {
+      setCurrentPlayingVideo(videoId);
+    }
+    handleVideoView();
+  };
+
+  const handleVideoPauseEvent = () => {
+    setIsPlaying(false);
+    setCurrentPlayingVideo(null);
+  };
 
   return (
     <div 
-      ref={containerRef}
       className={`relative bg-black rounded-lg overflow-hidden ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {isIntersecting ? (
-        <video
-          ref={videoRef}
-          src={src}
-          poster={thumbnail}
-          className="w-full h-full object-contain cursor-pointer"
-          onClick={togglePlay}
-          onEnded={handleVideoEnd}
-          onPlay={() => {
-            setIsPlaying(true);
-            if (videoId) setCurrentPlayingVideo(videoId);
-            handleVideoView();
-          }}
-          onPause={() => {
-            setIsPlaying(false);
-            setCurrentPlayingVideo(null);
-          }}
-          playsInline
-          preload="metadata"
-        />
-      ) : (
-        <div 
-          className="w-full h-full flex items-center justify-center bg-gray-800 cursor-pointer"
-          onClick={togglePlay}
-          style={{
-            backgroundImage: `url(${thumbnail})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
-        >
-          <Button
-            size="lg"
-            className="bg-white bg-opacity-80 hover:bg-opacity-100 text-black rounded-full w-16 h-16"
-          >
-            <Play className="w-8 h-8 ml-1" />
-          </Button>
-        </div>
-      )}
+      <video
+        ref={videoRef}
+        src={src}
+        poster={thumbnail}
+        className="w-full h-full object-contain cursor-pointer"
+        onClick={handleVideoClick}
+        onEnded={handleVideoEnd}
+        onPlay={handleVideoPlayEvent}
+        onPause={handleVideoPauseEvent}
+        playsInline
+        preload="metadata"
+      />
       
       {/* Центральная кнопка воспроизведения */}
-      {!isPlaying && isIntersecting && (
+      {!isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
           <Button
             size="lg"
@@ -165,7 +143,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
       )}
 
       {/* Панель управления */}
-      {showControls && isIntersecting && (
+      {showControls && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center space-x-2">
