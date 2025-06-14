@@ -93,7 +93,7 @@ export const useVideoComments = (videoId: string) => {
 export const useAddVideoComment = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { sendCommentNotification } = useTelegramNotifications();
+  const { sendCommentNotification, sendCommentReplyNotification } = useTelegramNotifications();
 
   return useMutation({
     mutationFn: async ({ videoId, content, parentCommentId }: { videoId: string; content: string; parentCommentId?: string }) => {
@@ -128,34 +128,63 @@ export const useAddVideoComment = () => {
 
       console.log('✅ Комментарий добавлен:', data.id);
 
-      // Отправляем уведомление владельцу видео
-      try {
-        const { data: videoData } = await supabase
-          .from('videos')
-          .select(`
-            title,
-            user_id,
-            profiles!inner(telegram_id, username, telegram_username)
-          `)
-          .eq('id', videoId)
-          .single();
+      if (data.parent_comment_id) {
+        // Это ответ. Уведомляем автора родительского комментария.
+        try {
+          const { data: parentCommentData } = await supabase
+            .from('video_comments')
+            .select(`
+              user_id,
+              profiles:user_id (telegram_id),
+              videos (title)
+            `)
+            .eq('id', data.parent_comment_id)
+            .single();
 
-        if (videoData && videoData.profiles && videoData.user_id !== user.id) {
-          const ownerTelegramId = videoData.profiles.telegram_id;
-          const commenterName = user.username || user.telegram_username || 'Пользователь';
-          
-          if (ownerTelegramId) {
-            await sendCommentNotification(
-              videoData.user_id,
-              ownerTelegramId,
-              commenterName,
-              videoData.title,
-              content
-            );
+          if (parentCommentData && parentCommentData.profiles && parentCommentData.user_id !== user.id && parentCommentData.profiles.telegram_id) {
+              const replierName = user.username || user.telegram_username || 'Пользователь';
+              const videoTitle = parentCommentData.videos?.title || 'ваше';
+              await sendCommentReplyNotification(
+                parentCommentData.user_id,
+                parentCommentData.profiles.telegram_id,
+                replierName,
+                data.content,
+                videoTitle
+              );
           }
+        } catch (e) {
+          console.error('Ошибка отправки уведомления об ответе на комментарий:', e);
         }
-      } catch (error) {
-        console.error('Ошибка отправки уведомления о комментарии:', error);
+      } else {
+        // Это комментарий верхнего уровня. Уведомляем владельца видео.
+        try {
+          const { data: videoData } = await supabase
+            .from('videos')
+            .select(`
+              title,
+              user_id,
+              profiles!inner(telegram_id, username, telegram_username)
+            `)
+            .eq('id', videoId)
+            .single();
+
+          if (videoData && videoData.profiles && videoData.user_id !== user.id) {
+            const ownerTelegramId = videoData.profiles.telegram_id;
+            const commenterName = user.username || user.telegram_username || 'Пользователь';
+            
+            if (ownerTelegramId) {
+              await sendCommentNotification(
+                videoData.user_id,
+                ownerTelegramId,
+                commenterName,
+                videoData.title,
+                content
+              );
+            }
+          }
+        } catch (error) {
+          console.error('Ошибка отправки уведомления о комментарии:', error);
+        }
       }
 
       return data;
@@ -176,6 +205,7 @@ export const useAddVideoComment = () => {
 export const useLikeVideoComment = () => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
+    const { sendCommentLikeNotification } = useTelegramNotifications();
 
     return useMutation({
         mutationFn: async ({ commentId, videoId, isLiked }: { commentId: string; videoId: string; isLiked: boolean }) => {
@@ -195,6 +225,26 @@ export const useLikeVideoComment = () => {
                     .from('video_comment_likes')
                     .insert({ user_id: user.id, comment_id: commentId });
                 if (error) throw error;
+                
+                try {
+                    const { data: commentData } = await supabase
+                        .from('video_comments')
+                        .select('content, user_id, profiles:user_id(telegram_id)')
+                        .eq('id', commentId)
+                        .single();
+                    
+                    if (commentData && commentData.profiles && commentData.user_id !== user.id && commentData.profiles.telegram_id) {
+                        const likerName = user.username || user.telegram_username || 'Пользователь';
+                        await sendCommentLikeNotification(
+                            commentData.user_id,
+                            commentData.profiles.telegram_id,
+                            likerName,
+                            commentData.content
+                        );
+                    }
+                } catch(e) {
+                    console.error("Ошибка отправки уведомления о лайке комментария:", e);
+                }
             }
             return { videoId };
         },

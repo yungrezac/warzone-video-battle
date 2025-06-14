@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const useTelegramNotifications = () => {
@@ -91,6 +90,41 @@ export const useTelegramNotifications = () => {
     return sendNotification(videoOwnerTelegramId, message, 'comment');
   };
 
+  const sendCommentLikeNotification = async (
+    commentOwnerId: string, 
+    commentOwnerTelegramId: string, 
+    likerName: string, 
+    commentContent: string
+  ) => {
+    const isEnabled = await checkNotificationSettings(commentOwnerId, 'likes');
+    if (!isEnabled) {
+      console.log('Уведомления о лайках (комментариев) отключены для пользователя', commentOwnerId);
+      return;
+    }
+
+    const shortComment = commentContent.length > 50 ? commentContent.substring(0, 50) + '...' : commentContent;
+    const message = `👍 <b>${likerName}</b> оценил(а) ваш комментарий:\n\n"<i>${shortComment}</i>"`;
+    return sendNotification(commentOwnerTelegramId, message, 'comment_like');
+  };
+
+  const sendCommentReplyNotification = async (
+    parentCommentOwnerId: string, 
+    parentCommentOwnerTelegramId: string, 
+    replierName: string, 
+    replyContent: string,
+    videoTitle: string
+  ) => {
+    const isEnabled = await checkNotificationSettings(parentCommentOwnerId, 'comments');
+    if (!isEnabled) {
+      console.log('Уведомления об ответах на комментарии отключены для пользователя', parentCommentOwnerId);
+      return;
+    }
+
+    const shortReply = replyContent.length > 50 ? replyContent.substring(0, 50) + '...' : replyContent;
+    const message = `💬 <b>${replierName}</b> ответил(а) на ваш комментарий к видео "<b>${videoTitle}</b>":\n\n"<i>${shortReply}</i>"`;
+    return sendNotification(parentCommentOwnerTelegramId, message, 'comment_reply');
+  };
+
   const sendAchievementNotification = async (userId: string, userTelegramId: string, achievementTitle: string, achievementIcon: string, rewardPoints: number) => {
     const isEnabled = await checkNotificationSettings(userId, 'achievements');
     if (!isEnabled) {
@@ -118,5 +152,7 @@ export const useTelegramNotifications = () => {
     sendCommentNotification,
     sendAchievementNotification,
     sendDailyWinnerNotification,
+    sendCommentLikeNotification,
+    sendCommentReplyNotification,
   };
 };
