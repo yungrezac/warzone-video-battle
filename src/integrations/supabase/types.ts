@@ -1302,48 +1302,6 @@ export type Database = {
           },
         ]
       }
-      video_ratings: {
-        Row: {
-          created_at: string
-          id: string
-          rating: number
-          updated_at: string
-          user_id: string
-          video_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          rating: number
-          updated_at?: string
-          user_id: string
-          video_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          rating?: number
-          updated_at?: string
-          user_id?: string
-          video_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "video_ratings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "video_ratings_video_id_fkey"
-            columns: ["video_id"]
-            isOneToOne: false
-            referencedRelation: "videos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       videos: {
         Row: {
           average_rating: number | null

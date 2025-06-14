@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Trophy, Crown, Medal, Award } from 'lucide-react';
-import { useTopUsers } from '@/hooks/useWinnerSystem';
+import { useTopUsers } from '@/hooks/useTopUsers';
 import { Loader2 } from 'lucide-react';
 
 const TopUsers: React.FC = () => {
@@ -60,7 +60,7 @@ const TopUsers: React.FC = () => {
           <h1 className="text-2xl font-bold">Рейтинг пользователей</h1>
         </div>
         <p className="text-center text-purple-100 text-sm">
-          Топ пользователей по количеству баллов
+          Все пользователи приложения по количеству баллов
         </p>
       </div>
 
@@ -131,6 +131,7 @@ const TopUsers: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md">
           <div className="p-3 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800">Полный рейтинг</h3>
+            <p className="text-sm text-gray-500">Всего пользователей: {topUsers?.length || 0}</p>
           </div>
           
           <div className="divide-y divide-gray-100">
@@ -177,7 +178,7 @@ const TopUsers: React.FC = () => {
           {(!topUsers || topUsers.length === 0) && (
             <div className="p-6 text-center text-gray-500">
               <Trophy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p>Пока нет пользователей в рейтинге</p>
+              <p>Пока нет пользователей в приложении</p>
             </div>
           )}
         </div>

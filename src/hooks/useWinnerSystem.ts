@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -46,21 +45,12 @@ export const useYesterdayWinner = () => {
           .select('*', { count: 'exact' })
           .eq('video_id', winner.id);
 
-        const { data: ratings } = await supabase
-          .from('video_ratings')
-          .select('rating')
-          .eq('video_id', winner.id);
-
-        const averageRating = ratings && ratings.length > 0
-          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-          : 0;
-
         // Создаем новый объект с обновленной статистикой
         const updatedWinner = {
           ...winner,
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
-          average_rating: Number(averageRating.toFixed(1))
+          average_rating: 0
         };
 
         console.log('Победитель найден с обновленной статистикой:', updatedWinner);
@@ -142,12 +132,10 @@ export const useCalculateWinner = () => {
       let bestScore = -1;
 
       for (const video of videos) {
-        // Формула: лайки * 3 + рейтинг * 10 + просмотры * 0.1
-        const score = (video.likes_count || 0) * 3 + 
-                     (video.average_rating || 0) * 10 + 
-                     (video.views || 0) * 0.1;
+        // Формула: лайки * 3 + просмотры * 0.1
+        const score = (video.likes_count || 0) * 3 + (video.views || 0) * 0.1;
 
-        console.log(`Видео ${video.id}: лайки=${video.likes_count}, рейтинг=${video.average_rating}, просмотры=${video.views}, балл=${score}`);
+        console.log(`Видео ${video.id}: лайки=${video.likes_count}, просмотры=${video.views}, балл=${score}`);
 
         if (score > bestScore) {
           bestScore = score;
