@@ -127,8 +127,8 @@ export const useTopUsers = () => {
             is_premium
           )
         `)
-        .order('total_points', { ascending: false })
-        .limit(10);
+        .gt('total_points', 0)
+        .order('total_points', { ascending: false });
 
       if (error) {
         console.error('Ошибка загрузки топа пользователей:', error);
