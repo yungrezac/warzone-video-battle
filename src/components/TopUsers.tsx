@@ -3,6 +3,7 @@ import React from 'react';
 import { Trophy, Crown, Medal, Award } from 'lucide-react';
 import { useTopUsers } from '@/hooks/useWinnerSystem';
 import { Loader2 } from 'lucide-react';
+import PremiumBadge from './PremiumBadge';
 
 const TopUsers: React.FC = () => {
   const { data: topUsers, isLoading, error } = useTopUsers();
@@ -78,8 +79,9 @@ const TopUsers: React.FC = () => {
                 />
               </div>
               <div className="text-center">
-                <div className="text-sm font-bold text-gray-700">
-                  {topUsers[1]?.user?.username || topUsers[1]?.user?.telegram_username || 'Роллер'}
+                <div className="text-sm font-bold text-gray-700 flex items-center justify-center gap-1">
+                  <span>{topUsers[1]?.user?.username || topUsers[1]?.user?.telegram_username || 'Роллер'}</span>
+                  {topUsers[1]?.user?.is_premium && <PremiumBadge size="sm" />}
                 </div>
                 <div className="text-xs text-gray-500">{topUsers[1]?.total_points || 0} баллов</div>
               </div>
@@ -97,8 +99,9 @@ const TopUsers: React.FC = () => {
                 <Crown className="w-6 h-6 mx-auto mt-2 text-yellow-200" />
               </div>
               <div className="text-center">
-                <div className="text-base font-bold text-gray-800">
-                  {topUsers[0]?.user?.username || topUsers[0]?.user?.telegram_username || 'Роллер'}
+                <div className="text-base font-bold text-gray-800 flex items-center justify-center gap-1">
+                  <span>{topUsers[0]?.user?.username || topUsers[0]?.user?.telegram_username || 'Роллер'}</span>
+                  {topUsers[0]?.user?.is_premium && <PremiumBadge size="sm" />}
                 </div>
                 <div className="text-sm text-yellow-600 font-semibold">{topUsers[0]?.total_points || 0} баллов</div>
               </div>
@@ -115,8 +118,9 @@ const TopUsers: React.FC = () => {
                 />
               </div>
               <div className="text-center">
-                <div className="text-sm font-bold text-gray-700">
-                  {topUsers[2]?.user?.username || topUsers[2]?.user?.telegram_username || 'Роллер'}
+                <div className="text-sm font-bold text-gray-700 flex items-center justify-center gap-1">
+                  <span>{topUsers[2]?.user?.username || topUsers[2]?.user?.telegram_username || 'Роллер'}</span>
+                  {topUsers[2]?.user?.is_premium && <PremiumBadge size="sm" />}
                 </div>
                 <div className="text-xs text-gray-500">{topUsers[2]?.total_points || 0} баллов</div>
               </div>
@@ -149,8 +153,9 @@ const TopUsers: React.FC = () => {
                 />
                 
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 truncate">
-                    {userPoint.user?.username || userPoint.user?.telegram_username || 'Роллер'}
+                  <div className="font-medium text-gray-900 flex items-center gap-1">
+                    <span className="truncate">{userPoint.user?.username || userPoint.user?.telegram_username || 'Роллер'}</span>
+                    {userPoint.user?.is_premium && <PremiumBadge size="sm" />}
                   </div>
                   {userPoint.user?.first_name && userPoint.user?.last_name && (
                     <div className="text-sm text-gray-500 truncate">

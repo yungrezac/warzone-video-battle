@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -62,7 +63,8 @@ export const useVideos = () => {
             first_name,
             last_name,
             telegram_username,
-            avatar_url
+            avatar_url,
+            is_premium
           )
         `)
         .order('created_at', { ascending: false });

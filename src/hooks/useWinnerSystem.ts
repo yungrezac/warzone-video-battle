@@ -88,7 +88,8 @@ export const useTopUsers = () => {
             telegram_username,
             avatar_url,
             first_name,
-            last_name
+            last_name,
+            is_premium
           )
         `)
         .order('total_points', { ascending: false })
