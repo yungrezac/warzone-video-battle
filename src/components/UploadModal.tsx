@@ -129,7 +129,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto" hideCloseButton>
+      <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto !rounded-xl" hideCloseButton>
         <div className="p-1">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-800">Загрузить трюк</h2>
