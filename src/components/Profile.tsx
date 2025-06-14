@@ -3,7 +3,6 @@ import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from '
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserVideos } from '@/hooks/useUserVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
-import { useRateVideo } from '@/hooks/useVideos';
 import { useDeleteVideo } from '@/hooks/useDeleteVideo';
 import { useAuth } from '@/components/AuthWrapper';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -19,11 +18,10 @@ import { Button } from '@/components/ui/button';
 
 const Profile: React.FC = () => {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
-  const { data: userVideos, isLoading: videosLoading } = useUserVideos();
+  const { data: userVideos, isLoading: videosLoading, refetch: refetchUserVideos } = useUserVideos();
   const { isPremium, subscription } = useSubscription();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
-  const rateVideoMutation = useRateVideo();
   const deleteVideoMutation = useDeleteVideo();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -47,26 +45,11 @@ const Profile: React.FC = () => {
         });
         console.log('✅ Profile: Лайк успешно обработан');
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
+        refetchUserVideos();
       } catch (error) {
         console.error('❌ Profile: Ошибка при обработке лайка:', error);
         toast.error('Ошибка при обработке лайка');
       }
-    }
-  };
-
-  const handleRate = async (videoId: string, rating: number) => {
-    if (!user) {
-      toast.error('Войдите в систему, чтобы ставить оценки');
-      return;
-    }
-
-    console.log('⭐ Profile: Ставим оценку видео:', videoId, 'рейтинг:', rating);
-    try {
-      await rateVideoMutation.mutateAsync({ videoId, rating });
-      toast.success(`Оценка ${rating} поставлена`);
-    } catch (error) {
-      console.error('❌ Profile: Ошибка при выставлении оценки:', error);
-      toast.error('Ошибка при выставлении оценки');
     }
   };
 
@@ -338,7 +321,6 @@ const Profile: React.FC = () => {
                         videoUrl: video.video_url,
                         likes: video.likes_count || 0,
                         comments: video.comments_count || 0,
-                        rating: video.average_rating || 0,
                         views: video.views,
                         isWinner: video.is_winner,
                         timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
@@ -348,17 +330,14 @@ const Profile: React.FC = () => {
                           minute: '2-digit'
                         }),
                         userLiked: video.user_liked || false,
-                        userRating: video.user_rating || 0,
-                        userId: video.user_id,
                       }}
                       onLike={handleLike}
-                      onRate={handleRate}
                     />
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteClick(video.id, video.title)}
-                      className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700"
+                      className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 p-1.5"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

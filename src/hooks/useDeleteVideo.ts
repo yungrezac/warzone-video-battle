@@ -9,93 +9,88 @@ export const useDeleteVideo = () => {
 
   return useMutation({
     mutationFn: async (videoId: string) => {
-      if (!user?.id) {
-        throw new Error('User not authenticated');
+      if (!user) {
+        throw new Error('User not authenticated to delete video');
       }
 
-      console.log('Удаляем видео:', videoId);
+      console.log('Attempting to delete video:', videoId, 'by user:', user.id);
 
-      // Сначала получаем информацию о видео для удаления файла из storage
-      const { data: video, error: fetchError } = await supabase
+      // 1. Получить информацию о видео, чтобы убедиться, что пользователь является владельцем
+      const { data: videoData, error: fetchError } = await supabase
         .from('videos')
-        .select('video_url, user_id')
+        .select('user_id, video_url, thumbnail_url')
         .eq('id', videoId)
         .single();
 
       if (fetchError) {
-        console.error('Ошибка получения видео:', fetchError);
-        throw fetchError;
+        console.error('Error fetching video for deletion:', fetchError);
+        throw new Error(`Failed to fetch video details: ${fetchError.message}`);
       }
 
-      // Проверяем, что пользователь может удалить это видео
-      if (video.user_id !== user.id) {
-        throw new Error('У вас нет прав на удаление этого видео');
+      if (!videoData) {
+        throw new Error('Video not found.');
       }
 
-      // Удаляем связанные записи (лайки, комментарии, рейтинги)
-      const { error: likesError } = await supabase
-        .from('video_likes')
-        .delete()
-        .eq('video_id', videoId);
-
-      if (likesError) {
-        console.error('Ошибка удаления лайков:', likesError);
+      if (videoData.user_id !== user.id) {
+        // Можно также добавить проверку на роль администратора, если это необходимо
+        throw new Error('User is not authorized to delete this video.');
       }
 
-      const { error: commentsError } = await supabase
-        .from('video_comments')
-        .delete()
-        .eq('video_id', videoId);
-
-      if (commentsError) {
-        console.error('Ошибка удаления комментариев:', commentsError);
+      // 2. Удалить файлы из Storage
+      const filesToDelete: string[] = [];
+      if (videoData.video_url) {
+        // Извлекаем путь к файлу из URL
+        // Пример URL: https://<project-ref>.supabase.co/storage/v1/object/public/videos/user_id/filename.mp4
+        // Путь будет: user_id/filename.mp4
+        const videoPath = videoData.video_url.substring(videoData.video_url.indexOf('/videos/') + '/videos/'.length);
+        filesToDelete.push(videoPath);
+      }
+      if (videoData.thumbnail_url) {
+        const thumbPath = videoData.thumbnail_url.substring(videoData.thumbnail_url.indexOf('/videos/') + '/videos/'.length);
+        filesToDelete.push(thumbPath);
       }
 
-      const { error: ratingsError } = await supabase
-        .from('video_ratings')
-        .delete()
-        .eq('video_id', videoId);
+      if (filesToDelete.length > 0) {
+        console.log('Deleting files from storage:', filesToDelete);
+        const { error: storageError } = await supabase.storage
+          .from('videos') // Убедитесь, что 'videos' - это ваш бакет
+          .remove(filesToDelete);
 
-      if (ratingsError) {
-        console.error('Ошибка удаления рейтингов:', ratingsError);
+        if (storageError) {
+          // Не блокируем удаление из БД, если не удалось удалить файлы, но логируем
+          console.warn('Failed to delete files from storage, proceeding with DB deletion:', storageError);
+        }
       }
-
-      // Удаляем видео из базы данных
+      
+      // 3. Удалить запись из таблицы videos
       const { error: deleteError } = await supabase
         .from('videos')
         .delete()
         .eq('id', videoId);
 
       if (deleteError) {
-        console.error('Ошибка удаления видео из БД:', deleteError);
-        throw deleteError;
+        console.error('Error deleting video from database:', deleteError);
+        throw new Error(`Failed to delete video: ${deleteError.message}`);
       }
 
-      // Удаляем файл из storage
-      if (video.video_url) {
-        const fileName = video.video_url.split('/').pop();
-        if (fileName) {
-          const { error: storageError } = await supabase.storage
-            .from('videos')
-            .remove([`${user.id}/${fileName}`]);
-
-          if (storageError) {
-            console.error('Ошибка удаления файла из storage:', storageError);
-            // Не бросаем ошибку, так как файл может уже не существовать
-          }
-        }
-      }
-
-      console.log('Видео успешно удалено');
+      console.log('Video deleted successfully from database:', videoId);
+      return videoId;
     },
-    onSuccess: () => {
-      // Обновляем кэш
-      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    onSuccess: (deletedVideoId) => {
+      console.log('Invalidating queries after video deletion:', deletedVideoId);
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-videos'] }); 
+      queryClient.invalidateQueries({ queryKey: ['user-profile', user?.id] }); // Для обновления статистики в профиле
+      queryClient.invalidateQueries({ queryKey: ['yesterday-winner'] }); // Если удаленное видео было победителем
+
+      // Убираем инвалидацию для video_ratings, так как таблица удалена
+      // queryClient.invalidateQueries({ queryKey: ['video_ratings'] }); 
+      // queryClient.invalidateQueries({ queryKey: ['video_ratings', deletedVideoId] });
     },
-    onError: (error) => {
-      console.error('Ошибка удаления видео:', error);
+    onError: (error: Error) => {
+      console.error('Mutation error on delete video:', error.message);
+      // Можно добавить toast уведомление об ошибке здесь
     },
   });
 };
+
