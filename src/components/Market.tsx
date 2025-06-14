@@ -2,13 +2,11 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ShoppingCart, Gift, Star, Crown } from 'lucide-react';
+import { Loader2, ShoppingCart, Gift, Star } from 'lucide-react';
 import MarketItemCard from './MarketItemCard';
 import MarketItemModal from './MarketItemModal';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BannerCarousel from './BannerCarousel';
-import SubscriptionModal from './SubscriptionModal';
 import { useSubscription } from '@/hooks/useSubscription';
 
 const Market: React.FC = () => {
@@ -54,32 +52,6 @@ const Market: React.FC = () => {
 
   return (
     <div className="pb-16">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center">
-            <div className="bg-white bg-opacity-20 rounded-full p-1.5 mr-2">
-              <ShoppingCart className="w-4 h-4" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">Магазин</h1>
-              <p className="text-green-100 text-sm">Обменивайте баллы на призы</p>
-            </div>
-          </div>
-          
-          <SubscriptionModal>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold"
-            >
-              <Crown className="w-4 h-4 mr-1" />
-              Premium
-            </Button>
-          </SubscriptionModal>
-        </div>
-      </div>
-
       {/* Banner Carousel */}
       <BannerCarousel />
 
