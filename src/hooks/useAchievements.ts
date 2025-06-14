@@ -48,6 +48,7 @@ export const useAchievements = () => {
       console.log('✅ Загружено достижений:', data?.length || 0);
       return data as Achievement[];
     },
+    staleTime: 1000 * 60 * 60, // 1 час
   });
 };
 
@@ -176,6 +177,7 @@ export const useUserAchievements = () => {
     enabled: !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 1000 * 60 * 15, // 15 минут
   });
 };
 
@@ -300,5 +302,6 @@ export const useAchievementStats = () => {
     enabled: !!user?.id,
     retry: 2,
     retryDelay: 1000,
+    staleTime: 1000 * 60 * 15, // 15 минут
   });
 };

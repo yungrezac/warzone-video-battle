@@ -105,5 +105,6 @@ export const useUserVideos = () => {
       return videosWithStats;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 10, // 10 минут
   });
 };

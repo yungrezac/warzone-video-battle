@@ -112,5 +112,6 @@ export const useUserProfile = () => {
       };
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 10, // 10 минут
   });
 };

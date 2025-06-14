@@ -23,5 +23,6 @@ export const useTournamentBanners = () => {
       console.log('Баннеры турниров загружены:', banners);
       return banners;
     },
+    staleTime: 1000 * 60 * 30, // 30 минут
   });
 };

@@ -131,6 +131,7 @@ export const useVideos = () => {
       console.log('✅ Видео с обновленной статистикой загружены');
       return videosWithStats;
     },
+    staleTime: 1000 * 60 * 10, // 10 минут
   });
 };
 
@@ -150,6 +151,7 @@ export const useVideo = (id: string) => {
 
       return data;
     },
+    staleTime: 1000 * 60 * 10, // 10 минут
   });
 };
 
