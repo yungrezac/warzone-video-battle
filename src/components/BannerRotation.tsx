@@ -45,7 +45,7 @@ const BannerRotation: React.FC = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   const currentBanner = chatBanners[currentIndex];
-  return <div className="p-3 mb-4 px-[6px]">
+  return <div className="p-3 mb-4 px-[8px]">
       <Card className={`bg-gradient-to-r ${currentBanner.gradient} text-white border-0 shadow-lg transform transition-all duration-500 hover:scale-[1.02] h-[100px] relative overflow-hidden rounded-xl`}>
         {/* Упрощенные декоративные элементы фона */}
         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-10 translate-x-10"></div>
