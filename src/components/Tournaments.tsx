@@ -13,11 +13,11 @@ const Tournaments: React.FC = () => {
       </Button>
     </div>;
   return <>
-      <div className="pb-16 p-4">
+      <div className="pb-16 p-4 px-[10px] py-[10px]">
         <TournamentBannerCarousel />
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Турниры</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2 px-[4px]">Турниры</h1>
           
         </div>
 
