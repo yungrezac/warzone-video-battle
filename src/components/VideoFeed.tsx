@@ -71,22 +71,6 @@ const VideoFeed: React.FC = () => {
     }
   };
 
-  const handleRate = async (videoId: string, rating: number) => {
-    if (!user) {
-      toast.error('Войдите в систему, чтобы ставить оценки');
-      return;
-    }
-
-    console.log('⭐ VideoFeed: Ставим оценку видео:', videoId, 'рейтинг:', rating);
-    try {
-      await rateVideoMutation.mutateAsync({ videoId, rating });
-      toast.success(`Оценка ${rating} поставлена`);
-    } catch (error) {
-      console.error('❌ VideoFeed: Ошибка при выставлении оценки:', error);
-      toast.error('Ошибка при выставлении оценки');
-    }
-  };
-
   const handleViewWinner = (videoId: string) => {
     const videoElement = document.querySelector(`[data-video-id="${videoId}"]`);
     if (videoElement) {
@@ -163,7 +147,6 @@ const VideoFeed: React.FC = () => {
                     videoUrl: video.video_url,
                     likes: video.likes_count || 0,
                     comments: video.comments_count || 0,
-                    rating: video.average_rating || 0,
                     views: video.views || 0,
                     isWinner: video.is_winner,
                     timestamp: new Date(video.created_at).toLocaleString('ru-RU', {

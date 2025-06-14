@@ -14,7 +14,6 @@ interface Video {
   likes_count: number; // This will be overridden by our direct count
   comments_count: number;
   created_at: string;
-  average_rating: number;
   user_liked: boolean;
   profiles?: {
     username?: string;
@@ -26,11 +25,6 @@ interface Video {
   };
   // This property comes from the videos table, might be used as a fallback or if is_winner logic changes
   is_winner?: boolean; 
-}
-
-interface RateVideoParams {
-  videoId: string;
-  rating: number;
 }
 
 interface UploadVideoParams {
@@ -117,35 +111,17 @@ export const useVideos = () => {
               console.warn(`⚠️ Ошибка загрузки общего количества комментариев для видео ${video.id}:`, commentsError);
             }
 
-            // Считаем средний рейтинг
-            const { data: ratingsData, error: ratingsError } = await supabase
-              .from('video_ratings' as any)
-              .select('rating')
-              .eq('video_id', video.id);
-            
-            if (ratingsError) {
-              console.warn(`⚠️ Ошибка при загрузке рейтинга для видео ${video.id}:`, ratingsError);
-            }
-
-            const ratings = ratingsData as unknown as { rating: number }[] | null;
-
-            const averageRating = ratings && ratings.length > 0
-              ? ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / ratings.length
-              : 0;
-
             return {
               ...video,
               likes_count: totalLikes || video.likes_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
               comments_count: totalComments || video.comments_count || 0, // Используем актуальное количество, затем из таблицы, затем 0
               user_liked: userLiked,
-              average_rating: Number(averageRating.toFixed(1)),
             };
           } catch (statError) {
             console.warn(`⚠️ Ошибка загрузки статистики для видео ${video.id}:`, statError);
             return {
               ...video, // возвращаем оригинальное видео с его значениями по умолчанию
               user_liked: false,
-              average_rating: 0,
               // likes_count и comments_count остаются из video, если они там есть
             };
           }
@@ -173,43 +149,6 @@ export const useVideo = (id: string) => {
       }
 
       return data;
-    },
-  });
-};
-
-export const useRateVideo = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ videoId, rating }: RateVideoParams) => {
-      if (!user?.id) {
-        throw new Error('Необходима авторизация');
-      }
-
-      console.log('⭐ Оцениваем видео:', { videoId, rating });
-
-      // Upsert the rating
-      const { error } = await supabase
-        .from('video_ratings' as any)
-        .upsert({ video_id: videoId, user_id: user.id, rating: rating }, { onConflict: 'video_id,user_id' });
-
-      if (error) {
-        console.error('Ошибка рейтинга:', error);
-        throw new Error(error.message);
-      }
-
-      console.log('✅ Рейтинг успешно поставлен');
-    },
-    onSuccess: (_, { videoId }) => {
-      console.log('✅ useRateVideo успешно, инвалидируем кэш...');
-      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-videos'] });
-      queryClient.invalidateQueries({ queryKey: ['video-feed'] });
-    },
-    onError: (error) => {
-      console.error('❌ Ошибка мутации рейтинга:', error);
     },
   });
 };

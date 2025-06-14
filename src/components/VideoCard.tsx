@@ -167,11 +167,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onLike }) => {
               commentsCount={video.comments} 
             />
 
-            <div className="text-gray-600 h-7 px-1.5 flex items-center">
-              <Star className="w-3.5 h-3.5 mr-1 text-yellow-500" />
-              <span className="text-xs">{video.rating.toFixed(1)}</span>
-            </div>
-
             <Button
               variant="ghost"
               size="sm"
