@@ -1,13 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MessageCircle, Send, User, X } from 'lucide-react';
-import { useVideoComments, useAddVideoComment } from '@/hooks/useVideoComments';
+import { MessageCircle, Send, X } from 'lucide-react';
+import { useVideoComments, useAddVideoComment, Comment } from '@/hooks/useVideoComments';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import CommentItem from './CommentItem';
 
 interface VideoCommentsProps {
   videoId: string;
@@ -19,12 +20,23 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
   const [newComment, setNewComment] = useState('');
   
   const { user } = useAuth();
-  const { data: commentsData, isLoading } = useVideoComments(videoId);
+  const { data: rootComments, isLoading } = useVideoComments(videoId);
   const addCommentMutation = useAddVideoComment();
 
-  const comments = commentsData?.comments || [];
-
-  console.log('VideoComments рендер:', { videoId, commentsCount, comments, isLoading, user: user?.id });
+  const totalComments = useMemo(() => {
+    if (isLoading || !rootComments) return commentsCount;
+    let count = 0;
+    const countComments = (comments: Comment[]) => {
+        for (const comment of comments) {
+            count++;
+            if (comment.replies) {
+                countComments(comment.replies);
+            }
+        }
+    }
+    countComments(rootComments);
+    return count;
+  }, [rootComments, commentsCount, isLoading]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) {
@@ -37,8 +49,6 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
       return;
     }
     
-    console.log('Отправляем комментарий:', { videoId, content: newComment.trim() });
-    
     try {
       await addCommentMutation.mutateAsync({
         videoId,
@@ -46,7 +56,6 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
       });
       setNewComment('');
       toast.success('Комментарий добавлен');
-      console.log('Комментарий успешно отправлен');
     } catch (error) {
       console.error('Ошибка добавления комментария:', error);
       toast.error('Ошибка добавления комментария');
@@ -62,7 +71,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
           className="text-gray-600 hover:text-blue-500 h-7 px-1.5"
         >
           <MessageCircle className="w-3.5 h-3.5 mr-1" />
-          <span className="text-xs">{comments?.length || commentsCount}</span>
+          <span className="text-xs">{totalComments}</span>
         </Button>
       </DialogTrigger>
       
@@ -70,9 +79,9 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
         className="w-screen h-screen max-w-none max-h-none m-0 rounded-none p-0 flex flex-col"
         hideCloseButton={true}
       >
-        <DialogHeader className="p-4 border-b bg-white">
+        <DialogHeader className="p-4 border-b bg-white sticky top-0 z-10">
           <div className="flex items-center justify-between">
-            <DialogTitle>Комментарии ({comments?.length || commentsCount})</DialogTitle>
+            <DialogTitle>Комментарии ({totalComments})</DialogTitle>
             <Button
               variant="ghost"
               size="sm"
@@ -84,42 +93,14 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
           </div>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
-          ) : comments && comments.length > 0 ? (
-            comments.map((comment) => (
-              <div key={comment.id} className="bg-white rounded-lg p-3 shadow-sm">
-                <div className="flex items-center mb-2">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-2">
-                    {comment.profiles?.avatar_url ? (
-                      <img 
-                        src={comment.profiles.avatar_url} 
-                        alt="Avatar" 
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-4 h-4 text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">
-                      {comment.profiles?.username || comment.profiles?.telegram_username || 'Пользователь'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(comment.created_at).toLocaleString('ru-RU', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-700">{comment.content}</p>
-              </div>
+          ) : rootComments && rootComments.length > 0 ? (
+             rootComments.map((comment) => (
+              <CommentItem key={comment.id} comment={comment} videoId={videoId} />
             ))
           ) : (
             <div className="text-center py-16 text-gray-500">
@@ -131,7 +112,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
         </div>
         
         {user ? (
-          <div className="border-t bg-white p-4">
+          <div className="border-t bg-white p-4 sticky bottom-0">
             <div className="flex space-x-3">
               <Textarea
                 value={newComment}
@@ -162,7 +143,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
             </p>
           </div>
         ) : (
-          <div className="border-t bg-white p-4 text-center text-gray-500">
+          <div className="border-t bg-white p-4 text-center text-gray-500 sticky bottom-0">
             <p>Войдите в систему, чтобы оставить комментарий</p>
           </div>
         )}

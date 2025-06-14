@@ -4,11 +4,30 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useTelegramNotifications } from './useTelegramNotifications';
 
+export interface Comment {
+  id: string;
+  created_at: string;
+  content: string;
+  likes_count: number;
+  user_id: string;
+  video_id: string;
+  parent_comment_id: string | null;
+  profiles: {
+    username: string | null;
+    telegram_username: string | null;
+    avatar_url: string | null;
+  } | null;
+  user_liked: boolean;
+  replies: Comment[];
+}
+
 export const useVideoComments = (videoId: string) => {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['video-comments', videoId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: comments, error } = await supabase
         .from('video_comments')
         .select(`
           *,
@@ -19,19 +38,50 @@ export const useVideoComments = (videoId: string) => {
           )
         `)
         .eq('video_id', videoId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Ошибка загрузки комментариев:', error);
         throw error;
       }
+      if (!comments) return [];
       
-      return data || [];
+      let userLikedCommentIds: string[] = [];
+      if (user?.id) {
+          const { data: likes } = await supabase
+              .from('video_comment_likes')
+              .select('comment_id')
+              .eq('user_id', user.id)
+              .in('comment_id', comments.map(c => c.id));
+          
+          if (likes) {
+              userLikedCommentIds = likes.map(l => l.comment_id);
+          }
+      }
+
+      const commentsWithLikeStatus: Comment[] = comments.map(comment => ({
+          ...comment,
+          user_liked: userLikedCommentIds.includes(comment.id),
+          replies: []
+      }));
+
+      const commentMap = new Map<string, Comment>();
+      const rootComments: Comment[] = [];
+
+      commentsWithLikeStatus.forEach(comment => {
+          commentMap.set(comment.id, comment);
+      });
+
+      commentsWithLikeStatus.forEach(comment => {
+          if (comment.parent_comment_id && commentMap.has(comment.parent_comment_id)) {
+              commentMap.get(comment.parent_comment_id)!.replies!.push(comment);
+          } else {
+              rootComments.push(comment);
+          }
+      });
+
+      return rootComments;
     },
-    select: (data) => ({
-      comments: data,
-      isLoading: false
-    })
   });
 };
 
@@ -41,12 +91,12 @@ export const useAddVideoComment = () => {
   const { sendCommentNotification } = useTelegramNotifications();
 
   return useMutation({
-    mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
+    mutationFn: async ({ videoId, content, parentCommentId }: { videoId: string; content: string; parentCommentId?: string }) => {
       if (!user?.id) {
         throw new Error('Необходима авторизация');
       }
 
-      console.log('💬 Добавляем комментарий:', { videoId, content: content.substring(0, 50) + '...' });
+      console.log('💬 Добавляем комментарий:', { videoId, content: content.substring(0, 50) + '...', parentCommentId });
 
       const { data, error } = await supabase
         .from('video_comments')
@@ -54,6 +104,7 @@ export const useAddVideoComment = () => {
           video_id: videoId,
           user_id: user.id,
           content: content.trim(),
+          parent_comment_id: parentCommentId,
         })
         .select(`
           *,
@@ -106,7 +157,6 @@ export const useAddVideoComment = () => {
     },
     onSuccess: (data) => {
       console.log('✅ Мутация комментария успешна, обновляем кэш...');
-      // Инвалидируем кэши для обновления комментариев и баллов
       queryClient.invalidateQueries({ queryKey: ['video-comments', data.video_id] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['user-videos'] });
@@ -116,6 +166,43 @@ export const useAddVideoComment = () => {
       console.error('❌ Ошибка мутации комментария:', error);
     },
   });
+};
+
+export const useLikeVideoComment = () => {
+    const queryClient = useQueryClient();
+    const { user } = useAuth();
+
+    return useMutation({
+        mutationFn: async ({ commentId, videoId, isLiked }: { commentId: string; videoId: string; isLiked: boolean }) => {
+            if (!user?.id) {
+                throw new Error('Необходима авторизация');
+            }
+
+            if (isLiked) {
+                const { error } = await supabase
+                    .from('video_comment_likes')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('comment_id', commentId);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from('video_comment_likes')
+                    .insert({ user_id: user.id, comment_id: commentId });
+                if (error) throw error;
+            }
+            return { videoId };
+        },
+        onSuccess: (data, variables) => {
+            // Оптимистичное обновление не требуется, так как триггер в БД обновит likes_count.
+            // Просто инвалидируем кэш, чтобы получить свежие данные (включая user_liked).
+            queryClient.invalidateQueries({ queryKey: ['video-comments', variables.videoId] });
+        },
+        onError: (error) => {
+            console.error('Ошибка при лайке комментария:', error);
+            toast.error('Не удалось обработать лайк');
+        },
+    });
 };
 
 export const useDeleteVideoComment = () => {
