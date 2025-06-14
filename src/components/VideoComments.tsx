@@ -112,7 +112,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
         </div>
         
         {user ? (
-          <div className="border-t bg-white p-4 sticky bottom-0">
+          <div className="border-t bg-white p-4">
             <div className="flex space-x-3">
               <Textarea
                 value={newComment}
@@ -143,7 +143,7 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
             </p>
           </div>
         ) : (
-          <div className="border-t bg-white p-4 text-center text-gray-500 sticky bottom-0">
+          <div className="border-t bg-white p-4 text-center text-gray-500">
             <p>Войдите в систему, чтобы оставить комментарий</p>
           </div>
         )}
