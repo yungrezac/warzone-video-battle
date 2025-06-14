@@ -7,10 +7,11 @@ export const useVideoViews = () => {
 
   const markVideoAsViewed = async (videoId: string) => {
     try {
-      // Увеличиваем счетчик просмотров
-      const { error } = await supabase.rpc('increment_video_views', {
-        video_id: videoId
-      });
+      // Увеличиваем счетчик просмотров напрямую через UPDATE
+      const { error } = await supabase
+        .from('videos')
+        .update({ views: supabase.sql`views + 1` })
+        .eq('id', videoId);
 
       if (error) {
         console.error('Ошибка при увеличении просмотров:', error);
@@ -29,4 +30,15 @@ export const useVideoViews = () => {
   };
 
   return { markVideoAsViewed };
+};
+
+export const useIncrementVideoViews = () => {
+  const { markVideoAsViewed } = useVideoViews();
+  
+  return useMutation({
+    mutationFn: markVideoAsViewed,
+    onError: (error) => {
+      console.error('Ошибка мутации просмотров:', error);
+    },
+  });
 };

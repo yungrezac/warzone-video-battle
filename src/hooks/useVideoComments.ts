@@ -23,6 +23,10 @@ export const useVideoComments = (videoId: string) => {
       if (error) throw error;
       return data || [];
     },
+    select: (data) => ({
+      comments: data,
+      isLoading: false
+    })
   });
 };
 
@@ -94,3 +98,6 @@ export const useDeleteVideoComment = () => {
     },
   });
 };
+
+// Экспортируем useAddComment как алиас для совместимости
+export const useAddComment = useAddVideoComment;

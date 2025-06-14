@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { MessageCircle, Send, User, X } from 'lucide-react';
-import { useVideoComments, useAddComment } from '@/hooks/useVideoComments';
+import { useVideoComments, useAddVideoComment } from '@/hooks/useVideoComments';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
@@ -19,8 +19,10 @@ const VideoComments: React.FC<VideoCommentsProps> = ({ videoId, commentsCount })
   const [newComment, setNewComment] = useState('');
   
   const { user } = useAuth();
-  const { comments, isLoading } = useVideoComments(videoId);
-  const addCommentMutation = useAddComment();
+  const { data: commentsData, isLoading } = useVideoComments(videoId);
+  const addCommentMutation = useAddVideoComment();
+
+  const comments = commentsData?.comments || [];
 
   console.log('VideoComments рендер:', { videoId, commentsCount, comments, isLoading, user: user?.id });
 
