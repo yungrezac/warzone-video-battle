@@ -7,10 +7,22 @@ export const useVideoViews = () => {
 
   const markVideoAsViewed = async (videoId: string) => {
     try {
-      // Увеличиваем счетчик просмотров напрямую через UPDATE
+      // Сначала получаем текущее количество просмотров
+      const { data: currentVideo, error: fetchError } = await supabase
+        .from('videos')
+        .select('views')
+        .eq('id', videoId)
+        .single();
+
+      if (fetchError) {
+        console.error('Ошибка при получении видео:', fetchError);
+        return;
+      }
+
+      // Увеличиваем счетчик просмотров на 1
       const { error } = await supabase
         .from('videos')
-        .update({ views: supabase.sql`views + 1` })
+        .update({ views: (currentVideo.views || 0) + 1 })
         .eq('id', videoId);
 
       if (error) {
