@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useVideos, useRateVideo } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -12,9 +11,12 @@ import MinimalUploadForm from './MinimalUploadForm';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { useHomeBanners } from '@/hooks/useHomeBanners';
+import InlineBannerCard from './InlineBannerCard';
 
 const VideoFeed: React.FC = () => {
   const { data: videos, isLoading, error } = useVideos();
+  const { data: banners } = useHomeBanners();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const rateVideoMutation = useRateVideo();
@@ -145,11 +147,12 @@ const VideoFeed: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4 p-2">
-          {videos?.map((video) => {
+          {videos?.reduce((acc, video, index) => {
             const videoUser = video.profiles;
             const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
             
-            return (
+            // Add video card
+            acc.push(
               <div key={video.id} data-video-id={video.id}>
                 <VideoCard
                   video={{
@@ -180,7 +183,22 @@ const VideoFeed: React.FC = () => {
                 />
               </div>
             );
-          })}
+
+            // Logic to insert banner
+            const BANNER_FREQUENCY = 7; // Show banner after every 7 videos
+            
+            if ((index + 1) % BANNER_FREQUENCY === 0 && banners && banners.length > 0) {
+               const bannerCycleIndex = Math.floor((index + 1) / BANNER_FREQUENCY);
+               const bannerIndex = (bannerCycleIndex - 1) % banners.length;
+               if (banners[bannerIndex]) {
+                 acc.push(
+                  <InlineBannerCard key={`banner-${banners[bannerIndex].id}`} banner={banners[bannerIndex]} />
+                 );
+               }
+            }
+
+            return acc;
+          }, [] as React.ReactNode[])}
         </div>
       )}
     </div>
