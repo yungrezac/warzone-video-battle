@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -96,13 +97,13 @@ const VideoComments: React.FC<VideoCommentsProps> = ({
                   Отменить
                 </Button>
               </div>}
-            <div className="flex items-end space-x-3">
+            <div className="flex items-center space-x-3">
               <Textarea ref={textAreaRef} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Напишите комментарий..." onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               handleSubmitComment();
             }
-          }} className="flex-1 min-h-[30px] resize-none" />
+          }} className="flex-1 h-10 resize-none" rows={1} />
               <Button size="icon" onClick={handleSubmitComment} disabled={!newComment.trim() || addCommentMutation.isPending}>
                 {addCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
