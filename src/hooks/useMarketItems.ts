@@ -23,8 +23,10 @@ export const useMarketItems = () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [queryClient]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, queryKey]);
 
   return useQuery({
     queryKey,
@@ -166,8 +168,10 @@ export const useUserPurchases = () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [queryClient, user?.id]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, user?.id, queryKey]);
 
   return useQuery({
     queryKey,

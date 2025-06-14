@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -15,8 +16,10 @@ export const useMarketBanners = () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [queryClient]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, queryKey]);
 
   return useQuery({
     queryKey,

@@ -15,8 +15,10 @@ export const useYesterdayWinner = () => {
         }
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [queryClient]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, queryKey]);
 
   return useQuery({
     queryKey,
@@ -101,8 +103,10 @@ export const useTopUsers = () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [queryClient]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, queryKey]);
 
   return useQuery({
     queryKey,

@@ -31,8 +31,10 @@ export const useHomeBanners = () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [queryClient]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, queryKey]);
 
   return useQuery({
     queryKey,
