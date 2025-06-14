@@ -151,7 +151,7 @@ const TournamentDetailsModal: React.FC<TournamentDetailsModalProps> = ({ isOpen,
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md p-0">
+      <DialogContent className="sm:max-w-md p-0 sm:rounded-xl">
         <DialogHeader className="p-4 border-b">
           <DialogTitle>Подробности о турнире</DialogTitle>
         </DialogHeader>
