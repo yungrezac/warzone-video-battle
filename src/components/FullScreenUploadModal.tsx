@@ -281,7 +281,7 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
                   <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
                 </div> : <>
                   <div className="space-y-3">
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-gray-50 rounded-lg p-3 px-0 py-px">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
                           <Video className="w-6 h-6 text-blue-600 mr-2" />
