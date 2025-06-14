@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, User, ShoppingBag, Trophy, Gamepad2 } from 'lucide-react';
+import { Home, User, ShoppingBag, Trophy, Zap } from 'lucide-react';
 
 interface BottomNavbarProps {
   activeTab: string;
@@ -11,7 +11,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, onTabChange }) =
   const tabs = [
     { id: 'home', icon: Home, label: 'Главная' },
     { id: 'top', icon: Trophy, label: 'ТОП' },
-    { id: 'tournaments', icon: Gamepad2, label: 'Турниры' },
+    { id: 'tournaments', icon: Zap, label: 'Турниры' },
     { id: 'market', icon: ShoppingBag, label: 'Магазин' },
     { id: 'profile', icon: User, label: 'Профиль' },
   ];
