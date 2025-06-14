@@ -275,7 +275,7 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
 
           {/* Content */}
           <div className="flex-1 p-0 overflow-y-auto py-0 px-0 ">
-            <div className="max-w-screen-md max-w-screen-md max-w-screen-md max-w-screen-md max-w-screen-md mx-0 px-[8px]">
+            <div className="max-w-screen-md max-w-screen-md max-w-screen-md max-w-screen-md max-w-screen-md mx-0 px-[8px] py-[6px]">
               <input ref={fileInputRef} type="file" accept="video/*" onChange={handleFileSelect} className="hidden" disabled={isUploading} />
               {!selectedFile ? <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center flex justify-center items-center h-48">
                   <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
@@ -313,7 +313,7 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
                       </div>
                       
                       {previewUrl && <div className="mb-3">
-                          <p className="text-xs text-gray-600 mb-2">Автоматически созданное превью:</p>
+                          <p className="text-xs text-gray-600 mb-2 px-[3px]">Автоматически созданное превью:</p>
                           <div className="w-full max-w-xs mx-auto">
                             <img src={previewUrl} alt="Превью видео" className="w-full h-auto rounded border border-gray-200" style={{
                         maxHeight: '150px',
@@ -352,10 +352,10 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
                   <CategorySelector selectedCategory={category} onCategoryChange={setCategory} disabled={isUploading} />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1 px-[2px]">
                       Название трюка *
                     </label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: 360 Spin, Backflip, Grind..." className="w-full" disabled={isUploading} maxLength={100} />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: 360 Spin, Backflip, Grind..." disabled={isUploading} maxLength={100} className="w-full py-0" />
                   </div>
 
                   
@@ -373,7 +373,7 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
 
                   
 
-                  <Button onClick={handleUpload} disabled={!selectedFile || !title.trim() || isUploading || !user} className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700">
+                  <Button onClick={handleUpload} disabled={!selectedFile || !title.trim() || isUploading || !user} className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 py-[2px] text-sm my-[17px]">
                     {isUploading ? <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Загрузка... {uploadProgress}%
