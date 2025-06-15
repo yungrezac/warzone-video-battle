@@ -199,7 +199,7 @@ const VideoFeed: React.FC = () => {
             title: video.title,
             author: displayName,
             authorAvatar: videoUser?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-            thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
+            thumbnail: video.thumbnail_url || 'https://i.postimg.cc/hGHyN1Z1/1eb82307-57c9-4efe-b3c2-5d1d49767f4c.png',
             videoUrl: video.video_url,
             likes: video.likes_count || 0,
             comments: video.comments_count || 0,
