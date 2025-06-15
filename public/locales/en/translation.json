@@ -107,5 +107,7 @@
   "toast_error_settings_load": "Error loading settings",
   "toast_error_auth_required": "Authorization required",
   "toast_error_settings_save": "Error saving settings: {{message}}",
-  "toast_error_settings_save_unknown": "Error saving settings: Unknown error"
+  "toast_error_settings_save_unknown": "Error saving settings: Unknown error",
+  "new_videos_from_subscriptions": "New videos from subscriptions",
+  "new_subscriber_notifications": "New subscribers"
 }

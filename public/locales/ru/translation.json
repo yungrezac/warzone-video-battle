@@ -107,5 +107,7 @@
   "toast_error_settings_load": "Ошибка загрузки настроек",
   "toast_error_auth_required": "Необходима авторизация",
   "toast_error_settings_save": "Ошибка сохранения настроек: {{message}}",
-  "toast_error_settings_save_unknown": "Ошибка сохранения настроек: Неизвестная ошибка"
+  "toast_error_settings_save_unknown": "Ошибка сохранения настроек: Неизвестная ошибка",
+  "new_videos_from_subscriptions": "Новые видео от подписок",
+  "new_subscriber_notifications": "Новые подписчики"
 }

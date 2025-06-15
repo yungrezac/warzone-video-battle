@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
@@ -34,7 +35,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 text-red-500" />
-              <span className="text-sm">{t('likes_notifications')}</span>
+              <span className="text-sm">{t('likes')}</span>
             </div>
             <Switch
               checked={settings.likes_notifications}
@@ -46,7 +47,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4 text-blue-500" />
-              <span className="text-sm">{t('comments_notifications')}</span>
+              <span className="text-sm">{t('comments')}</span>
             </div>
             <Switch
               checked={settings.comments_notifications}
@@ -58,7 +59,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm">{t('achievements_notifications')}</span>
+              <span className="text-sm">{t('achievements')}</span>
             </div>
             <Switch
               checked={settings.achievements_notifications}
@@ -70,7 +71,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-green-500" />
-              <span className="text-sm">{t('winners_notifications')}</span>
+              <span className="text-sm">{t('winner_of_the_day')}</span>
             </div>
             <Switch
               checked={settings.winners_notifications}
@@ -94,7 +95,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-indigo-500" />
-              <span className="text-sm">{t('new_subscriber_notifications', 'Новые подписчики')}</span>
+              <span className="text-sm">{t('new_subscriber_notifications')}</span>
             </div>
             <Switch
               checked={settings.new_subscriber_notifications}
@@ -106,7 +107,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Settings className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">{t('system_notifications')}</span>
+              <span className="text-sm">{t('system')}</span>
             </div>
             <Switch
               checked={settings.system_notifications}
