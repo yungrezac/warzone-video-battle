@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing, Heart, ThumbsUp, Eye, Loader2 } from 'lucide-react';
@@ -30,7 +31,7 @@ const UserProfile: React.FC = () => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const { t, i18n } = useTranslation();
-  const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(userId);
+  const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(userId || null);
   const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
 
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || null);

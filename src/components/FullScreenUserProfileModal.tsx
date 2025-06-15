@@ -37,7 +37,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
 }) => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
-  const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(userId || undefined);
+  const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(userId);
   const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
   
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);

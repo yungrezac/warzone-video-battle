@@ -11,7 +11,7 @@ type UseUserSubscriptionsReturn = {
   unsubscribe: () => void;
 };
 
-export const useUserSubscriptions = (profileUserId?: string): UseUserSubscriptionsReturn => {
+export const useUserSubscriptions = (profileUserId: string | null): UseUserSubscriptionsReturn => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const currentUserId = user?.id;
