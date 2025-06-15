@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -146,6 +145,15 @@ export const useOptimizedVideoUpload = () => {
         }
 
         onProgress?.(95);
+
+        // Асинхронно отправляем уведомления подписчикам
+        supabase.functions.invoke('notify-followers', {
+          body: { videoId: videoRecord.id }
+        }).then(() => {
+          console.log(`🚀 Запущены уведомления подписчикам для видео ${videoRecord.id}`);
+        }).catch(err => {
+          console.error(`❌ Ошибка запуска уведомлений для видео ${videoRecord.id}:`, err);
+        });
 
         // Асинхронно обновляем достижения
         try {

@@ -10,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthWrapper';
 import CategorySelector from './CategorySelector';
 import VideoEditor from './VideoEditor';
-import { shouldCompress } from '@/utils/videoOptimization';
+import { generateQuickThumbnail } from '@/utils/videoOptimization';
+
 interface FullScreenUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -73,60 +74,20 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
       setUploadProgress(0);
       setThumbnailGenerated(false);
       setPreviewUrl(null);
-      generatePreviewFromVideo(initialFile).then(preview => {
-        setPreviewUrl(preview);
+      
+      generateQuickThumbnail(initialFile).then(blob => {
+        setThumbnailBlob(blob);
+        setPreviewUrl(URL.createObjectURL(blob));
         setThumbnailGenerated(true);
-        console.log('✅ Превью для отображения создано');
+        console.log('✅ Превью для загрузки и отображения создано');
       }).catch(error => {
-        console.warn('⚠️ Не удалось создать превью для отображения:', error);
+        console.warn('⚠️ Не удалось создать превью для загрузки:', error);
         setPreviewUrl(null);
+        setThumbnailBlob(null);
       });
     }
   }, [initialFile, onClose, toast]);
 
-  // Функция для генерации превью локально для отображения
-  const generatePreviewFromVideo = (videoFile: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const video = document.createElement('video');
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Не удалось создать canvas context'));
-        return;
-      }
-      video.preload = 'metadata';
-      video.muted = true;
-      video.onloadedmetadata = () => {
-        const time = Math.min(1, video.duration / 2);
-        video.currentTime = time;
-      };
-      video.onseeked = () => {
-        try {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0);
-          canvas.toBlob(blob => {
-            if (blob) {
-              const url = URL.createObjectURL(blob);
-              resolve(url);
-            } else {
-              reject(new Error('Не удалось создать превью'));
-            }
-          }, 'image/jpeg', 0.8);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      video.onerror = () => {
-        reject(new Error('Ошибка загрузки видео для генерации превью'));
-      };
-      const videoUrl = URL.createObjectURL(videoFile);
-      video.src = videoUrl;
-      video.onloadstart = () => {
-        URL.revokeObjectURL(videoUrl);
-      };
-    });
-  };
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -157,15 +118,17 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
     setTrimEnd(0);
     setUploadProgress(0);
     setThumbnailGenerated(false);
-    try {
-      const preview = await generatePreviewFromVideo(file);
-      setPreviewUrl(preview);
-      setThumbnailGenerated(true);
-      console.log('✅ Превью для отображения создано');
-    } catch (error) {
-      console.warn('⚠️ Не удалось создать превью для отображения:', error);
-      setPreviewUrl(null);
-    }
+
+    generateQuickThumbnail(file).then(blob => {
+        setThumbnailBlob(blob);
+        setPreviewUrl(URL.createObjectURL(blob));
+        setThumbnailGenerated(true);
+        console.log('✅ Превью для загрузки и отображения создано (файл изменен)');
+    }).catch(error => {
+        console.warn('⚠️ Не удалось создать превью для загрузки (файл изменен):', error);
+        setPreviewUrl(null);
+        setThumbnailBlob(null);
+    });
   };
   const handleButtonClick = () => {
     if (!user) {
@@ -216,6 +179,7 @@ const FullScreenUploadModal: React.FC<FullScreenUploadModalProps> = ({
         description: description.trim() || undefined,
         videoFile: selectedFile,
         category: category,
+        thumbnailBlob: thumbnailBlob,
         onProgress: setUploadProgress
       });
       setSelectedFile(null);
