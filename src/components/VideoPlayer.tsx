@@ -33,6 +33,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     }
   }, [currentPlayingVideo, videoId, isPlaying]);
 
+  // Пауза, если контекст был очищен (например, при открытии модального окна)
+  useEffect(() => {
+    if (currentPlayingVideo === null && isPlaying && videoRef.current) {
+      console.log(`▶️⏸️ Контекст проигрываемого видео очищен, ставим на паузу ${videoId}`);
+      videoRef.current.pause();
+    }
+  }, [currentPlayingVideo, isPlaying, videoId]);
+
   const handleVideoView = async () => {
     // Засчитываем просмотр только один раз при первом воспроизведении
     if (videoId && !hasViewBeenCounted) {

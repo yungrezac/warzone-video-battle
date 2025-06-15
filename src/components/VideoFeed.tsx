@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -15,6 +16,7 @@ import { useHomeBanners } from '@/hooks/useHomeBanners';
 import InlineBannerCard from './InlineBannerCard';
 import FullScreenUserProfileModal from './FullScreenUserProfileModal';
 import { useNavigate } from 'react-router-dom';
+import { useVideoPlayback } from '@/contexts/VideoPlaybackContext';
 
 const VideoFeed: React.FC = () => {
   const {
@@ -33,11 +35,19 @@ const VideoFeed: React.FC = () => {
   const {
     markVideoAsViewed
   } = useVideoViews();
+  const { currentPlayingVideo, setCurrentPlayingVideo } = useVideoPlayback();
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (selectedUserId && currentPlayingVideo) {
+      console.log('👤 Профиль открыт, ставим на паузу видео:', currentPlayingVideo);
+      setCurrentPlayingVideo(null);
+    }
+  }, [selectedUserId, currentPlayingVideo, setCurrentPlayingVideo]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
