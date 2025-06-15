@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -14,6 +13,7 @@ import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHomeBanners } from '@/hooks/useHomeBanners';
 import InlineBannerCard from './InlineBannerCard';
+import FullScreenUserProfileModal from './FullScreenUserProfileModal';
 
 const VideoFeed: React.FC = () => {
   const {
@@ -34,6 +34,7 @@ const VideoFeed: React.FC = () => {
   } = useVideoViews();
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -76,6 +77,23 @@ const VideoFeed: React.FC = () => {
         console.error('❌ VideoFeed: Ошибка при обработке лайка:', error);
         toast.error('Ошибка при обработке лайка');
       }
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const authorLink = target.closest('a[href^="/profile/"]');
+
+    if (authorLink) {
+        e.preventDefault();
+        e.stopPropagation();
+        const href = authorLink.getAttribute('href');
+        if (href) {
+            const userId = href.split('/').pop();
+            if (userId) {
+                setSelectedUserId(userId);
+            }
+        }
     }
   };
 
@@ -131,6 +149,11 @@ const VideoFeed: React.FC = () => {
           initialFile={fileToUpload}
         />
       )}
+      <FullScreenUserProfileModal
+        isOpen={!!selectedUserId}
+        onClose={() => setSelectedUserId(null)}
+        userId={selectedUserId}
+      />
       <AdminWinnerControl />
       
       <BannerRotation />
@@ -159,7 +182,7 @@ const VideoFeed: React.FC = () => {
         const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
 
         // Add video card
-        acc.push(<div key={video.id} data-video-id={video.id}>
+        acc.push(<div key={video.id} data-video-id={video.id} onClick={handleCardClick}>
                 <VideoCard video={{
             id: video.id,
             title: video.title,
