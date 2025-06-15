@@ -116,7 +116,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                 variant={isSubscribed ? 'secondary' : 'outline'}
                 size="sm"
                 onClick={handleSubscribeClick}
-                className={`ml-auto ${isSubscribed ? '' : 'text-white border-white hover:bg-white/20 hover:text-white'}`}
+                className={`ml-auto ${isSubscribed ? '' : 'bg-transparent text-white border-white hover:bg-white/20 hover:text-white'}`}
                 disabled={isLoading}
               >
                 {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}

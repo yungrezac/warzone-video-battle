@@ -4,17 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useEffect } from 'react';
 
-export const useUserVideos = () => {
+export const useUserVideos = (profileUserId: string | null) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const queryKey = ['user-videos', user?.id];
+  const queryKey = ['user-videos', profileUserId];
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!profileUserId) return;
 
     const channel = supabase
-      .channel(`user-videos-changes-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${user.id}` }, () => {
+      .channel(`user-videos-changes-${profileUserId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${profileUserId}` }, () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_likes' }, () => {
@@ -31,20 +31,20 @@ export const useUserVideos = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, user?.id]);
+  }, [queryClient, profileUserId, queryKey]);
 
 
   return useQuery({
     queryKey,
     queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
+      if (!profileUserId) return [];
 
-      console.log('Загружаем видео пользователя:', user.id);
+      console.log('Загружаем видео пользователя:', profileUserId);
 
       const { data: videos, error } = await supabase
         .from('videos')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', profileUserId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -92,22 +92,23 @@ export const useUserVideos = () => {
           let userLiked = false;
           let userRating = 0;
 
-          // Эти запросы выполняются только если пользователь авторизован, что уже проверено в начале queryFn
-          const { data: userLikeData } = await supabase
-            .from('video_likes')
-            .select('*')
-            .eq('video_id', video.id)
-            .eq('user_id', user.id)
-            .maybeSingle();
-          userLiked = !!userLikeData;
-
-          const { data: userRatingData } = await supabase
-            .from('video_ratings' as any)
-            .select('rating')
-            .eq('video_id', video.id)
-            .eq('user_id', user.id)
-            .maybeSingle();
-          userRating = (userRatingData as unknown as { rating: number } | null)?.rating || 0;
+          if (user) {
+            const { data: userLikeData } = await supabase
+              .from('video_likes')
+              .select('*')
+              .eq('video_id', video.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            userLiked = !!userLikeData;
+  
+            const { data: userRatingData } = await supabase
+              .from('video_ratings' as any)
+              .select('rating')
+              .eq('video_id', video.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            userRating = (userRatingData as unknown as { rating: number } | null)?.rating || 0;
+          }
 
           console.log(`Статистика видео ${video.id}:`, {
             likes: likesCount,
@@ -132,6 +133,6 @@ export const useUserVideos = () => {
       console.log('Видео пользователя с обновленной статистикой:', videosWithStats);
       return videosWithStats;
     },
-    enabled: !!user,
+    enabled: !!profileUserId,
   });
 };

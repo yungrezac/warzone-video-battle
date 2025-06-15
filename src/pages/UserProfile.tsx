@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing, Heart, ThumbsUp, Eye, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
 import VideoCard from '@/components/VideoCard';
-import AchievementCard from '@/components/AchievementCard';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthWrapper';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -134,7 +132,7 @@ const UserProfile: React.FC = () => {
               variant={isSubscribed ? 'secondary' : 'outline'}
               size="sm"
               onClick={handleSubscribeClick}
-              className={`ml-auto ${isSubscribed ? '' : 'text-white border-white hover:bg-white/20 hover:text-white'}`}
+              className={`ml-auto ${isSubscribed ? '' : 'bg-transparent text-white border-white hover:bg-white/20 hover:text-white'}`}
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}
