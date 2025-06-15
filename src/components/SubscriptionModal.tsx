@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -187,7 +186,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                       <CardTitle className="text-xl">Premium</CardTitle>
                       <CardDescription className="flex items-center justify-center gap-1">
                         <Star className="w-4 h-4 text-yellow-500" />
-                        <span className="text-lg font-bold">300 Stars</span>
+                        <span className="text-lg font-bold">1 Star</span>
                         <span className="text-sm text-gray-500">/месяц</span>
                       </CardDescription>
                     </CardHeader>
@@ -215,7 +214,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                     ) : (
                       <>
                         <Star className="w-4 h-4 mr-2" />
-                        Подписаться за 300 Stars
+                        Подписаться за 1 Star
                       </>
                     )}
                   </Button>

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -42,7 +41,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
       p_user_id: user_id,
       p_telegram_charge_id: telegram_payment_charge_id,
       p_invoice_payload: telegram_invoice_payload,
-      p_amount_stars: 300
+      p_amount_stars: 1
     });
 
     if (error) {
