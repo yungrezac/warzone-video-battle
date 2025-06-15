@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -84,6 +83,26 @@ export const useJoinTournament = () => {
 
   return useMutation({
     mutationFn: async ({ tournamentId, userId }: { tournamentId: string; userId: string }) => {
+      console.log('Attempting to join tournament:', { tournamentId, userId });
+      
+      // Сначала проверим, не участвует ли уже пользователь в турнире
+      const { data: existingParticipant, error: checkError } = await supabase
+        .from('tournament_participants')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing participation:', checkError);
+        throw checkError;
+      }
+
+      if (existingParticipant) {
+        throw new Error('Вы уже участвуете в этом турнире');
+      }
+
+      // Пытаемся присоединиться к турниру
       const { data, error } = await supabase
         .from('tournament_participants')
         .insert({
@@ -93,7 +112,12 @@ export const useJoinTournament = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error joining tournament:', error);
+        throw error;
+      }
+
+      console.log('Successfully joined tournament:', data);
       return data;
     },
     onSuccess: () => {
@@ -103,7 +127,11 @@ export const useJoinTournament = () => {
     },
     onError: (error) => {
       console.error('Error joining tournament:', error);
-      toast.error('Ошибка при присоединении к турниру');
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Ошибка при присоединении к турниру');
+      }
     },
   });
 };
