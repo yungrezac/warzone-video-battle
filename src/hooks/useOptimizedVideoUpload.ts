@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
-import { generateQuickThumbnail, shouldCompress, compressVideo } from '@/utils/videoOptimization';
+import { generateQuickThumbnail } from '@/utils/videoOptimization';
 
 interface OptimizedUploadParams {
   title: string;
@@ -59,7 +59,7 @@ export const useOptimizedVideoUpload = () => {
 
       const { title, description, videoFile, category, thumbnailBlob, onProgress } = params;
       
-      console.log('📹 Начинаем процесс загрузки видео:', {
+      console.log('📹 Загружаем оригинальное видео:', {
         userId: user.id,
         title,
         category,
@@ -68,40 +68,29 @@ export const useOptimizedVideoUpload = () => {
 
       onProgress?.(2);
 
-      // Сжимаем видео, если оно слишком большое
+      // Загружаем оригинальное видео
       let finalVideoFile = videoFile;
-      if (shouldCompress(videoFile)) {
-        onProgress?.(5); // Индикатор начала сжатия
-        try {
-          // Этот этап может занять время
-          finalVideoFile = await compressVideo(videoFile);
-        } catch(e) {
-          console.warn("Не удалось сжать видео, будет загружен оригинал", e);
-        }
-      }
-      
-      onProgress?.(15);
-
-      // Используем переданный thumbnailBlob или генерируем новый
       let thumbnailPromise: Promise<Blob | null>;
+      
+      // Используем переданный thumbnailBlob или генерируем новый
       if (thumbnailBlob) {
         thumbnailPromise = Promise.resolve(thumbnailBlob);
       } else {
         console.log('🖼️ Создаем превью...');
-        thumbnailPromise = generateQuickThumbnail(finalVideoFile).catch(() => null);
+        thumbnailPromise = generateQuickThumbnail(videoFile).catch(() => null);
       }
 
-      onProgress?.(20); // Немного сдвинем прогресс
+      onProgress?.(15);
 
       // Сохраняем оригинальное расширение
-      const fileExtension = finalVideoFile.name.split('.').pop() || 'mp4';
-      const videoFileName = `${user.id}/${Date.now()}_video.${fileExtension}`;
+      const fileExtension = videoFile.name.split('.').pop() || 'mp4';
+      const videoFileName = `${user.id}/${Date.now()}_original.${fileExtension}`;
       
       try {
-        // Загружаем видео (оригинал или сжатое)
-        console.log('📹 Загружаем видео файл...');
+        // Загружаем оригинальное видео
+        console.log('📹 Загружаем оригинальное видео...');
         const videoUrl = await uploadOriginalVideo(finalVideoFile, videoFileName, (progress) => {
-          onProgress?.(20 + (progress * 0.55)); // 20-75%
+          onProgress?.(15 + (progress * 0.6)); // 15-75%
         });
 
         onProgress?.(75);
@@ -179,7 +168,7 @@ export const useOptimizedVideoUpload = () => {
 
         onProgress?.(100);
 
-        console.log('🎉 Загрузка видео завершена!');
+        console.log('🎉 Загрузка оригинального видео завершена!');
         return videoRecord;
       } catch (error) {
         console.error('❌ Ошибка загрузки:', error);
