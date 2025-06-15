@@ -85,10 +85,13 @@ export const useUserSubscriptions = (profileUserId?: string) => {
     },
   });
 
+  const subscribe = () => subscribeMutation.mutate();
+  const unsubscribe = () => unsubscribeMutation.mutate();
+
   return {
     isSubscribed,
     isLoadingSubscription,
-    subscribe: subscribeMutation.mutate,
-    unsubscribe: unsubscribeMutation.mutate,
+    subscribe,
+    unsubscribe,
   };
 };
