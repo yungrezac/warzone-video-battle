@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthWrapper';
 import CategorySelector from './CategorySelector';
 import VideoEditor from './VideoEditor';
-import { generateQuickThumbnail } from '@/utils/videoOptimization';
+import { generateQuickThumbnail, shouldCompress } from '@/utils/videoOptimization';
 
 interface FullScreenUploadModalProps {
   isOpen: boolean;
