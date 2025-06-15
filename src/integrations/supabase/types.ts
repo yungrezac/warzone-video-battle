@@ -244,6 +244,57 @@ export type Database = {
           },
         ]
       }
+      online_tournaments: {
+        Row: {
+          banner_url: string
+          created_at: string
+          creator_id: string
+          description: string
+          end_date: string
+          entry_cost_points: number
+          id: string
+          is_active: boolean | null
+          min_participants: number
+          participants_count: number | null
+          status: string
+          title: string
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          banner_url: string
+          created_at?: string
+          creator_id: string
+          description: string
+          end_date: string
+          entry_cost_points?: number
+          id?: string
+          is_active?: boolean | null
+          min_participants?: number
+          participants_count?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          banner_url?: string
+          created_at?: string
+          creator_id?: string
+          description?: string
+          end_date?: string
+          entry_cost_points?: number
+          id?: string
+          is_active?: boolean | null
+          min_participants?: number
+          participants_count?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_stars: number
@@ -991,6 +1042,116 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_judges: {
+        Row: {
+          created_at: string
+          id: string
+          judge_id: string
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          judge_id: string
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          judge_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_judges_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          tournament_id: string
+          user_id: string
+          video_id: string | null
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          tournament_id: string
+          user_id: string
+          video_id?: string | null
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          tournament_id?: string
+          user_id?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_participants_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_video_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          judge_id: string
+          rating: number
+          tournament_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          judge_id: string
+          rating: number
+          tournament_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          judge_id?: string
+          rating?: number
+          tournament_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_video_ratings_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_video_ratings_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_videos: {
         Row: {
           created_at: string
@@ -1676,6 +1837,10 @@ export type Database = {
       complete_task: {
         Args: { p_task_id: string }
         Returns: Json
+      }
+      complete_tournament_and_determine_winner: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_points_history: {
         Args: {
