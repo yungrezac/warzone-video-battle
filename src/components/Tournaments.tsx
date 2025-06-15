@@ -86,8 +86,12 @@ const Tournaments: React.FC = () => {
       end_date: activeTournament.end_date,
       status: activeTournament.status as 'registration' | 'active' | 'completed',
       participants_count: activeTournament.participants_count || 0,
-      winner_id: activeTournament.winner_id,
-      profiles: activeTournament.profiles,
+      winner_id: activeTournament.winner_id || undefined,
+      profiles: activeTournament.profiles ? {
+        username: activeTournament.profiles.username,
+        first_name: activeTournament.profiles.first_name,
+        avatar_url: activeTournament.profiles.avatar_url,
+      } : undefined,
     };
 
     return (
