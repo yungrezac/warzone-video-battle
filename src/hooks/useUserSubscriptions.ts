@@ -40,7 +40,7 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
 
   const isSubscribed = !!subscription;
 
-  const subscribeMutation = useMutation({
+  const subscribeMutation = useMutation<string | null, Error, void>({
     mutationFn: async () => {
       if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
       if (currentUserId === profileUserId) throw new Error('You cannot subscribe to yourself');
@@ -55,8 +55,12 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
     onSuccess: (targetUserId) => {
       toast.success('Вы успешно подписались!');
       queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
-      queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
-      queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
+      if (targetUserId) {
+        queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
+      }
+      if (currentUserId) {
+        queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error) => {
@@ -64,7 +68,7 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
     },
   });
 
-  const unsubscribeMutation = useMutation({
+  const unsubscribeMutation = useMutation<string | null, Error, void>({
     mutationFn: async () => {
       if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
 
@@ -80,8 +84,12 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
     onSuccess: (targetUserId) => {
       toast.info('Вы отписались.');
       queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
-      queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
-      queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
+      if (targetUserId) {
+        queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
+      }
+      if (currentUserId) {
+        queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error) => {
@@ -89,8 +97,12 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
     },
   });
 
-  const subscribe = () => subscribeMutation.mutate();
-  const unsubscribe = () => unsubscribeMutation.mutate();
+  const subscribe = (): void => {
+    subscribeMutation.mutate();
+  };
+  const unsubscribe = (): void => {
+    unsubscribeMutation.mutate();
+  };
 
   return {
     isSubscribed,
