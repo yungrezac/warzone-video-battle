@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useHomeBanners } from '@/hooks/useHomeBanners';
 import InlineBannerCard from './InlineBannerCard';
 import FullScreenUserProfileModal from './FullScreenUserProfileModal';
+import { useNavigate } from 'react-router-dom';
 
 const VideoFeed: React.FC = () => {
   const {
@@ -37,6 +38,7 @@ const VideoFeed: React.FC = () => {
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
@@ -92,7 +94,11 @@ const VideoFeed: React.FC = () => {
         if (href) {
             const userId = href.split('/').pop();
             if (userId) {
-                setSelectedUserId(userId);
+                if (user?.id === userId) {
+                    navigate('/profile');
+                } else {
+                    setSelectedUserId(userId);
+                }
             }
         }
     }
@@ -142,6 +148,10 @@ const VideoFeed: React.FC = () => {
       </div>;
   }
 
+  const handleCloseProfileModal = () => {
+    setSelectedUserId(null);
+  }
+
   return <div className="min-h-screen bg-gray-50 pb-16">
       {fileToUpload && (
         <FullScreenUploadModal 
@@ -152,7 +162,7 @@ const VideoFeed: React.FC = () => {
       )}
       <FullScreenUserProfileModal
         isOpen={!!selectedUserId}
-        onClose={() => setSelectedUserId(null)}
+        onClose={handleCloseProfileModal}
         userId={selectedUserId}
       />
       <AdminWinnerControl />

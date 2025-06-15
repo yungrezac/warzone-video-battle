@@ -23,6 +23,7 @@ import {
 import { formatPoints } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import AchievementCard from './AchievementCard';
+import { useNavigate } from 'react-router-dom';
 
 interface FullScreenUserProfileModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   userId 
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const likeVideoMutation = useLikeVideo();
   const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(userId);
   const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
@@ -76,6 +78,15 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
     }
   };
 
+  const handleCloseModal = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+    onClose();
+  }
+
   if (profileLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -106,7 +117,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               variant="ghost" 
               size="sm" 
               className="text-white hover:bg-white/20 mr-2 p-1"
-              onClick={onClose}
+              onClick={handleCloseModal}
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
