@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -35,7 +34,7 @@ const VideoFeed: React.FC = () => {
   const {
     markVideoAsViewed
   } = useVideoViews();
-  const { currentPlayingVideo, setCurrentPlayingVideo } = useVideoPlayback();
+  const { currentPlayingVideo, setCurrentPlayingVideo, setVideoToPreload } = useVideoPlayback();
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -48,6 +47,24 @@ const VideoFeed: React.FC = () => {
       setCurrentPlayingVideo(null);
     }
   }, [selectedUserId, currentPlayingVideo, setCurrentPlayingVideo]);
+
+  // Эффект для предзагрузки следующего видео
+  useEffect(() => {
+    if (!currentPlayingVideo || !videos || videos.length === 0) {
+      setVideoToPreload(null);
+      return;
+    }
+
+    const currentIndex = videos.findIndex(v => v.id === currentPlayingVideo);
+
+    if (currentIndex !== -1 && currentIndex < videos.length - 1) {
+      const nextVideo = videos[currentIndex + 1];
+      console.log(`▶️ Воспроизводится: ${currentPlayingVideo}. Предзагрузка: ${nextVideo.id}`);
+      setVideoToPreload(nextVideo.id);
+    } else {
+      setVideoToPreload(null); // Это было последнее видео
+    }
+  }, [currentPlayingVideo, videos, setVideoToPreload]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
