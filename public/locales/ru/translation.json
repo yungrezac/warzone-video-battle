@@ -116,5 +116,12 @@
   "notification_settings_winner": "Победитель дня",
   "notification_settings_new_videos": "Новые видео от подписок",
   "notification_settings_new_subscribers": "Новые подписчики",
-  "notification_settings_system": "Системные"
+  "notification_settings_system": "Системные",
+  "subscribe": "Подписаться",
+  "unsubscribe": "Отписаться",
+  "followers": "Подписчики",
+  "following": "Подписки",
+  "no_followers": "Пока нет подписчиков.",
+  "no_following": "Вы пока ни на кого не подписаны.",
+  "list_load_error": "Ошибка загрузки списка."
 }

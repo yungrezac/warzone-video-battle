@@ -116,5 +116,12 @@
   "notification_settings_winner": "Winner of the day",
   "notification_settings_new_videos": "New videos from subscriptions",
   "notification_settings_new_subscribers": "New subscribers",
-  "notification_settings_system": "System"
+  "notification_settings_system": "System",
+  "subscribe": "Subscribe",
+  "unsubscribe": "Unsubscribe",
+  "followers": "Followers",
+  "following": "Following",
+  "no_followers": "No followers yet.",
+  "no_following": "Not following anyone yet.",
+  "list_load_error": "Error loading list."
 }

@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { formatPoints } from '@/lib/utils';
+import FollowListModal from './FollowListModal';
+
 const Profile: React.FC = () => {
   const {
     t,
@@ -45,6 +47,9 @@ const Profile: React.FC = () => {
   } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isFollowModalOpen, setFollowModalOpen] = useState(false);
+  const [followListType, setFollowListType] = useState<'followers' | 'following' | null>(null);
+
   const handleLike = async (videoId: string) => {
     if (!user) {
       toast.error(t('login_to_like'));
@@ -89,6 +94,17 @@ const Profile: React.FC = () => {
     setDeleteDialogOpen(false);
     setVideoToDelete(null);
   };
+
+  const handleOpenFollowers = () => {
+    setFollowListType('followers');
+    setFollowModalOpen(true);
+  };
+
+  const handleOpenFollowing = () => {
+    setFollowListType('following');
+    setFollowModalOpen(true);
+  };
+
   if (profileLoading) {
     return <div className="flex justify-center items-center min-h-[300px] pb-16">
         <Loader2 className="w-6 h-6 animate-spin" />
@@ -149,20 +165,29 @@ const Profile: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-between">
-            <div>
-              <div className="text-lg font-bold points-display">{formatPoints(userProfile?.total_points || 0)}</div>
+        <div className="grid grid-cols-2 gap-2 mt-3">
+            <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center cursor-pointer hover:bg-opacity-30" onClick={handleOpenFollowers}>
+                <div className="text-lg font-bold">{userProfile?.followers_count || 0}</div>
+                <div className="text-xs opacity-90">{t('followers')}</div>
             </div>
-            {isPremium && <Button size="sm" className="mt-2 bg-green-500 hover:bg-green-600 text-white text-xs py-1" onClick={() => setIsWithdrawOpen(true)}>
-                  <ArrowUpRight className="w-3 h-3 mr-1" />
-                  {t('withdraw')}
-                </Button>}
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-center">
-            <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
-            <div className="text-xs opacity-90">{t('wins')}</div>
-          </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center cursor-pointer hover:bg-opacity-30" onClick={handleOpenFollowing}>
+                <div className="text-lg font-bold">{userProfile?.following_count || 0}</div>
+                <div className="text-xs opacity-90">{t('following')}</div>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-between">
+              <div>
+                <div className="text-lg font-bold points-display">{formatPoints(userProfile?.total_points || 0)}</div>
+                <div className="text-xs opacity-90">{t('points')}</div>
+              </div>
+              {isPremium && <Button size="sm" className="mt-2 bg-green-500 hover:bg-green-600 text-white text-xs py-1" onClick={() => setIsWithdrawOpen(true)}>
+                    <ArrowUpRight className="w-3 h-3 mr-1" />
+                    {t('withdraw')}
+                  </Button>}
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-center">
+              <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
+              <div className="text-xs opacity-90">{t('wins')}</div>
+            </div>
         </div>
       </div>
 
@@ -326,6 +351,15 @@ const Profile: React.FC = () => {
       <NotificationSettings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       
       <WithdrawalModal isOpen={isWithdrawOpen} onClose={() => setIsWithdrawOpen(false)} userPoints={userProfile?.total_points || 0} />
+      
+      {followListType && (
+        <FollowListModal
+          isOpen={isFollowModalOpen}
+          onClose={() => setFollowModalOpen(false)}
+          userId={user?.id || null}
+          listType={followListType}
+        />
+      )}
     </div>;
 };
 export default Profile;
