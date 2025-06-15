@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,23 +18,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [hasViewBeenCounted, setHasViewBeenCounted] = useState(false);
-  const [isActivated, setIsActivated] = useState(false); // Загружался ли источник по клику
   const videoRef = useRef<HTMLVideoElement>(null);
   const { markVideoAsViewed } = useVideoViews();
-  const { currentPlayingVideo, setCurrentPlayingVideo, videoToPreload } = useVideoPlayback();
-
-  const shouldPreload = videoId === videoToPreload;
-  const shouldLoadSource = isActivated || shouldPreload;
-
-  // Эффект для автоматического воспроизведения после активации
-  useEffect(() => {
-    if (isActivated && videoRef.current && !isPlaying) {
-      // Даем браузеру небольшой таймаут, чтобы он успел обработать новый src
-      setTimeout(() => {
-        videoRef.current?.play().catch(e => console.error(`Автовоспроизведение ${videoId} не удалось:`, e));
-      }, 50);
-    }
-  }, [isActivated, videoId]);
+  const { currentPlayingVideo, setCurrentPlayingVideo } = useVideoPlayback();
 
   // Останавливаем видео если играет другое видео
   useEffect(() => {
@@ -69,19 +56,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   };
 
   const togglePlay = () => {
-    if (!isActivated) {
-      console.log(`▶️ Первая активация видео ${videoId}`);
-      setIsActivated(true);
-      return; // Эффект позаботится о воспроизведении
-    }
-
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        setCurrentPlayingVideo(null);
       } else {
         videoRef.current.play();
+        if (videoId) {
+          setCurrentPlayingVideo(videoId);
+        }
+        handleVideoView();
       }
-      // isPlaying обновится через onPlay/onPause события
+      setIsPlaying(!isPlaying);
     }
   };
 
@@ -106,9 +92,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
 
   const handleVideoEnd = () => {
     setIsPlaying(false);
-    if(videoId === currentPlayingVideo) {
-      setCurrentPlayingVideo(null);
-    }
+    setCurrentPlayingVideo(null);
   };
 
   const handleMouseEnter = () => {
@@ -131,10 +115,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
 
   const handleVideoPauseEvent = () => {
     setIsPlaying(false);
-    // Сбрасываем currentPlayingVideo только если это было текущее видео
-    if(videoId === currentPlayingVideo) {
-      setCurrentPlayingVideo(null);
-    }
+    setCurrentPlayingVideo(null);
   };
 
   return (
@@ -145,7 +126,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     >
       <video
         ref={videoRef}
-        src={shouldLoadSource ? src : undefined}
+        src={src}
         poster={thumbnail}
         className="w-full h-full object-contain cursor-pointer"
         onClick={handleVideoClick}
@@ -153,7 +134,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
         onPlay={handleVideoPlayEvent}
         onPause={handleVideoPauseEvent}
         playsInline
-        preload={shouldPreload ? "auto" : "none"}
+        preload="metadata"
       />
       
       {/* Центральная кнопка воспроизведения */}
