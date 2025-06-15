@@ -1,5 +1,5 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
@@ -40,7 +40,20 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
 
   const isSubscribed = !!subscription;
 
-  const subscribeMutation = useMutation<string | null, Error, void>({
+  const mutationOptions = {
+    onSuccess: (targetUserId: string | null) => {
+      queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
+      if (targetUserId) {
+        queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
+      }
+      if (currentUserId) {
+        queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    },
+  };
+
+  const subscribeMutation: UseMutationResult<string | null, Error, void> = useMutation({
     mutationFn: async () => {
       if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
       if (currentUserId === profileUserId) throw new Error('You cannot subscribe to yourself');
@@ -54,21 +67,14 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
     },
     onSuccess: (targetUserId) => {
       toast.success('Вы успешно подписались!');
-      queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
-      if (targetUserId) {
-        queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
-      }
-      if (currentUserId) {
-        queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
-      }
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      mutationOptions.onSuccess(targetUserId);
     },
     onError: (error) => {
       toast.error(`Ошибка подписки: ${error.message}`);
     },
   });
 
-  const unsubscribeMutation = useMutation<string | null, Error, void>({
+  const unsubscribeMutation: UseMutationResult<string | null, Error, void> = useMutation({
     mutationFn: async () => {
       if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
 
@@ -83,14 +89,7 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
     },
     onSuccess: (targetUserId) => {
       toast.info('Вы отписались.');
-      queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
-      if (targetUserId) {
-        queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
-      }
-      if (currentUserId) {
-        queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
-      }
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      mutationOptions.onSuccess(targetUserId);
     },
     onError: (error) => {
       toast.error(`Ошибка отписки: ${error.message}`);
@@ -100,6 +99,7 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
   const subscribe = (): void => {
     subscribeMutation.mutate();
   };
+  
   const unsubscribe = (): void => {
     unsubscribeMutation.mutate();
   };

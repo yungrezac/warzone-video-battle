@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing, Heart, ThumbsUp, Eye, Loader2 } from 'lucide-react';
+import { Calendar, Trophy, Video, ArrowLeft, UserPlus, BellRing, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
 import VideoCard from '@/components/VideoCard';
@@ -21,8 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { formatPoints } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -190,41 +188,6 @@ const UserProfile: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Achievements Section */}
-        <div className="bg-white rounded-lg shadow-md p-3 mb-3">
-          <h3 className="text-base font-semibold mb-2 flex items-center">
-            <Award className="w-4 h-4 mr-2 text-purple-500" />
-            {t('achievements')}
-          </h3>
-          
-          <div className="grid grid-cols-2 gap-2 text-center mb-3">
-            <div className="bg-purple-50 rounded-lg p-2">
-              <div className="text-base font-bold text-purple-600">{userProfile?.total_achievements || 0}</div>
-              <div className="text-xs text-purple-700">{t('user_profile_achievements_received')}</div>
-            </div>
-            <div className="bg-blue-50 rounded-lg p-2">
-              <div className="text-base font-bold text-blue-600 points-display">{formatPoints(userProfile?.total_points || 0)}</div>
-            </div>
-          </div>
-
-          {userProfile.recent_achievements && userProfile.recent_achievements.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">{t('user_profile_recent_achievements')}</h4>
-              <div className="space-y-1">
-                {userProfile.recent_achievements.map((ua: any) => (
-                  <div key={ua.id} className="flex items-center text-xs bg-yellow-50 rounded p-1">
-                    <span className="mr-2">{ua.achievement.icon}</span>
-                    <span className="flex-1 text-gray-700">{ua.achievement.title}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      +{ua.achievement.reward_points}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {userProfile?.is_premium && (

@@ -198,13 +198,6 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center bg-white rounded-lg shadow-sm p-2">
-                  <Award className="w-5 h-5 mr-2 text-yellow-500" />
-                  <div>
-                    <div className="font-bold text-sm">Достижения</div>
-                    <div className="text-xs text-gray-500">{userProfile?.total_achievements || 0}</div>
-                  </div>
-                </div>
-                <div className="flex items-center bg-white rounded-lg shadow-sm p-2">
                   <Trophy className="w-5 h-5 mr-2 text-purple-500" />
                   <div>
                     <div className="font-bold text-sm">Баллы</div>
