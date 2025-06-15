@@ -8,6 +8,9 @@ import { useAuth } from '@/components/AuthWrapper';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import ComingSoonModal from './ComingSoonModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useSubscription } from '@/hooks/useSubscription';
+import PremiumRequiredModal from './PremiumRequiredModal';
+import { toast } from 'sonner';
 
 interface MarketItemCardProps {
   item: {
@@ -25,12 +28,43 @@ interface MarketItemCardProps {
 
 const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
   const [isComingSoonModalOpen, setComingSoonModalOpen] = useState(false);
+  const [isPremiumRequiredModalOpen, setPremiumRequiredModalOpen] = useState(false);
   const { user } = useAuth();
   const { data: userProfile, isLoading: isLoadingProfile } = useUserProfile();
+  const { isPremium, createInvoice, isCreatingInvoice, isLoading: isLoadingSubscription } = useSubscription();
 
   const handlePurchase = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setComingSoonModalOpen(true);
+    if (isPremium) {
+      setComingSoonModalOpen(true);
+    } else {
+      setPremiumRequiredModalOpen(true);
+    }
+  };
+
+  const handleConfirmPremium = async () => {
+    try {
+      const data = await createInvoice();
+      if (data && data.invoice_url && window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.openInvoice(data.invoice_url, (status: string) => {
+          if (status === 'paid') {
+            toast.success("Оплата прошла успешно! Ваш Premium статус активирован.");
+            setPremiumRequiredModalOpen(false);
+          } else {
+            toast.info("Статус платежа: " + status);
+          }
+        });
+      } else if (data && data.invoice_url) {
+        window.open(data.invoice_url, '_blank');
+        setPremiumRequiredModalOpen(false);
+      } else {
+        toast.error("Не удалось создать счет на оплату.");
+        console.error("Invoice URL not found in response", data);
+      }
+    } catch (error) {
+      toast.error("Ошибка при создании счета.");
+      console.error("Error creating subscription invoice:", error);
+    }
   };
 
   const isOutOfStock = item.stock_quantity !== null && item.stock_quantity <= 0;
@@ -126,7 +160,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
           
             <Button
               onClick={handlePurchase}
-              disabled={isOutOfStock || !user || !hasEnoughPoints || isLoadingProfile}
+              disabled={isOutOfStock || !user || !hasEnoughPoints || isLoadingProfile || isLoadingSubscription}
               size="sm"
               className={`w-full h-9 text-sm font-medium transition-all duration-200 mt-2 ${
                 (isOutOfStock || (user && !isLoadingProfile && !hasEnoughPoints))
@@ -138,7 +172,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
                 'Нет в наличии'
               ) : !user ? (
                 "Войти"
-              ) : isLoadingProfile ? (
+              ) : isLoadingProfile || isLoadingSubscription ? (
                  <Loader2 className="w-4 h-4 animate-spin" />
               ) : !hasEnoughPoints ? (
                 'Недостаточно баллов'
@@ -158,6 +192,12 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
         onClose={() => setComingSoonModalOpen(false)}
         title="Покупка скоро будет доступна"
         description="Вы скоро сможете приобрести этот товар."
+      />
+      <PremiumRequiredModal
+        isOpen={isPremiumRequiredModalOpen}
+        onClose={() => setPremiumRequiredModalOpen(false)}
+        onConfirm={handleConfirmPremium}
+        isPending={isCreatingInvoice}
       />
     </>
   );
