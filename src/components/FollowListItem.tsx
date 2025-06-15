@@ -5,12 +5,10 @@ import { Button } from './ui/button';
 import { useUserSubscriptions } from '@/hooks/useUserSubscriptions';
 import { useAuth } from './AuthWrapper';
 import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-const FollowListItem = ({ user, onUserClick }: { user: any, onUserClick: () => void }) => {
+const FollowListItem = ({ user, onUserClick, onUserSelect }: { user: any, onUserClick: () => void, onUserSelect: (userId: string) => void }) => {
   const { user: currentUser } = useAuth();
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(user.id);
 
@@ -24,7 +22,7 @@ const FollowListItem = ({ user, onUserClick }: { user: any, onUserClick: () => v
   
   const handleUserClick = () => {
     onUserClick();
-    navigate(`/user/${user.id}`);
+    onUserSelect(user.id);
   };
 
   return (

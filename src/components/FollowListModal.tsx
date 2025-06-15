@@ -11,9 +11,10 @@ interface FollowListModalProps {
   onClose: () => void;
   userId: string | null;
   listType: 'followers' | 'following';
+  onUserSelect: (userId: string) => void;
 }
 
-const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClose, userId, listType }) => {
+const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClose, userId, listType, onUserSelect }) => {
   const { data: users, isLoading, error } = useFollowList(userId, listType);
   const { t } = useTranslation();
 
@@ -42,6 +43,7 @@ const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClose, user
                   key={user.id}
                   user={user}
                   onUserClick={onClose}
+                  onUserSelect={onUserSelect}
                 />
               ))}
             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { formatPoints } from '@/lib/utils';
 import FollowListModal from './FollowListModal';
+import FullScreenUserProfileModal from './FullScreenUserProfileModal';
 
 const Profile: React.FC = () => {
   const {
@@ -49,6 +51,7 @@ const Profile: React.FC = () => {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isFollowModalOpen, setFollowModalOpen] = useState(false);
   const [followListType, setFollowListType] = useState<'followers' | 'following' | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -358,8 +361,15 @@ const Profile: React.FC = () => {
           onClose={() => setFollowModalOpen(false)}
           userId={user?.id || null}
           listType={followListType}
+          onUserSelect={setSelectedUserId}
         />
       )}
+
+      <FullScreenUserProfileModal
+        isOpen={!!selectedUserId}
+        onClose={() => setSelectedUserId(null)}
+        userId={selectedUserId}
+      />
     </div>;
 };
 export default Profile;
