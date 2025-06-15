@@ -88,9 +88,9 @@ const Tournaments: React.FC = () => {
       participants_count: activeTournament.participants_count || 0,
       winner_id: activeTournament.winner_id || undefined,
       profiles: activeTournament.winner ? {
-        username: activeTournament.winner.username,
-        first_name: activeTournament.winner.first_name,
-        avatar_url: activeTournament.winner.avatar_url,
+        username: activeTournament.winner.username || undefined,
+        first_name: activeTournament.winner.first_name || undefined,
+        avatar_url: activeTournament.winner.avatar_url || undefined,
       } : undefined,
     };
 

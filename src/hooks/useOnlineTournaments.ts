@@ -12,7 +12,7 @@ export const useOnlineTournaments = () => {
         .select(`
           *,
           tournament_participants(count),
-          winner:profiles!winner_id(username, first_name, avatar_url)
+          winner:profiles(username, first_name, avatar_url)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
