@@ -10,6 +10,7 @@ import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import PremiumBadge from './PremiumBadge';
 import SubscriptionModal from './SubscriptionModal';
 import { useTranslation } from 'react-i18next';
+import { formatPoints } from '@/lib/utils';
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -48,7 +49,7 @@ const Header: React.FC = () => {
             {/* Баллы */}
             <div className="hidden sm:flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
               <span>⭐</span>
-              <span>{userProfile?.total_points || 0}</span>
+              <span>{formatPoints(userProfile?.total_points || 0)} Б</span>
             </div>
 
             {/* Кнопка Premium */}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
@@ -14,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PremiumBadge from '@/components/PremiumBadge';
 import { useTranslation } from 'react-i18next';
+import { formatPoints } from '@/lib/utils';
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -158,8 +158,7 @@ const UserProfile: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-            <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
-            <div className="text-xs opacity-90">{t('points')}</div>
+            <div className="text-lg font-bold">{formatPoints(userProfile?.total_points || 0)} Б</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
             <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
@@ -216,8 +215,7 @@ const UserProfile: React.FC = () => {
               <div className="text-xs text-purple-700">{t('user_profile_achievements_received')}</div>
             </div>
             <div className="bg-blue-50 rounded-lg p-2">
-              <div className="text-base font-bold text-blue-600">{userProfile?.total_points || 0}</div>
-              <div className="text-xs text-blue-700">{t('user_profile_achievements_points')}</div>
+              <div className="text-base font-bold text-blue-600">{formatPoints(userProfile?.total_points || 0)} Б</div>
             </div>
           </div>
 

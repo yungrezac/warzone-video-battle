@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -16,6 +17,7 @@ import PremiumBadge from './PremiumBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
+import { formatPoints } from '@/lib/utils';
 const Profile: React.FC = () => {
   const {
     t,
@@ -152,8 +154,7 @@ const Profile: React.FC = () => {
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-between">
             <div>
-              <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
-              <div className="text-xs opacity-90">{t('points')}</div>
+              <div className="text-lg font-bold">{formatPoints(userProfile?.total_points || 0)} Б</div>
             </div>
             {isPremium && <Button size="sm" className="mt-2 bg-green-500 hover:bg-green-600 text-white text-xs py-1" onClick={() => setIsWithdrawOpen(true)}>
                   <ArrowUpRight className="w-3 h-3 mr-1" />

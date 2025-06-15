@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Trophy, Crown, Medal, Award } from 'lucide-react';
 import { useTopUsers } from '@/hooks/useWinnerSystem';
 import { Loader2 } from 'lucide-react';
 import PremiumBadge from './PremiumBadge';
+import { formatPoints } from '@/lib/utils';
 const TopUsers: React.FC = () => {
   const {
     data: topUsers,
@@ -63,7 +65,7 @@ const TopUsers: React.FC = () => {
                   <span className="max-w-[80px] truncate">{topUsers[1]?.user?.username || topUsers[1]?.user?.telegram_username || 'Роллер'}</span>
                   {topUsers[1]?.user?.is_premium && <PremiumBadge size="sm" />}
                 </div>
-                <div className="text-xs text-gray-500">{topUsers[1]?.total_points || 0} баллов</div>
+                <div className="text-xs text-gray-500">{formatPoints(topUsers[1]?.total_points || 0)} Б</div>
               </div>
             </div>
 
@@ -80,7 +82,7 @@ const TopUsers: React.FC = () => {
                   <span className="max-w-[100px] truncate">{topUsers[0]?.user?.username || topUsers[0]?.user?.telegram_username || 'Роллер'}</span>
                   {topUsers[0]?.user?.is_premium && <PremiumBadge size="sm" />}
                 </div>
-                <div className="text-sm text-yellow-600 font-semibold">{topUsers[0]?.total_points || 0} баллов</div>
+                <div className="text-sm text-yellow-600 font-semibold">{formatPoints(topUsers[0]?.total_points || 0)} Б</div>
               </div>
             </div>
 
@@ -95,7 +97,7 @@ const TopUsers: React.FC = () => {
                   <span className="max-w-[80px] truncate">{topUsers[2]?.user?.username || topUsers[2]?.user?.telegram_username || 'Роллер'}</span>
                   {topUsers[2]?.user?.is_premium && <PremiumBadge size="sm" />}
                 </div>
-                <div className="text-xs text-gray-500">{topUsers[2]?.total_points || 0} баллов</div>
+                <div className="text-xs text-gray-500">{formatPoints(topUsers[2]?.total_points || 0)} Б</div>
               </div>
             </div>
           </div>
@@ -129,8 +131,7 @@ const TopUsers: React.FC = () => {
                 </div>
                 
                 <div className="text-right">
-                  <div className="text-base font-bold text-blue-600">{userPoint.total_points || 0}</div>
-                  <div className="text-xs text-gray-500 -mt-1">баллов</div>
+                  <div className="text-base font-bold text-blue-600">{formatPoints(userPoint.total_points || 0)} Б</div>
                   {userPoint.wins_count > 0 && <div className="text-xs text-yellow-600 font-medium flex items-center justify-end gap-1 mt-1">
                       <Trophy className="w-3 h-3" />
                       <span>{userPoint.wins_count}</span>

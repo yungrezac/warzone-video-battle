@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { useWithdrawal } from '@/hooks/useWithdrawal';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
 import { Loader2, DollarSign, CreditCard } from 'lucide-react';
+import { formatPoints } from '@/lib/utils';
 
 interface WithdrawalModalProps {
   isOpen: boolean;
@@ -33,7 +33,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
     }
 
     if (amount < minWithdrawal) {
-      toast.error(`Минимальная сумма для вывода: ${minWithdrawal} баллов`);
+      toast.error(`Минимальная сумма для вывода: ${formatPoints(minWithdrawal)} Б`);
       return;
     }
 
@@ -84,10 +84,10 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              <strong>Доступно:</strong> {userPoints} баллов (≈{(userPoints * pointToUsdtRate).toFixed(2)} USDT)
+              <strong>Доступно:</strong> {formatPoints(userPoints)} Б (≈{(userPoints * pointToUsdtRate).toFixed(2)} USDT)
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              Минимум для вывода: {minWithdrawal} баллов
+              Минимум для вывода: {formatPoints(minWithdrawal)} Б
             </p>
           </div>
 
@@ -98,7 +98,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
               type="number"
               value={amount || ''}
               onChange={(e) => setAmount(Number(e.target.value))}
-              placeholder={`Минимум ${minWithdrawal}`}
+              placeholder={`Минимум ${formatPoints(minWithdrawal)}`}
               min={minWithdrawal}
               max={userPoints}
               disabled={isCreatingRequest}
