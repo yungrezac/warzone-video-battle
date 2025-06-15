@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useLikeVideo } from '@/hooks/useVideoLikes';
-import { useAuth } from '@/components/AuthWrapper';
-import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
-import { Loader2 } from 'lucide-react';
-import VideoCard from '@/components/VideoCard';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import PremiumBadge from '@/components/PremiumBadge';
+import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing, Heart, ThumbsUp, Eye, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatPoints } from '@/lib/utils';
+import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
+import VideoCard from '@/components/VideoCard';
+import AchievementCard from '@/components/AchievementCard';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/components/AuthWrapper';
+import { useLikeVideo } from '@/hooks/useVideoLikes';
+import { toast } from 'sonner';
+import PremiumBadge from '@/components/PremiumBadge';
+import { useUserSubscriptions } from '@/hooks/useUserSubscriptions';
+import { useUserVideos } from '@/hooks/useUserVideos';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { formatPoints } from '@/lib/utils';
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -33,83 +32,25 @@ const UserProfile: React.FC = () => {
   const { isSubscribed, subscribe, unsubscribe, isLoadingSubscription } = useUserSubscriptions(userId);
   const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
 
-  const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || '');
-
-  // Получаем видео пользователя
-  const { data: userVideos, isLoading: videosLoading } = useQuery({
-    queryKey: ['user-videos', userId],
-    queryFn: async () => {
-      if (!userId) throw new Error('User ID is required');
-
-      const { data: videos, error } = await supabase
-        .from('videos')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const videosWithStats = await Promise.all(
-        (videos || []).map(async (video) => {
-          const { count: likesCount } = await supabase
-            .from('video_likes')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id);
-
-          const { count: commentsCount } = await supabase
-            .from('video_comments')
-            .select('*', { count: 'exact' })
-            .eq('video_id', video.id);
-
-          let userLiked = false;
-
-          if (user?.id) {
-            const { data: userLike } = await supabase
-              .from('video_likes')
-              .select('*')
-              .eq('video_id', video.id)
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-            userLiked = !!userLike;
-          }
-
-          return {
-            ...video,
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            user_liked: userLiked,
-            thumbnail_url: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
-          };
-        })
-      );
-
-      return videosWithStats;
-    },
-    enabled: !!userId,
-  });
+  const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || null);
+  const { data: userVideos } = useUserVideos(userId || null);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
       toast.error(t('login_to_like'));
       return;
     }
-
-    const video = userVideos?.find(v => v.id === videoId);
-    if (video) {
-      try {
-        await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
-        toast.success(video.user_liked ? t('like_removed') : t('like_added'));
-      } catch (error) {
-        console.error('Ошибка при обработке лайка:', error);
-        toast.error(t('like_error'));
-      }
+    try {
+      await likeVideoMutation.mutateAsync({ videoId });
+    } catch (error) {
+      console.error(t('like_error_log'), error);
+      toast.error(t('like_error_toast'));
     }
   };
 
   const handleSubscribeClick = () => {
     if (!user) {
-      toast.error('Сначала нужно войти в систему');
+      toast.error(t('login_to_subscribe'));
       return;
     }
     if (userId) {
@@ -192,7 +133,7 @@ const UserProfile: React.FC = () => {
               variant={isSubscribed ? 'secondary' : 'outline'}
               size="sm"
               onClick={handleSubscribeClick}
-              className={`ml-auto ${isSubscribed ? '' : 'text-white border-white'}`}
+              className={`ml-auto ${isSubscribed ? '' : 'text-white border-white hover:bg-white/20 hover:text-white'}`}
               disabled={isLoadingSubscription}
             >
               {isLoadingSubscription ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}

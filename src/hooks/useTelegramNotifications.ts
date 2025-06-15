@@ -154,8 +154,7 @@ export const useTelegramNotifications = () => {
       console.log('Уведомления о победах отключены для пользователя', winnerId);
       return;
     }
-
-    const message = `🎉 <b>Поздравляем!</b>\n\nВаше видео "<b>${videoTitle}</b>" победило в ежедневном конкурсе!\n\nВы получили <b>${totalPoints} баллов</b>!`;
+    const message = `🏆 Поздравляем! Вы стали <b>победителем дня</b> с видео "<b>${videoTitle}</b>" и заработали <b>${formatPoints(totalPoints)}</b> <i class="font-bold balance-icon">Б</i>!`;
     return sendNotification(winnerTelegramId, message, 'daily_winner');
   };
 

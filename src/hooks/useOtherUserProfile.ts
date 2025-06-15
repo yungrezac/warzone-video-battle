@@ -1,34 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 
-export const useOtherUserProfile = (userId: string) => {
+export const useOtherUserProfile = (userId: string | null) => {
   const queryClient = useQueryClient();
-  const queryKey = ['other-user-profile', userId];
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const channel = supabase
-      .channel(`other-user-profile-changes-${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${userId}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_achievements', filter: `user_id=eq.${userId}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${userId}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, queryClient]);
+  const queryKey = useMemo(() => ['other-user-profile', userId], [userId]);
 
   return useQuery({
     queryKey,
@@ -46,8 +22,10 @@ export const useOtherUserProfile = (userId: string) => {
 
       if (profileError) {
         console.error('Ошибка загрузки профиля:', profileError);
-        throw profileError;
+        throw new Error(profileError.message);
       }
+
+      console.log('Профиль загружен:', profile);
 
       // Получаем баллы пользователя
       const { data: userPoints, error: pointsError } = await supabase

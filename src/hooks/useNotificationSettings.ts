@@ -26,12 +26,9 @@ export const useNotificationSettings = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Загружаем настройки при инициализации
   useEffect(() => {
-    if (user?.id) {
-      loadSettings();
-    }
-  }, [user?.id]);
+    loadSettings();
+  }, [user]);
 
   const loadSettings = async () => {
     if (!user?.id) return;
@@ -46,10 +43,8 @@ export const useNotificationSettings = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Ошибка загрузки настроек:', error);
-        if (error.code !== 'PGRST116') {
-          toast.error(t('toast_error_settings_load'));
-        }
+        toast.error(`${t('notification_settings_load_error')}: ${error.message}`);
+        console.error('Ошибка загрузки настроек уведомлений:', error);
         return;
       }
 
