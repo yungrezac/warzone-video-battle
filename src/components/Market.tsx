@@ -123,7 +123,7 @@ const Market: React.FC = () => {
                       {filteredItems.map(item => <MarketItemCard key={item.id} item={{
                   ...item,
                   images: Array.isArray(item.images) ? item.images as string[] : []
-                }} onItemClick={handleItemClick} />)}
+                }} />)}
                     </div> : <div className="text-center py-8 text-gray-500">
                       <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p className="text-sm">Товары в этой категории скоро появятся</p>
