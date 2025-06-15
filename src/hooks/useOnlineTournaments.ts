@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,7 +12,7 @@ export const useOnlineTournaments = () => {
         .select(`
           *,
           tournament_participants(count),
-          profiles!online_tournaments_winner_id_fkey(username, first_name, avatar_url)
+          winner:profiles!winner_id(username, first_name, avatar_url)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
