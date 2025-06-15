@@ -85,22 +85,23 @@ const VideoFeed: React.FC = () => {
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+    // Ищем клик по ссылке на профиль автора
     const authorLink = target.closest('a[href^="/profile/"]');
 
     if (authorLink) {
-        e.preventDefault();
-        e.stopPropagation();
-        const href = authorLink.getAttribute('href');
-        if (href) {
-            const userId = href.split('/').pop();
-            if (userId) {
-                if (user?.id === userId) {
-                    navigate('/profile');
-                } else {
-                    setSelectedUserId(userId);
-                }
-            }
+      // Предотвращаем стандартный переход по ссылке
+      e.preventDefault();
+      e.stopPropagation();
+
+      const href = authorLink.getAttribute('href');
+      if (href) {
+        const userId = href.split('/').pop();
+        if (userId) {
+          // Чтобы поведение было как на странице "ТОП",
+          // всегда открываем профиль в модальном окне.
+          setSelectedUserId(userId);
         }
+      }
     }
   };
 
