@@ -26,6 +26,7 @@ declare global {
         setBackgroundColor?: (color: string) => void;
         enableClosingConfirmation?: () => void;
         openLink?: (url: string) => void;
+        openInvoice?: (url: string, callback?: (status: string) => void) => void;
       };
     };
   }

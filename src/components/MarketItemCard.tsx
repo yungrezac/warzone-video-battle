@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useSubscription } from '@/hooks/useSubscription';
 import PremiumRequiredModal from './PremiumRequiredModal';
 import { toast } from 'sonner';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 interface MarketItemCardProps {
   item: {
@@ -30,6 +30,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
   const [isComingSoonModalOpen, setComingSoonModalOpen] = useState(false);
   const [isPremiumRequiredModalOpen, setPremiumRequiredModalOpen] = useState(false);
   const { user } = useAuth();
+  const { webApp } = useTelegramWebApp();
   const { data: userProfile, isLoading: isLoadingProfile } = useUserProfile();
   const { isPremium, createInvoice, isCreatingInvoice, isLoading: isLoadingSubscription } = useSubscription();
 
@@ -45,8 +46,8 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
   const handleConfirmPremium = async () => {
     try {
       const data = await createInvoice();
-      if (data && data.invoice_url && window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.openInvoice(data.invoice_url, (status: string) => {
+      if (data && data.invoice_url && webApp?.openInvoice) {
+        webApp.openInvoice(data.invoice_url, (status: string) => {
           if (status === 'paid') {
             toast.success("Оплата прошла успешно! Ваш Premium статус активирован.");
             setPremiumRequiredModalOpen(false);
