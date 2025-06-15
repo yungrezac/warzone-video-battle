@@ -7,21 +7,22 @@ import { useEffect } from 'react';
 export const useUserProfile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const queryKey = ['user-profile', user?.id];
+  const userId = user?.id;
+  const queryKey = ['user-profile', userId];
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     const channel = supabase
-      .channel(`user-profile-changes-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
+      .channel(`user-profile-changes-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${user.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${userId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${user.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${userId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_likes' }, () => {
         queryClient.invalidateQueries({ queryKey: ['user-profile'] });
@@ -31,7 +32,7 @@ export const useUserProfile = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient]);
+  }, [userId, queryClient]);
 
   return useQuery({
     queryKey,

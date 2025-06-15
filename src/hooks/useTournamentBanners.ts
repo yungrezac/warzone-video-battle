@@ -11,13 +11,13 @@ export const useTournamentBanners = () => {
     const channel = supabase
       .channel('tournament-banners-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_banners' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['tournament-banners'] });
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, queryKey]);
+  }, [queryClient]);
 
   return useQuery({
     queryKey,

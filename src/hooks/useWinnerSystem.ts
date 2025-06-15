@@ -11,14 +11,14 @@ export const useYesterdayWinner = () => {
       .channel('winner-changes')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'videos' }, (payload) => {
         if (payload.new.is_winner) {
-          queryClient.invalidateQueries({ queryKey });
+          queryClient.invalidateQueries({ queryKey: ['yesterday-winner'] });
         }
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, queryKey]);
+  }, [queryClient]);
 
   return useQuery({
     queryKey,
@@ -97,16 +97,16 @@ export const useTopUsers = () => {
     const channel = supabase
       .channel('top-users-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['top-users'] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['top-users'] });
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, queryKey]);
+  }, [queryClient]);
 
   return useQuery({
     queryKey,

@@ -35,7 +35,7 @@ export const useAchievements = () => {
     const channel = supabase
       .channel('achievements-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'achievements' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['achievements'] });
       })
       .subscribe();
 
@@ -70,25 +70,26 @@ export const useAchievements = () => {
 export const useUserAchievements = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const queryKey = ['user-achievements', user?.id];
+  const userId = user?.id;
+  const queryKey = ['user-achievements', userId];
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     const channel = supabase
-      .channel(`user-achievements-changes-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_achievements', filter: `user_id=eq.${user.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
+      .channel(`user-achievements-changes-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_achievements', filter: `user_id=eq.${userId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['user-achievements', userId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'achievements' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['user-achievements', userId] });
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, user?.id]);
+  }, [queryClient, userId]);
 
   return useQuery({
     queryKey,

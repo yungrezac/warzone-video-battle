@@ -15,23 +15,23 @@ export const useUserVideos = (profileUserId: string | null) => {
     const channel = supabase
       .channel(`user-videos-changes-${profileUserId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${profileUserId}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['user-videos', profileUserId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_likes' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['user-videos', profileUserId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comments' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['user-videos', profileUserId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_ratings' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['user-videos', profileUserId] });
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, profileUserId, queryKey]);
+  }, [queryClient, profileUserId]);
 
 
   return useQuery({

@@ -28,13 +28,13 @@ export const useHomeBanners = () => {
     const channel = supabase
       .channel('home-banners-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'home_banners' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['home_banners'] });
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, queryKey]);
+  }, [queryClient]);
 
   return useQuery({
     queryKey,

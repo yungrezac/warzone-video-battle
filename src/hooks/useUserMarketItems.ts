@@ -13,13 +13,13 @@ export const useUserMarketItems = () => {
     const channel = supabase
       .channel('user-market-items-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_market_items' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['user-market-items'] });
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, queryKey]);
+  }, [queryClient]);
 
   return useQuery({
     queryKey,

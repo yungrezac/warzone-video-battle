@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -42,27 +43,28 @@ interface UploadVideoParams {
 export const useVideos = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const queryKey = ['videos', user?.id];
+  const userId = user?.id;
+  const queryKey = ['videos', userId];
 
   useEffect(() => {
     console.log('Realtime enabled for video feed');
     const channel = supabase
       .channel('videos-feed-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['videos', userId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_likes' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['videos', userId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comments' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['videos', userId] });
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, user?.id]);
+  }, [queryClient, userId]);
 
   return useQuery({
     queryKey,

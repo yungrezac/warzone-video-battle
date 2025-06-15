@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -35,10 +36,10 @@ export const useVideoComments = (videoId: string) => {
     const channel = supabase
       .channel(`video-comments-changes-${videoId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comments', filter: `video_id=eq.${videoId}` }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comment_likes' }, () => {
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       })
       .subscribe();
 
