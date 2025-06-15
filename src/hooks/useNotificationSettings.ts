@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
@@ -10,6 +9,7 @@ export interface NotificationSettings {
   comments_notifications: boolean;
   winners_notifications: boolean;
   achievements_notifications: boolean;
+  new_video_notifications: boolean;
   system_notifications: boolean;
 }
 
@@ -21,6 +21,7 @@ export const useNotificationSettings = () => {
     comments_notifications: true,
     winners_notifications: true,
     achievements_notifications: true,
+    new_video_notifications: true,
     system_notifications: true,
   });
   const [loading, setLoading] = useState(false);
@@ -59,6 +60,7 @@ export const useNotificationSettings = () => {
           comments_notifications: data.comments_notifications,
           winners_notifications: data.winners_notifications,
           achievements_notifications: data.achievements_notifications,
+          new_video_notifications: data.new_video_notifications,
           system_notifications: data.system_notifications,
         });
       } else {

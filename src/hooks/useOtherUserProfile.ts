@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
@@ -41,7 +40,7 @@ export const useOtherUserProfile = (userId: string) => {
       // Получаем профиль пользователя
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, followers_count, following_count')
         .eq('id', userId)
         .single();
 

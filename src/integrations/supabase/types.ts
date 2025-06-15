@@ -201,6 +201,7 @@ export type Database = {
           created_at: string
           id: string
           likes_notifications: boolean
+          new_video_notifications: boolean
           system_notifications: boolean
           updated_at: string
           user_id: string
@@ -212,6 +213,7 @@ export type Database = {
           created_at?: string
           id?: string
           likes_notifications?: boolean
+          new_video_notifications?: boolean
           system_notifications?: boolean
           updated_at?: string
           user_id: string
@@ -223,6 +225,7 @@ export type Database = {
           created_at?: string
           id?: string
           likes_notifications?: boolean
+          new_video_notifications?: boolean
           system_notifications?: boolean
           updated_at?: string
           user_id?: string
@@ -454,6 +457,8 @@ export type Database = {
           city: string | null
           created_at: string
           first_name: string | null
+          followers_count: number
+          following_count: number
           id: string
           is_premium: boolean | null
           last_name: string | null
@@ -470,6 +475,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           first_name?: string | null
+          followers_count?: number
+          following_count?: number
           id?: string
           is_premium?: boolean | null
           last_name?: string | null
@@ -486,6 +493,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           first_name?: string | null
+          followers_count?: number
+          following_count?: number
           id?: string
           is_premium?: boolean | null
           last_name?: string | null
@@ -1308,6 +1317,42 @@ export type Database = {
           {
             foreignKeyName: "user_saved_spots_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          subscribed_to_id: string
+          subscriber_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          subscribed_to_id: string
+          subscriber_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          subscribed_to_id?: string
+          subscriber_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_subscribed_to_id_fkey"
+            columns: ["subscribed_to_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_subscriber_id_fkey"
+            columns: ["subscriber_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

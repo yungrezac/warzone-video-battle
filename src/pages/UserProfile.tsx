@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
+import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -14,12 +14,24 @@ import { Badge } from '@/components/ui/badge';
 import PremiumBadge from '@/components/PremiumBadge';
 import { useTranslation } from 'react-i18next';
 import { formatPoints } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const { t, i18n } = useTranslation();
+  const { isSubscribed, subscribe, unsubscribe, isLoadingSubscription } = useUserSubscriptions(userId);
+  const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
 
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || '');
 
@@ -95,6 +107,27 @@ const UserProfile: React.FC = () => {
     }
   };
 
+  const handleSubscribeClick = () => {
+    if (!user) {
+      toast.error('Сначала нужно войти в систему');
+      return;
+    }
+    if (userId) {
+      if (isSubscribed) {
+        unsubscribe(userId);
+      } else {
+        setShowSubscribeConfirm(true);
+      }
+    }
+  };
+
+  const confirmSubscription = () => {
+    if (userId) {
+      subscribe(userId);
+    }
+    setShowSubscribeConfirm(false);
+  };
+
   if (profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
@@ -114,7 +147,7 @@ const UserProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16">
       {/* Header with back button */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 sticky top-0 z-40">
         <div className="flex items-center">
@@ -129,11 +162,11 @@ const UserProfile: React.FC = () => {
 
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3">
-        <div className="flex items-center mb-2">
+        <div className="flex items-start mb-3">
           <img
             src={userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
             alt={userProfile.username || t('skater')}
-            className="w-12 h-12 rounded-full border-2 border-white mr-2"
+            className="w-12 h-12 rounded-full border-2 border-white mr-3"
           />
           <div className="flex-1">
             <div className="flex items-center gap-2">
@@ -154,11 +187,28 @@ const UserProfile: React.FC = () => {
               </span>
             </div>
           </div>
+          {user?.id !== userId && (
+            <Button
+              variant={isSubscribed ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={handleSubscribeClick}
+              className={`ml-auto ${isSubscribed ? '' : 'text-white border-white'}`}
+              disabled={isLoadingSubscription}
+            >
+              {isLoadingSubscription ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}
+              {isSubscribed ? t('unsubscribe') : t('subscribe')}
+            </Button>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-            <div className="text-lg font-bold points-display">{formatPoints(userProfile?.total_points || 0)}</div>
+            <div className="text-lg font-bold">{userProfile?.followers_count || 0}</div>
+            <div className="text-xs opacity-90">{t('followers')}</div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold">{userProfile?.following_count || 0}</div>
+            <div className="text-xs opacity-90">{t('following')}</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
             <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
@@ -295,6 +345,24 @@ const UserProfile: React.FC = () => {
           )}
         </div>
       </div>
+
+      <AlertDialog open={showSubscribeConfirm} onOpenChange={setShowSubscribeConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <BellRing className="w-5 h-5 text-yellow-500" />
+              {t('subscription_confirmation_title')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('subscription_confirmation_desc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSubscription}>{t('subscribe')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Calendar, Trophy, Video, ArrowLeft, Award } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -12,6 +12,18 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import PremiumBadge from '@/components/PremiumBadge';
+import { useUserSubscriptions } from '@/hooks/useUserSubscriptions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { formatPoints } from '@/lib/utils';
 
 interface FullScreenUserProfileModalProps {
   isOpen: boolean;
@@ -26,6 +38,8 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
 }) => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
+  const { isSubscribed, subscribe, unsubscribe, isLoadingSubscription } = useUserSubscriptions(userId);
+  const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
   
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
 
@@ -82,6 +96,27 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
     enabled: !!userId && isOpen,
   });
 
+  const handleSubscribeClick = () => {
+    if (!user) {
+      toast.error('Сначала нужно войти в систему');
+      return;
+    }
+    if (userId) {
+      if (isSubscribed) {
+        unsubscribe(userId);
+      } else {
+        setShowSubscribeConfirm(true);
+      }
+    }
+  };
+
+  const confirmSubscription = () => {
+    if (userId) {
+      subscribe(userId);
+    }
+    setShowSubscribeConfirm(false);
+  };
+
   const handleLike = async (videoId: string) => {
     if (!user) {
       toast.error('Войдите в систему, чтобы ставить лайки');
@@ -131,7 +166,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
       <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none" hideCloseButton>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           {/* Header with back button */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center sticky top-0 z-50">
             <Button 
               variant="ghost" 
               size="sm" 
@@ -141,6 +176,18 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <h1 className="text-lg font-bold">Профиль</h1>
+            {user?.id !== userId && (
+              <Button
+                variant={isSubscribed ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={handleSubscribeClick}
+                className={`ml-auto ${isSubscribed ? '' : 'text-white border-white'}`}
+                disabled={isLoadingSubscription}
+              >
+                {isLoadingSubscription ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}
+                {isSubscribed ? 'Отписаться' : 'Подписаться'}
+              </Button>
+            )}
           </div>
 
           {/* Content */}
@@ -174,10 +221,14 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-                  <div className="text-lg font-bold">{userProfile?.total_points || 0}</div>
-                  <div className="text-xs opacity-90">Баллов</div>
+                  <div className="text-lg font-bold">{userProfile?.followers_count || 0}</div>
+                  <div className="text-xs opacity-90">Подписчики</div>
+                </div>
+                <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
+                  <div className="text-lg font-bold">{userProfile?.following_count || 0}</div>
+                  <div className="text-xs opacity-90">Подписки</div>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
                   <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
@@ -317,6 +368,23 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             </div>
           </div>
         </div>
+        <AlertDialog open={showSubscribeConfirm} onOpenChange={setShowSubscribeConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <BellRing className="w-5 h-5 text-yellow-500" />
+                Подтверждение подписки
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Вы будете получать уведомления в Telegram, когда этот пользователь загрузит новое видео. Вы можете отключить это в настройках.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmSubscription}>Подписаться</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

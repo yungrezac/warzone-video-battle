@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, MessageCircle, Trophy, Award, Settings } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Trophy, Award, Settings, Users } from 'lucide-react';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -76,6 +76,18 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
             <Switch
               checked={settings.winners_notifications}
               onCheckedChange={() => handleToggle('winners_notifications')}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-cyan-500" />
+              <span className="text-sm">{t('new_videos_from_subscriptions')}</span>
+            </div>
+            <Switch
+              checked={settings.new_video_notifications}
+              onCheckedChange={() => handleToggle('new_video_notifications')}
               disabled={loading}
             />
           </div>
