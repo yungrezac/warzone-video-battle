@@ -8,9 +8,11 @@ import { useTranslation } from 'react-i18next';
 interface ComingSoonModalProps {
   isOpen: boolean;
   onClose: () => void;
+  title?: string;
+  description?: string;
 }
 
-const ComingSoonModal: React.FC<ComingSoonModalProps> = ({ isOpen, onClose }) => {
+const ComingSoonModal: React.FC<ComingSoonModalProps> = ({ isOpen, onClose, title, description }) => {
   const { t } = useTranslation();
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -26,9 +28,9 @@ const ComingSoonModal: React.FC<ComingSoonModalProps> = ({ isOpen, onClose }) =>
           </div>
           
           <div className="space-y-2">
-            <h3 className="text-xl font-bold text-gray-800">{t('coming_soon_title')}</h3>
+            <h3 className="text-xl font-bold text-gray-800">{title || t('coming_soon_title')}</h3>
             <p className="text-gray-600 text-sm">
-              {t('coming_soon_description')}
+              {description || t('coming_soon_description')}
             </p>
           </div>
           

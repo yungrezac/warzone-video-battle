@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Star, Crown, Gift, Sparkles } from 'lucide-react';
+import { ShoppingCart, Star, Crown, Gift, Sparkles, Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import ComingSoonModal from './ComingSoonModal';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface MarketItemCardProps {
   item: {
@@ -25,6 +26,7 @@ interface MarketItemCardProps {
 const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
   const [isComingSoonModalOpen, setComingSoonModalOpen] = useState(false);
   const { user } = useAuth();
+  const { data: userProfile, isLoading: isLoadingProfile } = useUserProfile();
 
   const handlePurchase = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,6 +34,7 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
   };
 
   const isOutOfStock = item.stock_quantity !== null && item.stock_quantity <= 0;
+  const hasEnoughPoints = user && userProfile ? userProfile.total_points >= item.price : false;
 
   const getCategoryIcon = () => {
     switch (item.category) {
@@ -123,10 +126,10 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
           
             <Button
               onClick={handlePurchase}
-              disabled={isOutOfStock || !user}
+              disabled={isOutOfStock || !user || !hasEnoughPoints || isLoadingProfile}
               size="sm"
               className={`w-full h-9 text-sm font-medium transition-all duration-200 mt-2 ${
-                isOutOfStock
+                (isOutOfStock || (user && !isLoadingProfile && !hasEnoughPoints))
                   ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                   : ""
               }`}
@@ -135,6 +138,10 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
                 'Нет в наличии'
               ) : !user ? (
                 "Войти"
+              ) : isLoadingProfile ? (
+                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : !hasEnoughPoints ? (
+                'Недостаточно баллов'
               ) : (
                 <div className="flex items-center justify-center gap-1.5">
                   <ShoppingCart className="w-4 h-4" />
@@ -146,7 +153,12 @@ const MarketItemCard: React.FC<MarketItemCardProps> = ({ item }) => {
           </CardContent>
         </div>
       </Card>
-      <ComingSoonModal isOpen={isComingSoonModalOpen} onClose={() => setComingSoonModalOpen(false)} />
+      <ComingSoonModal 
+        isOpen={isComingSoonModalOpen} 
+        onClose={() => setComingSoonModalOpen(false)}
+        title="Покупка скоро будет доступна"
+        description="Вы скоро сможете приобрести этот товар."
+      />
     </>
   );
 };
