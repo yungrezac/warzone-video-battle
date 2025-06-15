@@ -10,7 +10,6 @@ import FullScreenLoader from "./components/FullScreenLoader";
 import PrefetchBanners from "./components/PrefetchBanners";
 
 const Index = lazy(() => import("./pages/Index"));
-const UserProfile = lazy(() => import("./pages/UserProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -58,7 +57,6 @@ const App = () => {
               <Suspense fallback={<FullScreenLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/user/:userId" element={<UserProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

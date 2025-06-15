@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -86,7 +85,7 @@ const VideoFeed: React.FC = () => {
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     // Ищем клик по ссылке на профиль автора
-    const authorLink = target.closest('a[href^="/profile/"]');
+    const authorLink = target.closest('a[href^="/user/"]');
 
     if (authorLink) {
       // Предотвращаем стандартный переход по ссылке
