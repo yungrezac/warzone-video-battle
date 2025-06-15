@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatPoints } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import AchievementCard from './AchievementCard';
 
 interface FullScreenUserProfileModalProps {
@@ -47,19 +48,15 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
       toast.error('Сначала нужно войти в систему');
       return;
     }
-    if (userId) {
-      if (isSubscribed) {
-        unsubscribe(userId);
-      } else {
-        setShowSubscribeConfirm(true);
-      }
+    if (isSubscribed) {
+      unsubscribe();
+    } else {
+      setShowSubscribeConfirm(true);
     }
   };
 
   const confirmSubscription = () => {
-    if (userId) {
-      subscribe(userId);
-    }
+    subscribe();
     setShowSubscribeConfirm(false);
   };
 
@@ -68,8 +65,11 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
       toast.error('Сначала нужно войти в систему');
       return;
     }
+    const video = userVideos?.find(v => v.id === videoId);
+    if (!video) return;
+
     try {
-      await likeVideoMutation.mutateAsync({ videoId });
+      await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
     } catch (error) {
       console.error('Ошибка при лайке видео:', error);
       toast.error('Не удалось поставить лайк');
@@ -218,9 +218,17 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             {userProfile?.recent_achievements && userProfile?.recent_achievements.length > 0 && (
               <div className="p-3">
                 <h3 className="text-lg font-semibold mb-2">Последние достижения</h3>
-                <div className="flex gap-3 overflow-x-auto pb-3">
-                  {userProfile.recent_achievements.map((achievement) => (
-                    <AchievementCard key={achievement.id} achievement={achievement} />
+                <div className="space-y-2">
+                  {userProfile.recent_achievements.map((ua: any) => (
+                     <div key={ua.id} className="flex items-center text-sm bg-yellow-50 rounded-lg p-2">
+                      <span className="mr-3 text-lg">{ua.achievement.icon}</span>
+                      <div className="flex-1">
+                        <span className="font-semibold text-gray-800">{ua.achievement.title}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs font-bold">
+                        +{ua.achievement.reward_points}
+                      </Badge>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -231,7 +239,32 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               <h3 className="text-lg font-semibold mb-2">Видео</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {userVideos?.map((video) => (
-                  <VideoCard key={video.id} video={video} onLike={handleLike} />
+                  <VideoCard 
+                    key={video.id} 
+                    video={{
+                      id: video.id,
+                      title: video.title,
+                      author: userProfile.username || userProfile.telegram_username || 'Роллер',
+                      authorAvatar: userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                      thumbnail: video.thumbnail_url || 'https://www.proskating.by/upload/iblock/04d/2w63xqnuppkahlgzmab37ke1gexxxneg/%D0%B7%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F.jpg',
+                      videoUrl: video.video_url,
+                      likes: video.likes_count || 0,
+                      comments: video.comments_count || 0,
+                      views: video.views,
+                      isWinner: video.is_winner,
+                      timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }),
+                      userLiked: video.user_liked || false,
+                      authorIsPremium: userProfile.is_premium,
+                      userId: video.user_id,
+                      category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
+                    }} 
+                    onLike={handleLike} 
+                  />
                 ))}
               </div>
               {(!userVideos || userVideos.length === 0) && (

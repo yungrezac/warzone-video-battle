@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatPoints } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -33,15 +34,18 @@ const UserProfile: React.FC = () => {
   const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
 
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || null);
-  const { data: userVideos } = useUserVideos(userId || null);
+  const { data: userVideos, isLoading: videosLoading } = useUserVideos(userId || null);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
       toast.error(t('login_to_like'));
       return;
     }
+    const video = userVideos?.find(v => v.id === videoId);
+    if (!video) return;
+
     try {
-      await likeVideoMutation.mutateAsync({ videoId });
+      await likeVideoMutation.mutateAsync({ videoId, isLiked: video.user_liked || false });
     } catch (error) {
       console.error(t('like_error_log'), error);
       toast.error(t('like_error_toast'));
@@ -53,19 +57,15 @@ const UserProfile: React.FC = () => {
       toast.error(t('login_to_subscribe'));
       return;
     }
-    if (userId) {
-      if (isSubscribed) {
-        unsubscribe(userId);
-      } else {
-        setShowSubscribeConfirm(true);
-      }
+    if (isSubscribed) {
+      unsubscribe();
+    } else {
+      setShowSubscribeConfirm(true);
     }
   };
 
   const confirmSubscription = () => {
-    if (userId) {
-      subscribe(userId);
-    }
+    subscribe();
     setShowSubscribeConfirm(false);
   };
 

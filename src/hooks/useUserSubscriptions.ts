@@ -36,17 +36,18 @@ export const useUserSubscriptions = (profileUserId?: string) => {
 
   // Мутация для подписки
   const subscribeMutation = useMutation({
-    mutationFn: async (targetUserId: string) => {
-      if (!currentUserId) throw new Error('User not authenticated');
-      if (currentUserId === targetUserId) throw new Error('You cannot subscribe to yourself');
+    mutationFn: async () => {
+      if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
+      if (currentUserId === profileUserId) throw new Error('You cannot subscribe to yourself');
 
       const { error } = await supabase
         .from('user_subscriptions')
-        .insert({ subscriber_id: currentUserId, subscribed_to_id: targetUserId });
+        .insert({ subscriber_id: currentUserId, subscribed_to_id: profileUserId });
       
       if (error) throw error;
+      return profileUserId;
     },
-    onSuccess: (_, targetUserId) => {
+    onSuccess: (targetUserId) => {
       toast.success('Вы успешно подписались!');
       queryClient.invalidateQueries({ queryKey: ['subscription-status', currentUserId, targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
@@ -60,18 +61,19 @@ export const useUserSubscriptions = (profileUserId?: string) => {
 
   // Мутация для отписки
   const unsubscribeMutation = useMutation({
-    mutationFn: async (targetUserId: string) => {
-      if (!currentUserId) throw new Error('User not authenticated');
+    mutationFn: async () => {
+      if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
 
       const { error } = await supabase
         .from('user_subscriptions')
         .delete()
         .eq('subscriber_id', currentUserId)
-        .eq('subscribed_to_id', targetUserId);
+        .eq('subscribed_to_id', profileUserId);
         
       if (error) throw error;
+      return profileUserId;
     },
-    onSuccess: (_, targetUserId) => {
+    onSuccess: (targetUserId) => {
       toast.info('Вы отписались.');
       queryClient.invalidateQueries({ queryKey: ['subscription-status', currentUserId, targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });

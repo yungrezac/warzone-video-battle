@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { formatPoints } from '@/lib/utils';
 
 export const useTelegramNotifications = () => {
   const checkNotificationSettings = async (userId: string, notificationType: 'likes' | 'comments' | 'achievements' | 'winners' | 'system' | 'new_video') => {
