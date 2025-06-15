@@ -76,7 +76,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
           .single();
 
         if (user?.telegram_id) {
-          const notificationMessage = `🎉 Поздравляем, ${user.first_name}!\n\nВаша Premium подписка активирована!\n\n✨ Теперь вам доступны все премиум функции:\n• Неограниченная загрузка видео\n• Приоритетное размещение\n• Эксклюзивные значки\n• И многое другое!\n\nПодписка действует до: ${new Date(result.expires_at!).toLocaleDateString('ru-RU')}`;
+          const notificationMessage = `🎉 Поздравляем, ${user.first_name}!\n\nВаша подписка TRICKS PREMIUM активирована!\n\n✨ Теперь вам доступны все эксклюзивные функции.\n\nПодписка действует до: ${new Date(result.expires_at!).toLocaleDateString('ru-RU')}`;
 
           await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             method: 'POST',

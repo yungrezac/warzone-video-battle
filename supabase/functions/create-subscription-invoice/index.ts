@@ -54,14 +54,14 @@ const serve_handler = async (req: Request): Promise<Response> => {
     // Создаем инвойсную ссылку для webApp.openInvoice
     const invoiceData = {
       chat_id: user.telegram_id,
-      title: 'Premium подписка RollerTricks',
-      description: 'Месячная премиум подписка с эксклюзивными функциями',
+      title: 'TRICKS PREMIUM',
+      description: 'Доступ ко всем премиум функциям TRICKS на один месяц.',
       payload: invoicePayload,
       provider_token: '', // Для Telegram Stars оставляем пустым
       currency: 'XTR', // Telegram Stars
       prices: [
         {
-          label: 'Premium подписка',
+          label: 'TRICKS PREMIUM',
           amount: 300 // 300 Telegram Stars
         }
       ],

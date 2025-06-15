@@ -152,10 +152,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Crown className="w-6 h-6 text-yellow-500" />
-                Premium подписка
+                TRICKS PREMIUM
               </DialogTitle>
               <DialogDescription>
-                Получите доступ к эксклюзивным функциям
+                Получите доступ ко всем эксклюзивным функциям TRICKS
               </DialogDescription>
             </DialogHeader>
 
@@ -173,7 +173,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-sm text-yellow-700">
-                      Спасибо за поддержку! Ваша премиум подписка активна.
+                      Спасибо за поддержку! Ваша подписка TRICKS PREMIUM активна.
                     </div>
                   </CardContent>
                 </Card>
@@ -184,7 +184,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                       <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-2">
                         <Crown className="w-8 h-8 text-white" />
                       </div>
-                      <CardTitle className="text-xl">Premium</CardTitle>
+                      <CardTitle className="text-xl">TRICKS PREMIUM</CardTitle>
                       <CardDescription className="flex items-center justify-center gap-1">
                         <Star className="w-4 h-4 text-yellow-500" />
                         <span className="text-lg font-bold">300 Stars</span>
@@ -215,7 +215,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                     ) : (
                       <>
                         <Star className="w-4 h-4 mr-2" />
-                        Подписаться за 300 Stars
+                        Оформить TRICKS PREMIUM
                       </>
                     )}
                   </Button>
