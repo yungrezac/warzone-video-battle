@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -53,7 +54,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
     // Создаем инвойсную ссылку для webApp.openInvoice
     const invoiceData = {
       chat_id: user.telegram_id,
-      title: 'TRICKS premium',
+      title: 'Premium подписка RollerTricks',
       description: 'Месячная премиум подписка с эксклюзивными функциями',
       payload: invoicePayload,
       provider_token: '', // Для Telegram Stars оставляем пустым
@@ -61,7 +62,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
       prices: [
         {
           label: 'Premium подписка',
-          amount: 1 // 1 Telegram Star
+          amount: 300 // 300 Telegram Stars
         }
       ],
       photo_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
