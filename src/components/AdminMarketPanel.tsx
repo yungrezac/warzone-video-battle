@@ -26,7 +26,8 @@ const AdminMarketPanel: React.FC = () => {
   // Проверяем, является ли пользователь админом
   const isAdmin = user?.telegram_username === 'rollertricksby' || 
                  user?.username === 'TrickMaster' || 
-                 user?.telegram_username === 'TrickMaster';
+                 user?.telegram_username === 'TrickMaster' ||
+                 user?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
 
   if (!isAdmin) {
     return null;
@@ -250,3 +251,4 @@ const AdminMarketPanel: React.FC = () => {
 };
 
 export default AdminMarketPanel;
+
