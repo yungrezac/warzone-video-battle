@@ -109,5 +109,12 @@
   "toast_error_settings_save": "Error saving settings: {{message}}",
   "toast_error_settings_save_unknown": "Error saving settings: Unknown error",
   "new_videos_from_subscriptions": "New videos from subscriptions",
-  "new_subscriber_notifications": "New subscribers"
+  "new_subscriber_notifications": "New subscribers",
+  "notification_settings_likes": "Likes",
+  "notification_settings_comments": "Comments",
+  "notification_settings_achievements": "Achievements",
+  "notification_settings_winner": "Winner of the day",
+  "notification_settings_new_videos": "New videos from subscriptions",
+  "notification_settings_new_subscribers": "New subscribers",
+  "notification_settings_system": "System"
 }

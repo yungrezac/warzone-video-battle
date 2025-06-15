@@ -109,5 +109,12 @@
   "toast_error_settings_save": "Ошибка сохранения настроек: {{message}}",
   "toast_error_settings_save_unknown": "Ошибка сохранения настроек: Неизвестная ошибка",
   "new_videos_from_subscriptions": "Новые видео от подписок",
-  "new_subscriber_notifications": "Новые подписчики"
+  "new_subscriber_notifications": "Новые подписчики",
+  "notification_settings_likes": "Лайки",
+  "notification_settings_comments": "Комментарии",
+  "notification_settings_achievements": "Достижения",
+  "notification_settings_winner": "Победитель дня",
+  "notification_settings_new_videos": "Новые видео от подписок",
+  "notification_settings_new_subscribers": "Новые подписчики",
+  "notification_settings_system": "Системные"
 }
