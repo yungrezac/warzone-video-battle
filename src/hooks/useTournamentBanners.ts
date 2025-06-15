@@ -1,15 +1,16 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useTournamentBanners = () => {
   const queryClient = useQueryClient();
   const queryKey = ['tournament-banners'];
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     const channel = supabase
-      .channel('tournament-banners-changes')
+      .channel(`tournament-banners-changes:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_banners' }, () => {
         queryClient.invalidateQueries({ queryKey: ['tournament-banners'] });
       })

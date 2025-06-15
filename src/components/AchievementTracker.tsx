@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/components/AuthWrapper';
 import { supabase } from '@/integrations/supabase/client';
 import AchievementNotification from './AchievementNotification';
@@ -9,6 +9,7 @@ const AchievementTracker: React.FC = () => {
   const { user } = useAuth();
   const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
   const [showNotification, setShowNotification] = useState(false);
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     if (!user?.id) return;
@@ -17,7 +18,7 @@ const AchievementTracker: React.FC = () => {
 
     // Подписываемся на изменения в таблице user_achievements
     const channel = supabase
-      .channel('achievement-updates')
+      .channel(`achievement-updates:${uniqueChannelId.current}`)
       .on(
         'postgres_changes',
         {

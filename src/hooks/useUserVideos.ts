@@ -2,18 +2,19 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useUserVideos = (profileUserId: string | null) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const queryKey = ['user-videos', profileUserId];
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     if (!profileUserId) return;
 
     const channel = supabase
-      .channel(`user-videos-changes-${profileUserId}`)
+      .channel(`user-videos-changes-${profileUserId}:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `user_id=eq.${profileUserId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ['user-videos', profileUserId] });
       })

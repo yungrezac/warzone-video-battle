@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { useTelegramNotifications } from './useTelegramNotifications';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export interface Comment {
   id: string;
@@ -31,10 +31,11 @@ export const useVideoComments = (videoId: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const queryKey = ['video-comments', videoId];
+  const uniqueChannelId = useRef(Math.random());
   
   useEffect(() => {
     const channel = supabase
-      .channel(`video-comments-changes-${videoId}`)
+      .channel(`video-comments-changes-${videoId}:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'video_comments', filter: `video_id=eq.${videoId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
       })

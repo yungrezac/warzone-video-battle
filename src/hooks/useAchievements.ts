@@ -1,7 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export interface Achievement {
   id: string;
@@ -30,10 +31,11 @@ export interface UserAchievement {
 export const useAchievements = () => {
   const queryClient = useQueryClient();
   const queryKey = ['achievements'];
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     const channel = supabase
-      .channel('achievements-changes')
+      .channel(`achievements-changes:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'achievements' }, () => {
         queryClient.invalidateQueries({ queryKey: ['achievements'] });
       })
@@ -72,12 +74,13 @@ export const useUserAchievements = () => {
   const queryClient = useQueryClient();
   const userId = user?.id;
   const queryKey = ['user-achievements', userId];
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     if (!userId) return;
 
     const channel = supabase
-      .channel(`user-achievements-changes-${userId}`)
+      .channel(`user-achievements-changes-${userId}:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_achievements', filter: `user_id=eq.${userId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ['user-achievements', userId] });
       })

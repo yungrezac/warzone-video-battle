@@ -3,15 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useUserMarketItems = () => {
   const queryClient = useQueryClient();
   const queryKey = ['user-market-items'];
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     const channel = supabase
-      .channel('user-market-items-changes')
+      .channel(`user-market-items-changes:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_market_items' }, () => {
         queryClient.invalidateQueries({ queryKey: ['user-market-items'] });
       })

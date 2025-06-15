@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { generateQuickThumbnail } from '@/utils/videoOptimization';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface Video {
   id: string;
@@ -45,11 +45,12 @@ export const useVideos = () => {
   const queryClient = useQueryClient();
   const userId = user?.id;
   const queryKey = ['videos', userId];
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     console.log('Realtime enabled for video feed');
     const channel = supabase
-      .channel('videos-feed-changes')
+      .channel(`videos-feed-changes:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => {
         queryClient.invalidateQueries({ queryKey: ['videos', userId] });
       })

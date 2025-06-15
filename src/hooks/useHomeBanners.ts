@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { type Database } from '@/integrations/supabase/types';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export type HomeBanner = Database['public']['Tables']['home_banners']['Row'];
 
@@ -23,10 +23,11 @@ const fetchHomeBanners = async () => {
 export const useHomeBanners = () => {
   const queryClient = useQueryClient();
   const queryKey = ['home_banners'];
+  const uniqueChannelId = useRef(Math.random());
 
   useEffect(() => {
     const channel = supabase
-      .channel('home-banners-changes')
+      .channel(`home-banners-changes:${uniqueChannelId.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'home_banners' }, () => {
         queryClient.invalidateQueries({ queryKey: ['home_banners'] });
       })
