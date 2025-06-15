@@ -201,6 +201,7 @@ export type Database = {
           created_at: string
           id: string
           likes_notifications: boolean
+          new_subscriber_notifications: boolean
           new_video_notifications: boolean
           system_notifications: boolean
           updated_at: string
@@ -213,6 +214,7 @@ export type Database = {
           created_at?: string
           id?: string
           likes_notifications?: boolean
+          new_subscriber_notifications?: boolean
           new_video_notifications?: boolean
           system_notifications?: boolean
           updated_at?: string
@@ -225,6 +227,7 @@ export type Database = {
           created_at?: string
           id?: string
           likes_notifications?: boolean
+          new_subscriber_notifications?: boolean
           new_video_notifications?: boolean
           system_notifications?: boolean
           updated_at?: string

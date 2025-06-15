@@ -11,6 +11,7 @@ export interface NotificationSettings {
   achievements_notifications: boolean;
   new_video_notifications: boolean;
   system_notifications: boolean;
+  new_subscriber_notifications: boolean;
 }
 
 export const useNotificationSettings = () => {
@@ -23,6 +24,7 @@ export const useNotificationSettings = () => {
     achievements_notifications: true,
     new_video_notifications: true,
     system_notifications: true,
+    new_subscriber_notifications: true,
   });
   const [loading, setLoading] = useState(false);
 
@@ -57,6 +59,7 @@ export const useNotificationSettings = () => {
           achievements_notifications: data.achievements_notifications,
           new_video_notifications: data.new_video_notifications,
           system_notifications: data.system_notifications,
+          new_subscriber_notifications: data.new_subscriber_notifications ?? true,
         });
       } else {
         console.log('Настройки не найдены, используем значения по умолчанию');

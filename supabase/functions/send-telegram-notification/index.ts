@@ -11,7 +11,7 @@ const corsHeaders = {
 interface TelegramNotificationRequest {
   telegramId: string;
   message: string;
-  type: 'like' | 'comment' | 'achievement' | 'daily_winner' | 'comment_like' | 'comment_reply' | 'new_video';
+  type: 'like' | 'comment' | 'achievement' | 'daily_winner' | 'comment_like' | 'comment_reply' | 'new_video' | 'new_subscriber';
 }
 
 const handler = async (req: Request): Promise<Response> => {

@@ -1,8 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { formatPoints } from '@/lib/utils';
 
 export const useTelegramNotifications = () => {
-  const checkNotificationSettings = async (userId: string, notificationType: 'likes' | 'comments' | 'achievements' | 'winners' | 'system' | 'new_video') => {
+  const checkNotificationSettings = async (userId: string, notificationType: 'likes' | 'comments' | 'achievements' | 'winners' | 'system' | 'new_video' | 'new_subscriber') => {
     try {
       const { data, error } = await supabase
         .from('notification_settings')
@@ -30,6 +31,8 @@ export const useTelegramNotifications = () => {
           return data.winners_notifications;
         case 'new_video':
           return data.new_video_notifications;
+        case 'new_subscriber':
+          return data.new_subscriber_notifications;
         case 'system':
           return data.system_notifications;
         default:
@@ -44,7 +47,7 @@ export const useTelegramNotifications = () => {
   const sendNotification = async (
     telegramId: string, 
     message: string, 
-    type: 'like' | 'comment' | 'achievement' | 'daily_winner' | 'comment_like' | 'comment_reply' | 'new_video'
+    type: 'like' | 'comment' | 'achievement' | 'daily_winner' | 'comment_like' | 'comment_reply' | 'new_video' | 'new_subscriber'
   ) => {
     try {
       console.log(`Отправляем Telegram уведомление пользователю ${telegramId}:`, message);
@@ -149,6 +152,16 @@ export const useTelegramNotifications = () => {
     return sendNotification(followerTelegramId, message, 'new_video');
   };
 
+  const sendNewSubscriberNotification = async (subscribedToUserId: string, subscribedToUserTelegramId: string, subscriberName: string) => {
+    const isEnabled = await checkNotificationSettings(subscribedToUserId, 'new_subscriber');
+    if (!isEnabled) {
+      console.log('Уведомления о новых подписчиках отключены для пользователя', subscribedToUserId);
+      return;
+    }
+    const message = `👋 На вас подписался новый пользователь: <b>${subscriberName}</b>`;
+    return sendNotification(subscribedToUserTelegramId, message, 'new_subscriber');
+  };
+
   const sendDailyWinnerNotification = async (winnerId: string, winnerTelegramId: string, videoTitle: string, totalPoints: number) => {
     const isEnabled = await checkNotificationSettings(winnerId, 'winners');
     if (!isEnabled) {
@@ -167,5 +180,6 @@ export const useTelegramNotifications = () => {
     sendCommentLikeNotification,
     sendCommentReplyNotification,
     sendNewVideoNotification,
+    sendNewSubscriberNotification,
   };
 };

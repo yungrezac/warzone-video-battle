@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
+import { useTelegramNotifications } from './useTelegramNotifications';
 
 type UseUserSubscriptionsReturn = {
   isSubscribed: boolean;
@@ -13,6 +14,7 @@ type UseUserSubscriptionsReturn = {
 
 export const useUserSubscriptions = (profileUserId: string | null): UseUserSubscriptionsReturn => {
   const { user } = useAuth();
+  const { sendNewSubscriberNotification } = useTelegramNotifications();
   const queryClient = useQueryClient();
   const currentUserId = user?.id;
 
@@ -65,9 +67,37 @@ export const useUserSubscriptions = (profileUserId: string | null): UseUserSubsc
       if (error) throw error;
       return profileUserId;
     },
-    onSuccess: (targetUserId) => {
+    onSuccess: async (targetUserId) => {
       toast.success('Вы успешно подписались!');
       mutationOptions.onSuccess(targetUserId);
+      
+      if (targetUserId && user?.id) {
+        try {
+          const { data: subscribedToProfile, error: subscribedToProfileError } = await supabase
+            .from('profiles')
+            .select('telegram_id')
+            .eq('id', targetUserId)
+            .single();
+
+          const { data: subscriberProfile, error: subscriberProfileError } = await supabase
+            .from('profiles')
+            .select('username, telegram_username')
+            .eq('id', user.id)
+            .single();
+
+          if (subscribedToProfileError || subscriberProfileError) {
+            console.error('Ошибка при получении профилей для уведомления:', subscribedToProfileError || subscriberProfileError);
+            return;
+          }
+          
+          if (subscribedToProfile?.telegram_id && subscriberProfile) {
+            const subscriberName = subscriberProfile.username || subscriberProfile.telegram_username || 'Аноним';
+            await sendNewSubscriberNotification(targetUserId, subscribedToProfile.telegram_id, subscriberName);
+          }
+        } catch (e) {
+          console.error("Не удалось отправить уведомление о подписке", e);
+        }
+      }
     },
     onError: (error) => {
       toast.error(`Ошибка подписки: ${error.message}`);
