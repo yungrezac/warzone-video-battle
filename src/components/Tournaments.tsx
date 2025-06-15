@@ -75,6 +75,21 @@ const Tournaments: React.FC = () => {
       );
     }
 
+    // Приводим турнир к нужному типу
+    const formattedTournament = {
+      id: activeTournament.id,
+      title: activeTournament.title,
+      description: activeTournament.description,
+      banner_url: activeTournament.banner_url,
+      entry_cost_points: activeTournament.entry_cost_points,
+      min_participants: activeTournament.min_participants,
+      end_date: activeTournament.end_date,
+      status: activeTournament.status as 'registration' | 'active' | 'completed',
+      participants_count: activeTournament.participants_count || 0,
+      winner_id: activeTournament.winner_id,
+      profiles: activeTournament.profiles,
+    };
+
     return (
       <div className="space-y-6">
         {/* Административная панель для создания турниров */}
@@ -95,7 +110,7 @@ const Tournaments: React.FC = () => {
 
         {/* Карточка турнира */}
         <OnlineTournamentCard
-          tournament={activeTournament}
+          tournament={formattedTournament}
           onUploadVideo={handleUploadVideo}
         />
 
@@ -104,13 +119,26 @@ const Tournaments: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Видео участников</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tournamentVideos.map((video) => (
-                <TournamentVideoCard
-                  key={video.id}
-                  video={video}
-                  isJudge={isJudge}
-                />
-              ))}
+              {tournamentVideos.map((video) => {
+                // Приводим видео к нужному типу
+                const formattedVideo = {
+                  id: video.id,
+                  title: video.title,
+                  video_url: video.video_url,
+                  thumbnail_url: video.thumbnail_url,
+                  user_id: video.user_id,
+                  tournament_id: video.tournament_id,
+                  profiles: video.profiles as { username?: string; first_name?: string; avatar_url?: string; } | undefined,
+                };
+
+                return (
+                  <TournamentVideoCard
+                    key={video.id}
+                    video={formattedVideo}
+                    isJudge={isJudge}
+                  />
+                );
+              })}
             </div>
           </div>
         )}

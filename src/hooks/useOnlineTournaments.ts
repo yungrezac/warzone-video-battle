@@ -135,7 +135,7 @@ export const useTournamentVideos = (tournamentId: string) => {
         .from('tournament_videos')
         .select(`
           *,
-          profiles(username, first_name, avatar_url)
+          profiles!tournament_videos_user_id_fkey(username, first_name, avatar_url)
         `)
         .eq('tournament_id', tournamentId)
         .order('created_at', { ascending: false });
