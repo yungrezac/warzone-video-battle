@@ -49,9 +49,9 @@ export const useUserSubscriptions = (profileUserId?: string) => {
     },
     onSuccess: (targetUserId) => {
       toast.success('Вы успешно подписались!');
-      queryClient.invalidateQueries({ queryKey: ['subscription-status', currentUserId, targetUserId] });
+      queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
       queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
-       queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error) => {
@@ -75,7 +75,7 @@ export const useUserSubscriptions = (profileUserId?: string) => {
     },
     onSuccess: (targetUserId) => {
       toast.info('Вы отписались.');
-      queryClient.invalidateQueries({ queryKey: ['subscription-status', currentUserId, targetUserId] });
+      queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
       queryClient.invalidateQueries({ queryKey: ['other-user-profile', targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['other-user-profile', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
