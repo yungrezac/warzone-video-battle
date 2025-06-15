@@ -249,6 +249,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                       category: video.category as 'Rollers' | 'BMX' | 'Skateboard',
                     }} 
                     onLike={handleLike} 
+                    contextUserId={userId}
                   />
                 ))}
               </div>

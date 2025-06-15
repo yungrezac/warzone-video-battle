@@ -27,10 +27,12 @@ interface Video {
 interface VideoCardProps {
   video: Video;
   onLike: (id: string) => void;
+  contextUserId?: string | null;
 }
 const VideoCard: React.FC<VideoCardProps> = ({
   video,
-  onLike
+  onLike,
+  contextUserId
 }) => {
   const [localUserLiked, setLocalUserLiked] = useState(video.userLiked || false);
   const location = useLocation();
@@ -65,8 +67,10 @@ const VideoCard: React.FC<VideoCardProps> = ({
     onLike(video.id);
   };
 
-  // Не показываем ссылку если уже находимся на странице профиля этого пользователя
-  const isOnUserProfile = location.pathname === `/user/${video.userId}`;
+  // Не показываем ссылку если мы уже на странице этого профиля,
+  // или в модальном окне этого пользователя.
+  const isViewingSameUserProfile = location.pathname === `/user/${video.userId}` || (contextUserId != null && contextUserId === video.userId);
+
   return <div className={`bg-white rounded-lg shadow-md overflow-hidden ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}>
       {video.isWinner && <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-1 font-bold text-sm">
           🏆 ПОБЕДИТЕЛЬ ДНЯ 🏆
@@ -90,7 +94,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
       <div className="p-2">
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center flex-1 min-w-0">
-            {video.userId && !isOnUserProfile ? <Link to={`/user/${video.userId}`} className="flex items-center flex-1 min-w-0 hover:opacity-80">
+            {video.userId && !isViewingSameUserProfile ? <Link to={`/user/${video.userId}`} className="flex items-center flex-1 min-w-0 hover:opacity-80">
                 <img src={video.authorAvatar} alt={video.author} className="w-7 h-7 rounded-full mr-2" />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
