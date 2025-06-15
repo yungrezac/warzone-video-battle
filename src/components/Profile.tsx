@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Video, Trash2, Settings, ArrowUpRight, Crown } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -23,6 +22,7 @@ const Profile: React.FC = () => {
     t,
     i18n
   } = useTranslation();
+  const { user } = useAuth();
   const {
     data: userProfile,
     isLoading: profileLoading
@@ -30,14 +30,12 @@ const Profile: React.FC = () => {
   const {
     data: userVideos,
     isLoading: videosLoading
-  } = useUserVideos();
+  } = useUserVideos(user?.id || null);
   const {
     isPremium,
     subscription
   } = useSubscription();
-  const {
-    user
-  } = useAuth();
+  
   const likeVideoMutation = useLikeVideo();
   const deleteVideoMutation = useDeleteVideo();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
