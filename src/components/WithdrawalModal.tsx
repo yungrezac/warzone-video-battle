@@ -84,10 +84,10 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, user
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              <strong>Доступно:</strong> {formatPoints(userPoints)} Б (≈{(userPoints * pointToUsdtRate).toFixed(2)} USDT)
+              <strong>Доступно:</strong> <span className="points-display">{formatPoints(userPoints)}</span> (≈{(userPoints * pointToUsdtRate).toFixed(2)} USDT)
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              Минимум для вывода: {formatPoints(minWithdrawal)} Б
+              Минимум для вывода: <span className="points-display">{formatPoints(minWithdrawal)}</span>
             </p>
           </div>
 

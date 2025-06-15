@@ -49,7 +49,7 @@ const Header: React.FC = () => {
             {/* Баллы */}
             <div className="hidden sm:flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
               <span>⭐</span>
-              <span>{formatPoints(userProfile?.total_points || 0)} Б</span>
+              <span className="points-display">{formatPoints(userProfile?.total_points || 0)}</span>
             </div>
 
             {/* Кнопка Premium */}

@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .points-display::after {
+    content: " Б";
+    @apply font-bold italic;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

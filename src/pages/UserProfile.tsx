@@ -158,7 +158,7 @@ const UserProfile: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
-            <div className="text-lg font-bold">{formatPoints(userProfile?.total_points || 0)} Б</div>
+            <div className="text-lg font-bold points-display">{formatPoints(userProfile?.total_points || 0)}</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center">
             <div className="text-lg font-bold">{userProfile?.wins_count || 0}</div>
@@ -215,7 +215,7 @@ const UserProfile: React.FC = () => {
               <div className="text-xs text-purple-700">{t('user_profile_achievements_received')}</div>
             </div>
             <div className="bg-blue-50 rounded-lg p-2">
-              <div className="text-base font-bold text-blue-600">{formatPoints(userProfile?.total_points || 0)} Б</div>
+              <div className="text-base font-bold text-blue-600 points-display">{formatPoints(userProfile?.total_points || 0)}</div>
             </div>
           </div>
 
