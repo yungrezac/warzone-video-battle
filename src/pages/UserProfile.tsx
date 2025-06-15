@@ -30,7 +30,7 @@ const UserProfile: React.FC = () => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
   const { t, i18n } = useTranslation();
-  const { isSubscribed, subscribe, unsubscribe, isLoadingSubscription } = useUserSubscriptions(userId);
+  const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(userId);
   const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
 
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId || null);
@@ -134,9 +134,9 @@ const UserProfile: React.FC = () => {
               size="sm"
               onClick={handleSubscribeClick}
               className={`ml-auto ${isSubscribed ? '' : 'text-white border-white hover:bg-white/20 hover:text-white'}`}
-              disabled={isLoadingSubscription}
+              disabled={isLoading}
             >
-              {isLoadingSubscription ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}
+              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}
               {isSubscribed ? t('unsubscribe') : t('subscribe')}
             </Button>
           )}

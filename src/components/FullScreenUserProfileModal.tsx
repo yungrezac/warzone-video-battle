@@ -37,7 +37,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
 }) => {
   const { user } = useAuth();
   const likeVideoMutation = useLikeVideo();
-  const { isSubscribed, subscribe, unsubscribe, isLoadingSubscription } = useUserSubscriptions(userId || undefined);
+  const { isSubscribed, subscribe, unsubscribe, isLoading } = useUserSubscriptions(userId || undefined);
   const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
   
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
@@ -117,9 +117,9 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
                 size="sm"
                 onClick={handleSubscribeClick}
                 className={`ml-auto ${isSubscribed ? '' : 'text-white border-white hover:bg-white/20 hover:text-white'}`}
-                disabled={isLoadingSubscription}
+                disabled={isLoading}
               >
-                {isLoadingSubscription ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}
+                {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <UserPlus className="w-4 h-4 mr-2" />}
                 {isSubscribed ? 'Отписаться' : 'Подписаться'}
               </Button>
             )}

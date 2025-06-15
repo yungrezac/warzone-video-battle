@@ -4,14 +4,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthWrapper';
 import { toast } from 'sonner';
 
-export const useUserSubscriptions = (profileUserId?: string) => {
+type UseUserSubscriptionsReturn = {
+  isSubscribed: boolean;
+  isLoading: boolean;
+  subscribe: () => void;
+  unsubscribe: () => void;
+};
+
+export const useUserSubscriptions = (profileUserId?: string): UseUserSubscriptionsReturn => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const currentUserId = user?.id;
 
   const subscriptionQueryKey = ['subscription-status', currentUserId, profileUserId];
 
-  // Проверяем, подписан ли текущий пользователь на просматриваемый профиль
   const { data: subscription, isLoading: isLoadingSubscription } = useQuery({
     queryKey: subscriptionQueryKey,
     queryFn: async () => {
@@ -34,7 +40,6 @@ export const useUserSubscriptions = (profileUserId?: string) => {
 
   const isSubscribed = !!subscription;
 
-  // Мутация для подписки
   const subscribeMutation = useMutation({
     mutationFn: async () => {
       if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
@@ -59,7 +64,6 @@ export const useUserSubscriptions = (profileUserId?: string) => {
     },
   });
 
-  // Мутация для отписки
   const unsubscribeMutation = useMutation({
     mutationFn: async () => {
       if (!currentUserId || !profileUserId) throw new Error('User not authenticated or profile user id not provided');
@@ -90,7 +94,7 @@ export const useUserSubscriptions = (profileUserId?: string) => {
 
   return {
     isSubscribed,
-    isLoadingSubscription,
+    isLoading: isLoadingSubscription || subscribeMutation.isPending || unsubscribeMutation.isPending,
     subscribe,
     unsubscribe,
   };
