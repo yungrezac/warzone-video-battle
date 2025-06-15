@@ -218,26 +218,6 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Recent Achievements */}
-            {userProfile?.recent_achievements && userProfile?.recent_achievements.length > 0 && (
-              <div className="p-3">
-                <h3 className="text-lg font-semibold mb-2">Последние достижения</h3>
-                <div className="space-y-2">
-                  {userProfile.recent_achievements.map((ua: any) => (
-                     <div key={ua.id} className="flex items-center text-sm bg-yellow-50 rounded-lg p-2">
-                      <span className="mr-3 text-lg">{ua.achievement.icon}</span>
-                      <div className="flex-1">
-                        <span className="font-semibold text-gray-800">{ua.achievement.title}</span>
-                      </div>
-                      <Badge variant="secondary" className="text-xs font-bold">
-                        +{ua.achievement.reward_points}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Videos Section */}
             <div className="p-3">
               <h3 className="text-lg font-semibold mb-2">Видео</h3>
