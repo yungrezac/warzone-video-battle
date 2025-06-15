@@ -168,11 +168,11 @@ const Profile: React.FC = () => {
         <div className="grid grid-cols-2 gap-2 mt-3">
             <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center cursor-pointer hover:bg-opacity-30" onClick={handleOpenFollowers}>
                 <div className="text-lg font-bold">{userProfile?.followers_count || 0}</div>
-                <div className="text-xs opacity-90">{t('followers')}</div>
+                <div className="text-xs opacity-90">{t('followers_stat')}</div>
             </div>
             <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center cursor-pointer hover:bg-opacity-30" onClick={handleOpenFollowing}>
                 <div className="text-lg font-bold">{userProfile?.following_count || 0}</div>
-                <div className="text-xs opacity-90">{t('following')}</div>
+                <div className="text-xs opacity-90">{t('following_stat')}</div>
             </div>
             <div className="bg-white bg-opacity-20 rounded-lg p-2 text-center flex flex-col justify-between">
               <div>

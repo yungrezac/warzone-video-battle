@@ -121,6 +121,8 @@
   "unsubscribe": "Unsubscribe",
   "followers": "Followers",
   "following": "Following",
+  "followers_stat": "Followers",
+  "following_stat": "Following",
   "no_followers": "No followers yet.",
   "no_following": "Not following anyone yet.",
   "list_load_error": "Error loading list."

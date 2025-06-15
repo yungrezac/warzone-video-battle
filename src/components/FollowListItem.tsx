@@ -31,7 +31,7 @@ const FollowListItem = ({ user, onUserClick }: { user: any, onUserClick: () => v
     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
       <div onClick={handleUserClick} className="flex items-center gap-3 cursor-pointer flex-1">
         <Avatar>
-          <AvatarImage src={user.avatar_url} alt={user.username || 'user'} />
+          <AvatarImage src={user.avatar_url} alt={user.username || t('skater')} />
           <AvatarFallback>{user.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
         </Avatar>
         <div className="flex-1 overflow-hidden">
