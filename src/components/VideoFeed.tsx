@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -182,7 +183,7 @@ const VideoFeed: React.FC = () => {
         const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
 
         // Add video card
-        acc.push(<div key={video.id} data-video-id={video.id} onClick={handleCardClick}>
+        acc.push(<div key={video.id} data-video-id={video.id} onClickCapture={handleCardClick}>
                 <VideoCard video={{
             id: video.id,
             title: video.title,
