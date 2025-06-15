@@ -1,14 +1,35 @@
+import compress from 'browser-video-compression';
 
-// Утилиты для работы с видео (без агрессивного сжатия)
-export const compressVideo = async (file: File, quality: number = 0.8): Promise<File> => {
-  // Возвращаем оригинальный файл без сжатия
-  console.log('🎥 Загружаем видео в оригинальном качестве');
-  return file;
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 5,
+  maxWidthOrHeight: 1280,
+  useWebWorker: true,
+  maxIteration: 10,
+  onProgress: (progress: number) => {
+    console.log(`Compression progress: ${(progress * 100).toFixed(0)}%`);
+  },
+};
+
+// Утилиты для работы с видео
+export const compressVideo = async (file: File): Promise<File> => {
+  console.log(`🎥 Начинаем сжатие видео: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+  try {
+    const compressedFile = await compress(file, COMPRESSION_OPTIONS);
+    console.log(`✅ Сжатие завершено. Новый размер: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+    return compressedFile;
+  } catch (error) {
+    console.error('❌ Ошибка сжатия видео, будет загружен оригинал:', error);
+    // В случае ошибки возвращаем оригинальный файл
+    return file;
+  }
 };
 
 export const shouldCompress = (file: File): boolean => {
-  // Отключаем автоматическое сжатие
-  return false;
+  // Сжимаем видео больше 10 МБ
+  const MAX_UNCOMPRESSED_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+  const should = file.size > MAX_UNCOMPRESSED_SIZE_BYTES;
+  console.log(`🤔 Проверка необходимости сжатия: ${should ? 'Да' : 'Нет'}. Размер: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+  return should;
 };
 
 export const getOptimalChunkSize = (fileSize: number): number => {
