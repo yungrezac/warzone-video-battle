@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +9,7 @@ import { Crown, Star, Check, X, Loader2, CheckCircle2, AlertTriangle, Info } fro
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/AuthWrapper';
 
 interface SubscriptionModalProps {
   children: React.ReactNode;
@@ -14,12 +17,14 @@ interface SubscriptionModalProps {
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<'default' | 'processing' | 'status'>('default');
+  const [view, setView] = useState<'default' | 'processing' | 'checking' | 'status'>('default');
   const [paymentResult, setPaymentResult] = useState<{ status: string; title: string; description: string } | null>(null);
 
   const { subscription, isPremium, createInvoice, isCreatingInvoice } = useSubscription();
   const { webApp } = useTelegramWebApp();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -62,15 +67,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
           console.log('💰 Статус платежа:', status);
           
           if (status === 'paid') {
-            setPaymentResult({
-                status,
-                title: "Успех!",
-                description: "Подписка успешно оформлена. Спасибо за поддержку!",
-            });
-            toast({
-              title: "Успех!",
-              description: "Подписка успешно оформлена",
-            });
+            setView('checking');
           } else if (status === 'cancelled') {
              setPaymentResult({
                 status,
@@ -81,6 +78,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
               title: "Платеж отменен",
               description: "Вы можете попробовать еще раз",
             });
+            setView('status');
           } else if (status === 'failed') {
             setPaymentResult({
                 status,
@@ -92,8 +90,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
               description: "Попробуйте еще раз или обратитесь в поддержку",
               variant: "destructive",
             });
+            setView('status');
           }
-           setView('status');
         });
       } else {
         // Fallback: открываем ссылку в браузере
@@ -122,6 +120,67 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
       setView('default');
     }
   };
+
+  useEffect(() => {
+    if (view !== 'checking' || !isOpen || !user?.id) {
+        return;
+    }
+
+    const startTime = Date.now();
+    const timeoutDuration = 30000; // 30 seconds
+    const pollInterval = 2000; // 2 seconds
+
+    if (isPremium) {
+        setView('status');
+        setPaymentResult({
+            status: 'paid',
+            title: "Успех!",
+            description: "Подписка уже была активна. Все в порядке!",
+        });
+        return;
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
+    
+    const intervalId = setInterval(() => {
+        if (isPremium) {
+            clearInterval(intervalId);
+            return;
+        }
+
+        if (Date.now() - startTime > timeoutDuration) {
+            clearInterval(intervalId);
+            setPaymentResult({
+                status: 'failed',
+                title: 'Не удалось проверить платеж',
+                description: 'Платеж может обрабатываться с задержкой. Пожалуйста, проверьте статус подписки позже или обратитесь в поддержку.',
+            });
+            setView('status');
+            return;
+        }
+
+        console.log('Polling for subscription status...');
+        queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
+    }, pollInterval);
+
+    return () => clearInterval(intervalId);
+  }, [view, isOpen, user?.id, queryClient, isPremium]);
+
+  useEffect(() => {
+    if (view === 'checking' && isPremium) {
+        setPaymentResult({
+            status: 'paid',
+            title: "Успех!",
+            description: "Подписка успешно оформлена. Спасибо за поддержку!",
+        });
+        setView('status');
+        toast({
+          title: "Успех!",
+          description: "Подписка успешно оформлена",
+        });
+    }
+  }, [isPremium, view]);
+
 
   const premiumFeatures = [
     'Эксклюзивные скидки у партнёров TRICKS',
@@ -234,6 +293,16 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                 <h3 className="text-lg font-semibold">Ожидание платежа</h3>
                 <p className="text-sm text-gray-500">
                     Пожалуйста, подтвердите оплату в открывшемся окне Telegram.
+                </p>
+            </div>
+        )}
+
+        {view === 'checking' && (
+            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
+                <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
+                <h3 className="text-lg font-semibold">Проверяем ваш платеж...</h3>
+                <p className="text-sm text-gray-500">
+                    Это может занять до 30 секунд. Пожалуйста, не закрывайте окно.
                 </p>
             </div>
         )}
