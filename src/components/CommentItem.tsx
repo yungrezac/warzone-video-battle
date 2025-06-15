@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Comment, useLikeVideoComment, useDeleteVideoComment } from '@/hooks/useVideoComments';
 import { Button } from '@/components/ui/button';
@@ -21,9 +22,10 @@ interface CommentItemProps {
   comment: Comment;
   videoId: string;
   onReply: (comment: Comment) => void;
+  onViewProfile: (userId: string) => void;
 }
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply }) => {
+const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply, onViewProfile }) => {
     const { user } = useAuth();
     const [localIsLiked, setLocalIsLiked] = useState(comment.user_liked);
     const [localLikesCount, setLocalLikesCount] = useState(comment.likes_count);
@@ -66,10 +68,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, videoId, onReply }) 
     
     return (
         <div className="flex space-x-3">
-            <Avatar className="w-8 h-8">
-                <AvatarImage src={comment.profiles?.avatar_url || undefined} alt={comment.profiles?.username || 'avatar'}/>
-                <AvatarFallback>{comment.profiles?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-            </Avatar>
+            <button
+              onClick={() => comment.user_id && onViewProfile(comment.user_id)}
+              disabled={!comment.user_id}
+              className="flex-shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:cursor-default"
+            >
+              <Avatar className="w-8 h-8">
+                  <AvatarImage src={comment.profiles?.avatar_url || undefined} alt={comment.profiles?.username || 'avatar'}/>
+                  <AvatarFallback>{comment.profiles?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+            </button>
             <div className="flex-1">
                 <div className="bg-gray-100 rounded-lg p-2.5">
                     <p className="font-semibold text-sm text-gray-800">{comment.profiles?.username || comment.profiles?.telegram_username || 'Пользователь'}</p>
