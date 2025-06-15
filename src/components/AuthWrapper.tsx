@@ -38,7 +38,6 @@ interface AuthWrapperProps {
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     console.log('🚀 AuthWrapper мгновенная инициализация через Telegram API...');
@@ -59,8 +58,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       } catch (err: any) {
         console.error('❌ Ошибка инициализации:', err);
         createFallbackUser();
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -227,10 +224,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   };
 
   const contextValue = { user, signOut, signIn };
-
-  if (loading) {
-    return <FullScreenLoader />;
-  }
 
   return (
     <AuthContext.Provider value={contextValue}>
