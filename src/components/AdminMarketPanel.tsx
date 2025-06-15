@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Settings, X, Upload } from 'lucide-react';
+import { Plus, Settings, X, Upload, Loader2 } from 'lucide-react';
 import { useCreateMarketItem } from '@/hooks/useMarketItems';
-import { useAuth } from '@/components/AuthWrapper';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const AdminMarketPanel: React.FC = () => {
-  const { user } = useAuth();
+  const { data: userProfile, isLoading: isProfileLoading } = useUserProfile();
   const createItemMutation = useCreateMarketItem();
   
   const [title, setTitle] = useState('');
@@ -23,11 +23,32 @@ const AdminMarketPanel: React.FC = () => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
 
+  if (isProfileLoading) {
+    return (
+      <Card className="mb-6 border-orange-200 bg-orange-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2 text-orange-700">
+            <Settings className="w-5 h-5" />
+            Админ панель - Управление маркетом
+          </CardTitle>
+          <CardDescription className="text-orange-600">
+            Добавление новых товаров в маркет
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Проверяем, является ли пользователь админом
-  const isAdmin = user?.telegram_username === 'rollertricksby' || 
-                 user?.username === 'TrickMaster' || 
-                 user?.telegram_username === 'TrickMaster' ||
-                 user?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
+  const isAdmin = userProfile?.telegram_username === 'rollertricksby' || 
+                 userProfile?.username === 'TrickMaster' || 
+                 userProfile?.telegram_username === 'TrickMaster' ||
+                 userProfile?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
 
   if (!isAdmin) {
     return null;
@@ -251,4 +272,3 @@ const AdminMarketPanel: React.FC = () => {
 };
 
 export default AdminMarketPanel;
-
