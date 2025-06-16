@@ -88,7 +88,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
         expires_at: expiresAt.toISOString(),
         telegram_payment_charge_id: telegram_payment_charge_id,
         telegram_invoice_payload: telegram_invoice_payload,
-        amount_stars: 300,
+        amount_stars: 1, // Обновлено на 1 Star
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id,status', // Обновляем если уже есть активная подписка
@@ -110,7 +110,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
         subscription_id: subscription.id,
         telegram_payment_charge_id: telegram_payment_charge_id,
         telegram_invoice_payload: telegram_invoice_payload,
-        amount_stars: 300,
+        amount_stars: 1, // Обновлено на 1 Star
         status: 'succeeded',
         processed_at: new Date().toISOString()
       });

@@ -193,7 +193,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                       <CardTitle className="text-xl">TRICKS PREMIUM</CardTitle>
                       <CardDescription className="flex items-center justify-center gap-1">
                         <Star className="w-4 h-4 text-yellow-500" />
-                        <span className="text-lg font-bold">300 Stars</span>
+                        <span className="text-lg font-bold">1 Star</span>
                         <span className="text-sm text-gray-500">/месяц</span>
                         <Badge variant="outline" className="ml-2">
                           <RefreshCw className="w-3 h-3 mr-1" />
