@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Star, Check, X, Loader2, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Crown, Star, Check, X, Loader2, CheckCircle2, AlertTriangle, Info, RefreshCw } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useToast } from '@/hooks/use-toast';
@@ -46,16 +46,16 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
     setView('processing');
 
     try {
-      console.log('🎯 Создаем инвойс для подписки...');
+      console.log('🎯 Создаем рекуррентный инвойс для подписки...');
       
       const invoiceData = await createInvoice();
-      console.log('📄 Данные инвойса:', invoiceData);
+      console.log('📄 Данные рекуррентного инвойса:', invoiceData);
 
       if (!invoiceData?.invoice_url) {
         throw new Error('Не удалось получить URL инвойса');
       }
 
-      console.log('💳 Открываем инвойс через webApp.openInvoice...');
+      console.log('💳 Открываем рекуррентный инвойс через webApp.openInvoice...');
       console.log('🔗 URL инвойса:', invoiceData.invoice_url);
 
       if (webApp.openInvoice) {
@@ -66,7 +66,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
             setPaymentResult({
                 status,
                 title: "Успех!",
-                description: "Подписка успешно оформлена. Спасибо за поддержку!",
+                description: invoiceData.is_recurring 
+                  ? "Подписка успешно оформлена с автоматическим продлением. Спасибо за поддержку!"
+                  : "Подписка успешно оформлена. Спасибо за поддержку!",
             });
             toast({
               title: "Успех!",
@@ -166,6 +168,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                     <CardTitle className="text-lg flex items-center gap-2 text-yellow-700">
                       <Crown className="w-5 h-5" />
                       Активная подписка
+                      <Badge variant="outline" className="ml-auto">
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Автопродление
+                      </Badge>
                     </CardTitle>
                     <CardDescription className="text-yellow-600">
                       {subscription && `Действует до ${formatDate(subscription.expires_at)}`}
@@ -173,7 +179,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-sm text-yellow-700">
-                      Спасибо за поддержку! Ваша подписка TRICKS PREMIUM активна.
+                      Спасибо за поддержку! Ваша подписка TRICKS PREMIUM активна с автоматическим продлением.
                     </div>
                   </CardContent>
                 </Card>
@@ -189,6 +195,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                         <Star className="w-4 h-4 text-yellow-500" />
                         <span className="text-lg font-bold">300 Stars</span>
                         <span className="text-sm text-gray-500">/месяц</span>
+                        <Badge variant="outline" className="ml-2">
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Автопродление
+                        </Badge>
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -221,7 +231,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                   </Button>
 
                   <div className="text-xs text-gray-500 text-center">
-                    Оплата через Telegram Stars. Подписка продлевается автоматически.
+                    Оплата через Telegram Stars. Подписка с автоматическим продлением каждый месяц.
                   </div>
                 </>
               )}

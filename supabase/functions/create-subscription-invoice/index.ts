@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface CreateInvoiceRequest {
   user_id: string;
+  subscription_period?: number; // В секундах (30 дней = 2592000)
 }
 
 const serve_handler = async (req: Request): Promise<Response> => {
@@ -17,9 +18,9 @@ const serve_handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { user_id }: CreateInvoiceRequest = await req.json();
+    const { user_id, subscription_period = 2592000 }: CreateInvoiceRequest = await req.json(); // 30 дней по умолчанию
     
-    console.log('Создание счета для пользователя:', user_id);
+    console.log('Создание рекуррентного счета для пользователя:', user_id);
 
     // Инициализируем Supabase клиент
     const supabase = createClient(
@@ -45,23 +46,22 @@ const serve_handler = async (req: Request): Promise<Response> => {
     // Создаем уникальный payload для счета
     const invoicePayload = `premium_subscription_${user_id}_${Date.now()}`;
     
-    // Данные для создания инвойса через Telegram Bot API для Mini App
+    // Данные для создания рекуррентного инвойса через Telegram Bot API
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
 
-    // Создаем инвойсную ссылку для webApp.openInvoice
+    // Создаем инвойсную ссылку с поддержкой подписок
     const invoiceData = {
-      chat_id: user.telegram_id,
       title: 'TRICKS PREMIUM',
-      description: 'Доступ ко всем премиум функциям TRICKS на один месяц.',
+      description: 'Подписка на премиум функции TRICKS с автоматическим продлением каждый месяц.',
       payload: invoicePayload,
       provider_token: '', // Для Telegram Stars оставляем пустым
       currency: 'XTR', // Telegram Stars
       prices: [
         {
-          label: 'TRICKS PREMIUM',
+          label: 'TRICKS PREMIUM (месячная подписка)',
           amount: 300 // 300 Telegram Stars
         }
       ],
@@ -75,12 +75,13 @@ const serve_handler = async (req: Request): Promise<Response> => {
       send_phone_number_to_provider: false,
       send_email_to_provider: false,
       is_flexible: false,
-      start_parameter: 'premium_subscription'
+      start_parameter: 'premium_subscription',
+      subscription_period: subscription_period // Новый параметр для рекуррентных подписок
     };
 
-    console.log('Создаем инвойс для Mini App:', invoiceData);
+    console.log('Создаем рекуррентный инвойс:', invoiceData);
 
-    // Создаем инвойсную ссылку через createInvoiceLink
+    // Создаем инвойсную ссылку через createInvoiceLink с поддержкой подписок
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/createInvoiceLink`, {
       method: 'POST',
       headers: {
@@ -92,16 +93,17 @@ const serve_handler = async (req: Request): Promise<Response> => {
     const telegramResult = await telegramResponse.json();
 
     if (!telegramResult.ok) {
-      console.error('Ошибка создания инвойса в Telegram:', telegramResult);
-      throw new Error(`Failed to create Telegram invoice: ${telegramResult.description}`);
+      console.error('Ошибка создания рекуррентного инвойса в Telegram:', telegramResult);
+      throw new Error(`Failed to create Telegram recurring invoice: ${telegramResult.description}`);
     }
 
     const invoiceUrl = telegramResult.result;
 
-    console.log('Инвойс создан успешно:', {
+    console.log('Рекуррентный инвойс создан успешно:', {
       payload: invoicePayload,
       telegram_id: user.telegram_id,
-      invoice_url: invoiceUrl
+      invoice_url: invoiceUrl,
+      subscription_period: subscription_period
     });
 
     return new Response(
@@ -109,7 +111,9 @@ const serve_handler = async (req: Request): Promise<Response> => {
         success: true,
         invoice_payload: invoicePayload,
         invoice_url: invoiceUrl,
-        message: 'Invoice created successfully'
+        subscription_period: subscription_period,
+        is_recurring: true,
+        message: 'Recurring subscription invoice created successfully'
       }),
       {
         status: 200,

@@ -26,15 +26,18 @@ const serve_handler = async (req: Request): Promise<Response> => {
       throw new Error('TELEGRAM_BOT_TOKEN not set');
     }
 
-    // Обработка успешного платежа
+    // Обработка успешного платежа с поддержкой подписок
     if (update.message?.successful_payment) {
       const payment = update.message.successful_payment;
       const user = update.message.from;
       
-      console.log('Обработка успешного платежа:', {
+      console.log('Обработка успешного платежа с новыми полями:', {
         telegram_payment_charge_id: payment.telegram_payment_charge_id,
         invoice_payload: payment.invoice_payload,
-        user_id: user.id
+        user_id: user.id,
+        subscription_expiration_date: payment.subscription_expiration_date,
+        is_recurring: payment.is_recurring,
+        is_first_recurring: payment.is_first_recurring
       });
 
       // Находим пользователя в базе данных
@@ -45,12 +48,15 @@ const serve_handler = async (req: Request): Promise<Response> => {
         .single();
 
       if (userProfile) {
-        // Обрабатываем платеж через нашу функцию
+        // Обрабатываем платеж через нашу функцию с новыми параметрами
         const { data, error } = await supabase.functions.invoke('process-payment', {
           body: {
             user_id: userProfile.id,
             telegram_payment_charge_id: payment.telegram_payment_charge_id,
-            telegram_invoice_payload: payment.invoice_payload
+            telegram_invoice_payload: payment.invoice_payload,
+            subscription_expiration_date: payment.subscription_expiration_date,
+            is_recurring: payment.is_recurring || false,
+            is_first_recurring: payment.is_first_recurring || false
           }
         });
 
