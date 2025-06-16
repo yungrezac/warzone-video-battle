@@ -26,18 +26,20 @@ const serve_handler = async (req: Request): Promise<Response> => {
       throw new Error('TELEGRAM_BOT_TOKEN not set');
     }
 
-    // Обработка успешного платежа с поддержкой подписок
+    // Обработка успешного платежа с полной поддержкой подписок
     if (update.message?.successful_payment) {
       const payment = update.message.successful_payment;
       const user = update.message.from;
       
-      console.log('Обработка успешного платежа с новыми полями:', {
+      console.log('🎯 Обработка успешного платежа:', {
         telegram_payment_charge_id: payment.telegram_payment_charge_id,
         invoice_payload: payment.invoice_payload,
         user_id: user.id,
         subscription_expiration_date: payment.subscription_expiration_date,
         is_recurring: payment.is_recurring,
-        is_first_recurring: payment.is_first_recurring
+        is_first_recurring: payment.is_first_recurring,
+        total_amount: payment.total_amount,
+        currency: payment.currency
       });
 
       // Находим пользователя в базе данных
@@ -48,7 +50,9 @@ const serve_handler = async (req: Request): Promise<Response> => {
         .single();
 
       if (userProfile) {
-        // Обрабатываем платеж через нашу функцию с новыми параметрами
+        console.log('👤 Найден профиль пользователя:', userProfile.id);
+        
+        // Обрабатываем платеж через нашу функцию с полной поддержкой подписок
         const { data, error } = await supabase.functions.invoke('process-payment', {
           body: {
             user_id: userProfile.id,
@@ -61,10 +65,38 @@ const serve_handler = async (req: Request): Promise<Response> => {
         });
 
         if (error) {
-          console.error('Ошибка обработки платежа:', error);
+          console.error('❌ Ошибка обработки платежа:', error);
+          
+          // Отправляем сообщение об ошибке пользователю
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: user.id,
+              text: `❌ Произошла ошибка при обработке вашего платежа. Пожалуйста, обратитесь в поддержку.\n\nID платежа: ${payment.telegram_payment_charge_id}`,
+              parse_mode: 'HTML'
+            }),
+          });
         } else {
-          console.log('Платеж обработан успешно:', data);
+          console.log('✅ Платеж обработан успешно:', data);
+          
+          // Отправляем подтверждение успешного платежа
+          const successMessage = payment.is_first_recurring 
+            ? `🎉 Поздравляем, ${user.first_name}!\n\n💎 Ваша подписка TRICKS PREMIUM активирована с автоматическим продлением!\n\n✨ Теперь вам доступны все эксклюзивные функции:\n• Эксклюзивные скидки у партнёров\n• Участие в турнирах\n• Вывод баллов в USDT\n• Премиум значок\n• Добавление товаров в маркет\n\n🔄 Подписка будет автоматически продлеваться каждый месяц за 1 ⭐`
+            : `✅ Подписка TRICKS PREMIUM продлена!\n\n💎 Ваша подписка активна\n🔄 Автоматическое продление: включено\n\nСпасибо за поддержку!`;
+
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: user.id,
+              text: successMessage,
+              parse_mode: 'HTML'
+            }),
+          });
         }
+      } else {
+        console.error('❌ Пользователь не найден в базе данных:', user.id);
       }
     }
 
@@ -86,7 +118,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
           break;
 
         case '/premium':
-          response = '💎 TRICKS PREMIUM дает вам:\n\n✨ Неограниченную загрузку видео\n🚀 Приоритетное размещение в ленте\n🎯 Эксклюзивные стикеры и значки\n🏆 Доступ к премиум контестам\n📞 Персональную поддержку\n📊 Расширенную статистику\n\n💰 Стоимость: 300 Telegram Stars в месяц\n\nДля оформления подписки используйте приложение!';
+          response = '💎 TRICKS PREMIUM дает вам:\n\n✨ Эксклюзивные скидки у партнёров\n🏆 Участие в онлайн и офлайн турнирах\n🎉 Приглашения на закрытые мероприятия\n💰 Вывод баллов в USDT\n👑 Специальный значок премиум-пользователя\n🛍️ Возможность добавлять товары в маркет\n\n💰 Стоимость: всего 1 ⭐ в месяц\n🔄 С автоматическим продлением\n\nДля оформления подписки используйте приложение!';
           break;
 
         case '/help':
@@ -121,6 +153,14 @@ const serve_handler = async (req: Request): Promise<Response> => {
     if (update.pre_checkout_query) {
       const preCheckoutQuery = update.pre_checkout_query;
       
+      console.log('💳 Подтверждение платежа:', {
+        id: preCheckoutQuery.id,
+        from: preCheckoutQuery.from,
+        currency: preCheckoutQuery.currency,
+        total_amount: preCheckoutQuery.total_amount,
+        invoice_payload: preCheckoutQuery.invoice_payload
+      });
+      
       await fetch(`https://api.telegram.org/bot${botToken}/answerPreCheckoutQuery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,7 +177,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error('Ошибка в telegram-bot:', error);
+    console.error('❌ Ошибка в telegram-bot:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
