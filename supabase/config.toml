@@ -48,3 +48,6 @@ verify_jwt = false
 
 [functions.process-payment]
 verify_jwt = false
+
+[functions.cancel-star-subscription]
+verify_jwt = false
