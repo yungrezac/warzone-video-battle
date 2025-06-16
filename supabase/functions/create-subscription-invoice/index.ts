@@ -62,7 +62,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
       prices: [
         {
           label: 'TRICKS PREMIUM (месячная подписка)',
-          amount: 1 // 1 Telegram Star
+          amount: 300 // 300 Telegram Stars
         }
       ],
       photo_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',

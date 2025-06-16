@@ -58,39 +58,27 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
       console.log('💳 Открываем рекуррентный инвойс через webApp.openInvoice...');
       console.log('🔗 URL инвойса:', invoiceData.invoice_url);
 
-      // Устанавливаем таймаут для обработки случаев зависания
-      const paymentTimeout = setTimeout(() => {
-        console.log('⏰ Таймаут платежа - возвращаемся к главному экрану');
-        setPaymentResult({
-          status: 'timeout',
-          title: "Время ожидания истекло",
-          description: "Платеж не был завершен. Попробуйте еще раз.",
-        });
-        setView('status');
-      }, 60000); // 60 секунд
-
       if (webApp.openInvoice) {
         webApp.openInvoice(invoiceData.invoice_url, (status: string) => {
-          clearTimeout(paymentTimeout);
-          console.log('💰 Статус платежа от Telegram:', status);
+          console.log('💰 Статус платежа:', status);
           
           if (status === 'paid') {
             setPaymentResult({
-              status,
-              title: "Успех!",
-              description: invoiceData.is_recurring 
-                ? "Подписка TRICKS PREMIUM успешно оформлена с автоматическим продлением! Теперь вам доступны все премиум функции."
-                : "Подписка TRICKS PREMIUM успешно оформлена! Спасибо за поддержку!",
+                status,
+                title: "Успех!",
+                description: invoiceData.is_recurring 
+                  ? "Подписка успешно оформлена с автоматическим продлением. Спасибо за поддержку!"
+                  : "Подписка успешно оформлена. Спасибо за поддержку!",
             });
             toast({
               title: "Успех!",
               description: "Подписка успешно оформлена",
             });
           } else if (status === 'cancelled') {
-            setPaymentResult({
-              status,
-              title: "Платеж отменен",
-              description: "Вы отменили платеж. Вы можете попробовать оформить подписку еще раз.",
+             setPaymentResult({
+                status,
+                title: "Платеж отменен",
+                description: "Вы можете попробовать совершить платеж еще раз.",
             });
             toast({
               title: "Платеж отменен",
@@ -98,26 +86,19 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
             });
           } else if (status === 'failed') {
             setPaymentResult({
-              status,
-              title: "Ошибка платежа",
-              description: "Не удалось обработать платеж. Проверьте баланс Telegram Stars и попробуйте снова.",
+                status,
+                title: "Ошибка платежа",
+                description: "Не удалось обработать платеж. Попробуйте снова или обратитесь в поддержку.",
             });
             toast({
               title: "Ошибка платежа",
-              description: "Проверьте баланс Stars и попробуйте еще раз",
+              description: "Попробуйте еще раз или обратитесь в поддержку",
               variant: "destructive",
             });
-          } else {
-            setPaymentResult({
-              status: 'unknown',
-              title: "Неизвестный статус",
-              description: `Получен неожиданный статус: ${status}. Обратитесь в поддержку.`,
-            });
           }
-          setView('status');
+           setView('status');
         });
       } else {
-        clearTimeout(paymentTimeout);
         // Fallback: открываем ссылку в браузере
         console.log('🔗 Fallback: открываем ссылку...');
         if (webApp.openLink) {
@@ -128,7 +109,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
         
         toast({
           title: "Инвойс создан",
-          description: "Откройте ссылку для оплаты подписки",
+          description: "Откройте ссылку для оплаты",
         });
         setIsOpen(false);
       }
@@ -212,7 +193,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                       <CardTitle className="text-xl">TRICKS PREMIUM</CardTitle>
                       <CardDescription className="flex items-center justify-center gap-1">
                         <Star className="w-4 h-4 text-yellow-500" />
-                        <span className="text-lg font-bold">1 Star</span>
+                        <span className="text-lg font-bold">300 Stars</span>
                         <span className="text-sm text-gray-500">/месяц</span>
                         <Badge variant="outline" className="ml-2">
                           <RefreshCw className="w-3 h-3 mr-1" />
@@ -244,7 +225,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                     ) : (
                       <>
                         <Star className="w-4 h-4 mr-2" />
-                        Оформить за 1 ⭐
+                        Оформить TRICKS PREMIUM
                       </>
                     )}
                   </Button>
@@ -259,44 +240,41 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
         )}
 
         {view === 'processing' && (
-          <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
-            <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
-            <h3 className="text-lg font-semibold">Ожидание платежа</h3>
-            <p className="text-sm text-gray-500">
-              Пожалуйста, подтвердите оплату в открывшемся окне Telegram.
-            </p>
-            <div className="text-xs text-gray-400">
-              Стоимость: 1 ⭐ Telegram Star
+            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
+                <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
+                <h3 className="text-lg font-semibold">Ожидание платежа</h3>
+                <p className="text-sm text-gray-500">
+                    Пожалуйста, подтвердите оплату в открывшемся окне Telegram.
+                </p>
             </div>
-          </div>
         )}
 
         {view === 'status' && paymentResult && (
-          <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
-            {paymentResult.status === 'paid' && <CheckCircle2 className="w-12 h-12 text-green-500" />}
-            {paymentResult.status === 'cancelled' && <Info className="w-12 h-12 text-yellow-500" />}
-            {(paymentResult.status === 'failed' || paymentResult.status === 'timeout' || paymentResult.status === 'unknown') && <AlertTriangle className="w-12 h-12 text-red-500" />}
-            
-            <h3 className="text-lg font-semibold">{paymentResult.title}</h3>
-            <p className="text-sm text-gray-500">{paymentResult.description}</p>
-            
-            <div className="flex gap-2 pt-4 w-full">
-              {paymentResult.status === 'paid' ? (
-                <Button className="w-full" onClick={() => window.location.reload()}>
-                  Отлично!
-                </Button>
-              ) : (
-                <>
-                  <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
-                    Закрыть
-                  </Button>
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" onClick={() => setView('default')}>
-                    Попробовать снова
-                  </Button>
-                </>
-              )}
+            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
+                {paymentResult.status === 'paid' && <CheckCircle2 className="w-12 h-12 text-green-500" />}
+                {paymentResult.status === 'cancelled' && <Info className="w-12 h-12 text-yellow-500" />}
+                {paymentResult.status === 'failed' && <AlertTriangle className="w-12 h-12 text-red-500" />}
+                
+                <h3 className="text-lg font-semibold">{paymentResult.title}</h3>
+                <p className="text-sm text-gray-500">{paymentResult.description}</p>
+                
+                <div className="flex gap-2 pt-4 w-full">
+                    {paymentResult.status === 'paid' ? (
+                        <Button className="w-full" onClick={() => window.location.reload()}>
+                            Отлично!
+                        </Button>
+                    ) : (
+                        <>
+                            <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
+                                Закрыть
+                            </Button>
+                            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" onClick={() => setView('default')}>
+                                Попробовать снова
+                            </Button>
+                        </>
+                    )}
+                </div>
             </div>
-          </div>
         )}
       </DialogContent>
     </Dialog>
