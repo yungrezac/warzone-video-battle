@@ -162,48 +162,27 @@ export const useSkeletonStorage = () => {
     const maxAge = 24 * 60 * 60 * 1000; // 24 часа
     const now = Date.now();
 
-    if (webApp?.DeviceStorage) {
-      webApp.DeviceStorage.getKeys((error, keys) => {
-        if (!error && keys) {
-          keys.forEach(key => {
-            if (key.startsWith('skeleton_')) {
-              webApp.DeviceStorage.getItem(key, (error, value) => {
-                if (!error && value) {
-                  try {
-                    const data = JSON.parse(value);
-                    if (now - data.timestamp > maxAge) {
-                      console.log('🗑️ Удаляем старый скелетон:', key);
-                      webApp.DeviceStorage.removeItem(key);
-                    }
-                  } catch (e) {
-                    console.error('❌ Ошибка при проверке возраста скелетона:', e);
-                  }
-                }
-              });
+    // Очищаем только localStorage, так как DeviceStorage не поддерживает getKeys
+    console.log('🗑️ Очищаем старые скелетоны из localStorage...');
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('skeleton_')) {
+        try {
+          const value = localStorage.getItem(key);
+          if (value) {
+            const data = JSON.parse(value);
+            if (now - data.timestamp > maxAge) {
+              console.log('🗑️ Удаляем старый скелетон из localStorage:', key);
+              localStorage.removeItem(key);
             }
-          });
-        }
-      });
-    } else {
-      // Fallback для localStorage
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('skeleton_')) {
-          try {
-            const value = localStorage.getItem(key);
-            if (value) {
-              const data = JSON.parse(value);
-              if (now - data.timestamp > maxAge) {
-                console.log('🗑️ Удаляем старый скелетон из localStorage:', key);
-                localStorage.removeItem(key);
-              }
-            }
-          } catch (e) {
-            console.error('❌ Ошибка при проверке возраста скелетона localStorage:', e);
           }
+        } catch (e) {
+          console.error('❌ Ошибка при проверке возраста скелетона localStorage:', e);
+          // Удаляем поврежденные данные
+          localStorage.removeItem(key);
         }
-      });
-    }
-  }, [webApp]);
+      }
+    });
+  }, []);
 
   return {
     isStorageAvailable,

@@ -88,7 +88,6 @@ interface TelegramWebApp {
     getItems(keys: string[], callback: (error: string | null, values: { [key: string]: string }) => void): void;
     removeItem(key: string, callback?: (error: string | null, success: boolean) => void): void;
     removeItems(keys: string[], callback?: (error: string | null, success: boolean) => void): void;
-    getKeys(callback: (error: string | null, keys: string[]) => void): void;
   };
   DeviceStorage: {
     setItem(key: string, value: string, callback?: (error: string | null, success: boolean) => void): void;
@@ -96,7 +95,6 @@ interface TelegramWebApp {
     getItems(keys: string[], callback: (error: string | null, values: { [key: string]: string }) => void): void;
     removeItem(key: string, callback?: (error: string | null, success: boolean) => void): void;
     removeItems(keys: string[], callback?: (error: string | null, success: boolean) => void): void;
-    getKeys(callback: (error: string | null, keys: string[]) => void): void;
   };
   SecureStorage: {
     setItem(key: string, value: string, callback?: (error: string | null, success: boolean) => void): void;
@@ -104,7 +102,6 @@ interface TelegramWebApp {
     getItems(keys: string[], callback: (error: string | null, values: { [key: string]: string }) => void): void;
     removeItem(key: string, callback?: (error: string | null, success: boolean) => void): void;
     removeItems(keys: string[], callback?: (error: string | null, success: boolean) => void): void;
-    getKeys(callback: (error: string | null, keys: string[]) => void): void;
   };
   openLink(url: string, options?: { try_instant_view?: boolean }): void;
   openTelegramLink(url: string): void;
