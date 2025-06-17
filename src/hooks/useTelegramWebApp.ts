@@ -98,6 +98,43 @@ export const useTelegramWebApp = () => {
     }
   };
 
+  const shareVideo = (videoUrl: string, thumbnailUrl: string, message: string) => {
+    console.log('📤 Попытка поделиться видео:', { videoUrl, message });
+    
+    if (webApp?.shareMessage) {
+      webApp.shareMessage({
+        text: message,
+        media: {
+          type: 'video',
+          url: videoUrl,
+          thumbnail_url: thumbnailUrl
+        }
+      }, (success: boolean) => {
+        console.log('📤 Результат шаринга видео:', success);
+        if (success) {
+          hapticFeedback('notification');
+        }
+      });
+    } else {
+      console.log('⚠️ shareMessage недоступен, используем fallback');
+      // Fallback для обычного браузера
+      if (navigator.share) {
+        navigator.share({
+          title: 'TRICKS - видео трюков',
+          text: message,
+          url: 'https://t.me/Tricksrubot/aps'
+        }).catch(err => console.log('Ошибка Web Share API:', err));
+      } else {
+        // Копируем в буфер обмена
+        navigator.clipboard.writeText(`${message}`).then(() => {
+          alert('Сообщение скопировано в буфер обмена!');
+        }).catch(() => {
+          alert('Не удалось скопировать сообщение');
+        });
+      }
+    }
+  };
+
   return {
     webApp,
     user,
@@ -109,5 +146,6 @@ export const useTelegramWebApp = () => {
     showAlert,
     hapticFeedback,
     openInvoice,
+    shareVideo,
   };
 };

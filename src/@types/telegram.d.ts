@@ -88,7 +88,6 @@ interface TelegramWebApp {
     getItems(keys: string[], callback: (error: string | null, values: { [key: string]: string }) => void): void;
     removeItem(key: string, callback?: (error: string | null, success: boolean) => void): void;
     removeItems(keys: string[], callback?: (error: string | null, success: boolean) => void): void;
-    getKeys(callback: (error: string | null, keys: string[]) => void): void;
   };
   openLink(url: string, options?: { try_instant_view?: boolean }): void;
   openTelegramLink(url: string): void;
@@ -118,6 +117,15 @@ interface TelegramWebApp {
       name?: string;
     };
   }): void;
+  shareMessage(params: {
+    text?: string;
+    url?: string;
+    media?: {
+      type: 'video' | 'photo';
+      url: string;
+      thumbnail_url?: string;
+    };
+  }, callback?: (success: boolean) => void): void;
   onEvent(eventType: string, eventHandler: () => void): void;
   offEvent(eventType: string, eventHandler: () => void): void;
   sendData(data: string): void;

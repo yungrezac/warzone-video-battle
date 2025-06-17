@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Heart, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,8 @@ import VideoPlayer from './VideoPlayer';
 import VideoComments from './VideoComments';
 import CategoryBadge from './CategoryBadge';
 import PremiumBadge from './PremiumBadge';
+import VideoShareButton from './VideoShareButton';
+
 interface Video {
   id: string;
   title: string;
@@ -24,11 +27,13 @@ interface Video {
   category?: 'Rollers' | 'BMX' | 'Skateboard';
   authorIsPremium?: boolean;
 }
+
 interface VideoCardProps {
   video: Video;
   onLike: (id: string) => void;
   contextUserId?: string | null;
 }
+
 const VideoCard: React.FC<VideoCardProps> = ({
   video,
   onLike,
@@ -51,6 +56,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
       setLocalUserLiked(video.userLiked || false);
     }
   }, [video.userLiked, video.id]);
+
   const handleLike = () => {
     console.log('💖 VideoCard handleLike вызван для видео:', {
       videoId: video.id,
@@ -71,31 +77,56 @@ const VideoCard: React.FC<VideoCardProps> = ({
   // или в модальном окне этого пользователя.
   const isViewingSameUserProfile = location.pathname === `/user/${video.userId}` || (contextUserId != null && contextUserId === video.userId);
 
-  return <div className={`bg-white rounded-lg shadow-md overflow-hidden ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}>
-      {video.isWinner && <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-1 font-bold text-sm">
+  return (
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${video.isWinner ? 'border-2 border-yellow-400' : ''}`}>
+      {video.isWinner && (
+        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-1 font-bold text-sm">
           🏆 ПОБЕДИТЕЛЬ ДНЯ 🏆
-        </div>}
+        </div>
+      )}
       
       <div className="relative">
-        {video.videoUrl ? <AspectRatio ratio={9 / 16} className="bg-black">
-            <VideoPlayer src={video.videoUrl} thumbnail={video.thumbnail} title={video.title} className="w-full h-full" videoId={video.id} />
-          </AspectRatio> : <AspectRatio ratio={9 / 16} className="bg-black">
+        {video.videoUrl ? (
+          <AspectRatio ratio={9 / 16} className="bg-black">
+            <VideoPlayer 
+              src={video.videoUrl} 
+              thumbnail={video.thumbnail} 
+              title={video.title} 
+              className="w-full h-full" 
+              videoId={video.id} 
+            />
+          </AspectRatio>
+        ) : (
+          <AspectRatio ratio={9 / 16} className="bg-black">
             <div className="relative w-full h-full">
-              <img src={video.thumbnail} alt={video.title} className="w-full h-full object-contain" />
+              <img 
+                src={video.thumbnail} 
+                alt={video.title} 
+                className="w-full h-full object-contain" 
+              />
               <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
                 <div className="text-white text-center">
                   <p className="text-sm opacity-75">Видео недоступно</p>
                 </div>
               </div>
             </div>
-          </AspectRatio>}
+          </AspectRatio>
+        )}
       </div>
 
       <div className="p-2">
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center flex-1 min-w-0">
-            {video.userId && !isViewingSameUserProfile ? <Link to={`/user/${video.userId}`} className="flex items-center flex-1 min-w-0 hover:opacity-80">
-                <img src={video.authorAvatar} alt={video.author} className="w-7 h-7 rounded-full mr-2" />
+            {video.userId && !isViewingSameUserProfile ? (
+              <Link 
+                to={`/user/${video.userId}`} 
+                className="flex items-center flex-1 min-w-0 hover:opacity-80"
+              >
+                <img 
+                  src={video.authorAvatar} 
+                  alt={video.author} 
+                  className="w-7 h-7 rounded-full mr-2" 
+                />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
                   <div className="flex items-center gap-1">
@@ -103,8 +134,14 @@ const VideoCard: React.FC<VideoCardProps> = ({
                     {video.authorIsPremium && <PremiumBadge size="sm" />}
                   </div>
                 </div>
-              </Link> : <div className="flex items-center flex-1 min-w-0">
-                <img src={video.authorAvatar} alt={video.author} className="w-7 h-7 rounded-full mr-2" />
+              </Link>
+            ) : (
+              <div className="flex items-center flex-1 min-w-0">
+                <img 
+                  src={video.authorAvatar} 
+                  alt={video.author} 
+                  className="w-7 h-7 rounded-full mr-2" 
+                />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-gray-900 text-sm truncate">{video.title}</h3>
                   <div className="flex items-center gap-1">
@@ -112,7 +149,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
                     {video.authorIsPremium && <PremiumBadge size="sm" />}
                   </div>
                 </div>
-              </div>}
+              </div>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             {video.category && <CategoryBadge category={video.category} />}
@@ -122,7 +160,12 @@ const VideoCard: React.FC<VideoCardProps> = ({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm" onClick={handleLike} className={`${localUserLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLike} 
+              className={`${localUserLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 h-7 px-1.5`}
+            >
               <Heart className={`w-3.5 h-3.5 mr-1 ${localUserLiked ? 'fill-current' : ''}`} />
               <span className="text-xs">{video.likes}</span>
             </Button>
@@ -133,9 +176,20 @@ const VideoCard: React.FC<VideoCardProps> = ({
               <Eye className="w-3.5 h-3.5 mr-1" />
               <span className="text-xs">{video.views}</span>
             </Button>
+
+            {video.videoUrl && video.userId && (
+              <VideoShareButton
+                videoUrl={video.videoUrl}
+                thumbnailUrl={video.thumbnail}
+                authorName={video.author}
+                videoOwnerId={video.userId}
+              />
+            )}
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default VideoCard;
