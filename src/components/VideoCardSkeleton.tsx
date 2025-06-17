@@ -1,40 +1,58 @@
 
-import React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
+import React, { useEffect, useState } from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSkeletonStorage } from '@/hooks/useSkeletonStorage';
 
 const VideoCardSkeleton: React.FC = () => {
+  const { loadSkeletonData } = useSkeletonStorage();
+  const [skeletonData, setSkeletonData] = useState<any>(null);
+
+  useEffect(() => {
+    // Загружаем сохраненные данные скелетона
+    loadSkeletonData('video_skeleton').then(data => {
+      if (data) {
+        setSkeletonData(data.data);
+        console.log('🦴 Скелетон видео загружен из локального хранения');
+      }
+    });
+  }, [loadSkeletonData]);
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
+      {/* Превью видео */}
       <div className="relative">
-        <AspectRatio ratio={9 / 16} className="bg-black">
-          <Skeleton className="w-full h-full" />
-        </AspectRatio>
+        <Skeleton className="w-full h-48 rounded-lg" />
+        <div className="absolute bottom-2 right-2">
+          <Skeleton className="w-12 h-5 rounded" />
+        </div>
       </div>
 
-      <div className="p-2">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center flex-1 min-w-0">
-            <Skeleton className="w-7 h-7 rounded-full mr-2" />
-            <div className="flex-1 min-w-0">
-              <Skeleton className="h-4 w-3/4 mb-1" />
-              <Skeleton className="h-3 w-1/2" />
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-4 w-12" />
-            <Skeleton className="h-3 w-16" />
+      {/* Информация об авторе */}
+      <div className="flex items-center space-x-3">
+        <Skeleton className="w-8 h-8 rounded-full" />
+        <div className="flex-1">
+          <div className="text-sm text-gray-500">
+            {skeletonData?.author || 'Загрузка...'}
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-7 w-12" />
-            <Skeleton className="h-7 w-12" />
-            <Skeleton className="h-7 w-12" />
-            <Skeleton className="h-7 w-12" />
-          </div>
+      {/* Заголовок */}
+      <div>
+        <div className="text-sm font-medium text-gray-900 mb-1">
+          {skeletonData?.title || 'Загрузка видео...'}
         </div>
+        <Skeleton className="w-3/4 h-4" />
+      </div>
+
+      {/* Статистика */}
+      <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center space-x-4">
+          <span>👀 {skeletonData?.views || '---'}</span>
+          <span>❤️ {skeletonData?.likes || '---'}</span>
+          <span>💬 {skeletonData?.comments || '---'}</span>
+        </div>
+        <span>{skeletonData?.duration || '00:00'}</span>
       </div>
     </div>
   );

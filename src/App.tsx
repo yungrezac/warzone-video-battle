@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { VideoPlaybackProvider } from "@/contexts/VideoPlaybackContext";
 import AuthWrapper from "@/components/AuthWrapper";
 import AchievementTracker from "@/components/AchievementTracker";
+import SkeletonManager from "@/components/SkeletonManager";
 import React, { Suspense, lazy } from 'react';
 import PrefetchBanners from "./components/PrefetchBanners";
 
@@ -43,7 +44,9 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
   console.log('✅ Telegram WebApp готов:', {
     user: tg.initDataUnsafe?.user?.first_name || 'none',
     platform: tg.platform || 'unknown',
-    version: tg.version || 'unknown'
+    version: tg.version || 'unknown',
+    hasDeviceStorage: !!tg.DeviceStorage,
+    hasSecureStorage: !!tg.SecureStorage
   });
 }
 
@@ -54,6 +57,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthWrapper>
         <PrefetchBanners />
+        <SkeletonManager />
         <VideoPlaybackProvider>
           <TooltipProvider>
             <Sonner />

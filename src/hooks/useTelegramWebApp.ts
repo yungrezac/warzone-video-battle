@@ -24,7 +24,9 @@ export const useTelegramWebApp = () => {
       console.log('✅ Telegram WebApp найден:', {
         version: tg.version,
         platform: tg.platform,
-        user: tg.initDataUnsafe?.user?.first_name || 'none'
+        user: tg.initDataUnsafe?.user?.first_name || 'none',
+        hasDeviceStorage: !!tg.DeviceStorage,
+        hasSecureStorage: !!tg.SecureStorage
       });
 
       // Инициализируем WebApp
@@ -49,6 +51,15 @@ export const useTelegramWebApp = () => {
       setIsReady(true);
       
       console.log('🎯 Telegram WebApp успешно инициализирован');
+      
+      // Проверяем новые возможности хранения
+      if (tg.DeviceStorage) {
+        console.log('💾 DeviceStorage доступен - включена поддержка постоянного локального хранения');
+      }
+      
+      if (tg.SecureStorage) {
+        console.log('🔐 SecureStorage доступен - включена поддержка безопасного хранения');
+      }
     } else {
       console.log('⚠️ Telegram WebApp не найден, работаем в обычном браузере');
       setIsReady(true);
@@ -104,6 +115,8 @@ export const useTelegramWebApp = () => {
     isReady,
     isTelegramWebApp: !!webApp,
     colorScheme: webApp?.colorScheme || 'light',
+    hasDeviceStorage: !!webApp?.DeviceStorage,
+    hasSecureStorage: !!webApp?.SecureStorage,
     showMainButton,
     hideMainButton,
     showAlert,
