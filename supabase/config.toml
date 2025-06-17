@@ -1,5 +1,5 @@
 
-project_id = "cibytresc-wntdgxqjpfm"
+project_id = "cibytrescwntdgxqjpfm"
 
 [api]
 enabled = true
@@ -47,4 +47,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.process-payment]
+verify_jwt = false
+
+[functions.setup-telegram-webhook]
 verify_jwt = false
