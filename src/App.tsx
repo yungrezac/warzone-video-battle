@@ -21,12 +21,12 @@ const queryClient = new QueryClient({
   },
 });
 
-console.log('🚀 App загружается мгновенно...');
+console.log('🚀 TRICKS App загружается...');
 
 // Мгновенная инициализация Telegram WebApp
 if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
   const tg = window.Telegram.WebApp;
-  console.log('⚡ Мгновенная инициализация Telegram WebApp');
+  console.log('⚡ Инициализация Telegram WebApp');
   
   // Вызываем ready сразу
   tg.ready();
@@ -36,14 +36,24 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     tg.expand();
   }
   
-  console.log('✅ Telegram WebApp готов мгновенно:', {
+  // Настраиваем тему
+  if (tg.setHeaderColor) {
+    tg.setHeaderColor('#1e40af');
+  }
+  
+  if (tg.setBackgroundColor) {
+    tg.setBackgroundColor('#ffffff');
+  }
+  
+  console.log('✅ Telegram WebApp готов:', {
     user: tg.initDataUnsafe?.user?.first_name || 'none',
-    platform: tg.platform || 'unknown'
+    platform: tg.platform || 'unknown',
+    version: tg.version || 'unknown'
   });
 }
 
 const App = () => {
-  console.log('🎯 App рендерится мгновенно...');
+  console.log('🎯 TRICKS App рендерится...');
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -54,7 +64,11 @@ const App = () => {
             <Sonner />
             <AchievementTracker />
             <BrowserRouter>
-              <Suspense fallback={null}>
+              <Suspense fallback={
+                <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <div className="text-white text-xl font-bold">TRICKS</div>
+                </div>
+              }>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="*" element={<NotFound />} />

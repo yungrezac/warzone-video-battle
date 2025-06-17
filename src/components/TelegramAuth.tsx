@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Crown } from 'lucide-react';
+import { Loader2, Crown, CheckCircle } from 'lucide-react';
 import { useAuth } from './AuthWrapper';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 interface TelegramUser {
   id: number;
@@ -19,45 +20,23 @@ const TelegramAuth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { signIn } = useAuth();
+  const { webApp, user, isReady, isTelegramWebApp } = useTelegramWebApp();
 
   useEffect(() => {
     console.log('🔐 TelegramAuth компонент загружен');
-    console.log('🌐 Проверяем Telegram в TelegramAuth...');
     
-    if (typeof window !== 'undefined') {
-      console.log('📱 Window доступен в TelegramAuth');
-      console.log('📱 Telegram объект:', !!window.Telegram);
-      console.log('📱 WebApp объект:', !!window.Telegram?.WebApp);
-      
-      if (window.Telegram?.WebApp) {
-        console.log('✅ Telegram WebApp доступен в TelegramAuth');
-        const tg = window.Telegram.WebApp;
-        console.log('📊 initDataUnsafe в TelegramAuth:', JSON.stringify(tg.initDataUnsafe, null, 2));
-        console.log('👤 Пользователь в initDataUnsafe:', tg.initDataUnsafe?.user);
-        
-        // Пытаемся повторно вызвать ready
-        console.log('🔄 Повторно вызываем tg.ready()...');
-        tg.ready();
-        
-        // Проверяем через небольшую задержку
-        setTimeout(() => {
-          console.log('⏰ Повторная проверка через 1 секунду:', {
-            initDataUnsafe: tg.initDataUnsafe,
-            user: tg.initDataUnsafe?.user
-          });
-        }, 1000);
-      } else {
-        console.log('❌ Telegram WebApp НЕ доступен в TelegramAuth');
-        // Автоматический вход как админ если не в Telegram
-        console.log('🔧 Вход вне Telegram - используем админский аккаунт');
-        setTimeout(() => {
-          handleAdminAuth();
-        }, 2000);
-      }
-    } else {
-      console.log('❌ Window НЕ доступен в TelegramAuth');
+    // Автоматическая авторизация если есть пользователь из Telegram
+    if (isReady && user && isTelegramWebApp) {
+      console.log('🎯 Автоматическая авторизация пользователя:', user.first_name);
+      handleTelegramAuth(user as TelegramUser);
+    } else if (isReady && !isTelegramWebApp) {
+      // Автоматический вход как админ если не в Telegram
+      console.log('🔧 Вход вне Telegram - используем админский аккаунт');
+      setTimeout(() => {
+        handleAdminAuth();
+      }, 1000);
     }
-  }, []);
+  }, [isReady, user, isTelegramWebApp]);
 
   const handleTelegramAuth = async (telegramUser: TelegramUser) => {
     setLoading(true);
@@ -197,6 +176,7 @@ const TelegramAuth: React.FC = () => {
             telegram_id: 'admin_web',
             telegram_username: 'TrickMaster',
             telegram_photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+            is_premium: true,
           })
           .select()
           .single();
@@ -267,8 +247,8 @@ const TelegramAuth: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">WZ Battle</h1>
-          <p className="text-gray-600">Войдите через Telegram, чтобы продолжить</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">TRICKS</h1>
+          <p className="text-gray-600">Добро пожаловать в мир трюков!</p>
         </div>
 
         {error && (
@@ -281,23 +261,31 @@ const TelegramAuth: React.FC = () => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
             <h4 className="font-semibold text-blue-800 mb-2">Статус подключения:</h4>
             <div className="text-blue-700 space-y-1">
-              <p>• Window: {typeof window !== 'undefined' ? '✅' : '❌'}</p>
-              <p>• Telegram: {typeof window !== 'undefined' && window.Telegram ? '✅' : '❌'}</p>
-              <p>• WebApp: {typeof window !== 'undefined' && window.Telegram?.WebApp ? '✅' : '❌'}</p>
-              {typeof window !== 'undefined' && window.Telegram?.WebApp && (
-                <p>• Пользователь: {window.Telegram.WebApp.initDataUnsafe?.user ? '✅' : '❌'}</p>
+              <div className="flex items-center justify-between">
+                <span>Telegram WebApp:</span>
+                {isTelegramWebApp ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <span className="text-orange-500">Браузер</span>
+                )}
+              </div>
+              {user && (
+                <div className="flex items-center justify-between">
+                  <span>Пользователь:</span>
+                  <span className="text-green-600">{user.first_name}</span>
+                </div>
               )}
             </div>
           </div>
 
-          {!window.Telegram?.WebApp && (
+          {!isTelegramWebApp && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Crown className="w-5 h-5 text-yellow-600" />
-                <h4 className="font-semibold text-yellow-800">Вход как админ</h4>
+                <h4 className="font-semibold text-yellow-800">Демо режим</h4>
               </div>
               <p className="text-yellow-700 text-sm mb-3">
-                Вы входите вне Telegram Mini App и получите права администратора
+                Вы используете демо-версию. Для полной функциональности откройте приложение через Telegram.
               </p>
               <Button 
                 onClick={handleAdminAuth}
@@ -305,13 +293,16 @@ const TelegramAuth: React.FC = () => {
                 disabled={loading}
               >
                 <Crown className="w-4 h-4 mr-2" />
-                Войти как админ
+                Продолжить как демо-пользователь
               </Button>
             </div>
           )}
 
           <p className="text-xs text-gray-500">
-            В Telegram Mini App авторизация происходит автоматически
+            {isTelegramWebApp 
+              ? 'Авторизация через Telegram прошла успешно'
+              : 'Для полной функциональности используйте Telegram Mini App'
+            }
           </p>
         </div>
       </div>

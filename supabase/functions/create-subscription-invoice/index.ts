@@ -20,7 +20,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
   try {
     const { user_id, subscription_period = 2592000 }: CreateInvoiceRequest = await req.json(); // 30 дней по умолчанию
     
-    console.log('Создание рекуррентного счета для пользователя:', user_id);
+    console.log('🎯 Создание рекуррентного счета для пользователя:', user_id);
 
     // Инициализируем Supabase клиент
     const supabase = createClient(
@@ -36,7 +36,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (userError || !user) {
-      console.error('Пользователь не найден:', userError);
+      console.error('❌ Пользователь не найден:', userError);
       return new Response(
         JSON.stringify({ error: 'User not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -55,7 +55,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
     // Создаем инвойсную ссылку с поддержкой подписок
     const invoiceData = {
       title: 'TRICKS PREMIUM',
-      description: 'Подписка на премиум функции TRICKS с автоматическим продлением каждый месяц.',
+      description: 'Подписка на премиум функции TRICKS с автоматическим продлением каждый месяц. Получите доступ к эксклюзивным функциям!',
       payload: invoicePayload,
       provider_token: '', // Для Telegram Stars оставляем пустым
       currency: 'XTR', // Telegram Stars
@@ -79,7 +79,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
       subscription_period: subscription_period // Новый параметр для рекуррентных подписок
     };
 
-    console.log('Создаем рекуррентный инвойс:', invoiceData);
+    console.log('💳 Создаем рекуррентный инвойс:', invoiceData);
 
     // Создаем инвойсную ссылку через createInvoiceLink с поддержкой подписок
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/createInvoiceLink`, {
@@ -93,13 +93,13 @@ const serve_handler = async (req: Request): Promise<Response> => {
     const telegramResult = await telegramResponse.json();
 
     if (!telegramResult.ok) {
-      console.error('Ошибка создания рекуррентного инвойса в Telegram:', telegramResult);
+      console.error('❌ Ошибка создания рекуррентного инвойса в Telegram:', telegramResult);
       throw new Error(`Failed to create Telegram recurring invoice: ${telegramResult.description}`);
     }
 
     const invoiceUrl = telegramResult.result;
 
-    console.log('Рекуррентный инвойс создан успешно:', {
+    console.log('✅ Рекуррентный инвойс создан успешно:', {
       payload: invoicePayload,
       telegram_id: user.telegram_id,
       invoice_url: invoiceUrl,
@@ -122,7 +122,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Ошибка в create-subscription-invoice:', error);
+    console.error('❌ Ошибка в create-subscription-invoice:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {

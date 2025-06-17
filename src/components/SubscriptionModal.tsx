@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Star, Check, X, Loader2, CheckCircle2, AlertTriangle, Info, RefreshCw } from 'lucide-react';
+import { Crown, Star, Check, Loader2, CheckCircle2, AlertTriangle, Info, RefreshCw } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +19,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
   const [paymentResult, setPaymentResult] = useState<{ status: string; title: string; description: string } | null>(null);
 
   const { subscription, isPremium, createInvoice, isCreatingInvoice } = useSubscription();
-  const { webApp } = useTelegramWebApp();
+  const { webApp, isTelegramWebApp, openInvoice } = useTelegramWebApp();
   const { toast } = useToast();
 
   const handleOpenChange = (open: boolean) => {
@@ -34,10 +34,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
   };
 
   const handleSubscribe = async () => {
-    if (!webApp) {
+    if (!isTelegramWebApp) {
       toast({
-        title: "Ошибка",
-        description: "Доступно только в Telegram",
+        title: "Недоступно",
+        description: "Подписка доступна только в Telegram Mini App",
         variant: "destructive",
       });
       return;
@@ -46,73 +46,56 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
     setView('processing');
 
     try {
-      console.log('🎯 Создаем рекуррентный инвойс для подписки...');
+      console.log('🎯 Создаем инвойс для подписки...');
       
       const invoiceData = await createInvoice();
-      console.log('📄 Данные рекуррентного инвойса:', invoiceData);
+      console.log('📄 Данные инвойса:', invoiceData);
 
       if (!invoiceData?.invoice_url) {
         throw new Error('Не удалось получить URL инвойса');
       }
 
-      console.log('💳 Открываем рекуррентный инвойс через webApp.openInvoice...');
+      console.log('💳 Открываем инвойс через Telegram WebApp...');
       console.log('🔗 URL инвойса:', invoiceData.invoice_url);
 
-      if (webApp.openInvoice) {
-        webApp.openInvoice(invoiceData.invoice_url, (status: string) => {
-          console.log('💰 Статус платежа:', status);
-          
-          if (status === 'paid') {
-            setPaymentResult({
-                status,
-                title: "Успех!",
-                description: invoiceData.is_recurring 
-                  ? "Подписка успешно оформлена с автоматическим продлением. Спасибо за поддержку!"
-                  : "Подписка успешно оформлена. Спасибо за поддержку!",
-            });
-            toast({
-              title: "Успех!",
-              description: "Подписка успешно оформлена",
-            });
-          } else if (status === 'cancelled') {
-             setPaymentResult({
-                status,
-                title: "Платеж отменен",
-                description: "Вы можете попробовать совершить платеж еще раз.",
-            });
-            toast({
-              title: "Платеж отменен",
-              description: "Вы можете попробовать еще раз",
-            });
-          } else if (status === 'failed') {
-            setPaymentResult({
-                status,
-                title: "Ошибка платежа",
-                description: "Не удалось обработать платеж. Попробуйте снова или обратитесь в поддержку.",
-            });
-            toast({
-              title: "Ошибка платежа",
-              description: "Попробуйте еще раз или обратитесь в поддержку",
-              variant: "destructive",
-            });
-          }
-           setView('status');
-        });
-      } else {
-        // Fallback: открываем ссылку в браузере
-        console.log('🔗 Fallback: открываем ссылку...');
-        if (webApp.openLink) {
-          webApp.openLink(invoiceData.invoice_url);
-        } else {
-          window.open(invoiceData.invoice_url, '_blank');
-        }
+      // Открываем инвойс через Telegram WebApp
+      openInvoice(invoiceData.invoice_url, (status: string) => {
+        console.log('💰 Статус платежа:', status);
         
-        toast({
-          title: "Инвойс создан",
-          description: "Откройте ссылку для оплаты",
-        });
-        setIsOpen(false);
-      }
+        if (status === 'paid') {
+          setPaymentResult({
+            status,
+            title: "Успех!",
+            description: "Подписка TRICKS PREMIUM успешно оформлена с автоматическим продлением! Спасибо за поддержку!",
+          });
+          toast({
+            title: "Успех!",
+            description: "Подписка успешно оформлена",
+          });
+        } else if (status === 'cancelled') {
+          setPaymentResult({
+            status,
+            title: "Платеж отменен",
+            description: "Вы можете попробовать совершить платеж еще раз.",
+          });
+          toast({
+            title: "Платеж отменен",
+            description: "Вы можете попробовать еще раз",
+          });
+        } else if (status === 'failed') {
+          setPaymentResult({
+            status,
+            title: "Ошибка платежа",
+            description: "Не удалось обработать платеж. Попробуйте снова или обратитесь в поддержку.",
+          });
+          toast({
+            title: "Ошибка платежа",
+            description: "Попробуйте еще раз или обратитесь в поддержку",
+            variant: "destructive",
+          });
+        }
+        setView('status');
+      });
       
     } catch (error) {
       console.error('❌ Ошибка создания платежа:', error);
@@ -213,7 +196,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
 
                   <Button 
                     onClick={handleSubscribe}
-                    disabled={isCreatingInvoice}
+                    disabled={isCreatingInvoice || !isTelegramWebApp}
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                     size="lg"
                   >
@@ -221,6 +204,11 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                         Создаем счет...
+                      </>
+                    ) : !isTelegramWebApp ? (
+                      <>
+                        <Star className="w-4 h-4 mr-2" />
+                        Доступно только в Telegram
                       </>
                     ) : (
                       <>
@@ -240,41 +228,41 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ children }) => {
         )}
 
         {view === 'processing' && (
-            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
-                <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
-                <h3 className="text-lg font-semibold">Ожидание платежа</h3>
-                <p className="text-sm text-gray-500">
-                    Пожалуйста, подтвердите оплату в открывшемся окне Telegram.
-                </p>
-            </div>
+          <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
+            <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
+            <h3 className="text-lg font-semibold">Ожидание платежа</h3>
+            <p className="text-sm text-gray-500">
+              Пожалуйста, подтвердите оплату в открывшемся окне Telegram.
+            </p>
+          </div>
         )}
 
         {view === 'status' && paymentResult && (
-            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
-                {paymentResult.status === 'paid' && <CheckCircle2 className="w-12 h-12 text-green-500" />}
-                {paymentResult.status === 'cancelled' && <Info className="w-12 h-12 text-yellow-500" />}
-                {paymentResult.status === 'failed' && <AlertTriangle className="w-12 h-12 text-red-500" />}
-                
-                <h3 className="text-lg font-semibold">{paymentResult.title}</h3>
-                <p className="text-sm text-gray-500">{paymentResult.description}</p>
-                
-                <div className="flex gap-2 pt-4 w-full">
-                    {paymentResult.status === 'paid' ? (
-                        <Button className="w-full" onClick={() => window.location.reload()}>
-                            Отлично!
-                        </Button>
-                    ) : (
-                        <>
-                            <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
-                                Закрыть
-                            </Button>
-                            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" onClick={() => setView('default')}>
-                                Попробовать снова
-                            </Button>
-                        </>
-                    )}
-                </div>
+          <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
+            {paymentResult.status === 'paid' && <CheckCircle2 className="w-12 h-12 text-green-500" />}
+            {paymentResult.status === 'cancelled' && <Info className="w-12 h-12 text-yellow-500" />}
+            {paymentResult.status === 'failed' && <AlertTriangle className="w-12 h-12 text-red-500" />}
+            
+            <h3 className="text-lg font-semibold">{paymentResult.title}</h3>
+            <p className="text-sm text-gray-500">{paymentResult.description}</p>
+            
+            <div className="flex gap-2 pt-4 w-full">
+              {paymentResult.status === 'paid' ? (
+                <Button className="w-full" onClick={() => window.location.reload()}>
+                  Отлично!
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
+                    Закрыть
+                  </Button>
+                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" onClick={() => setView('default')}>
+                    Попробовать снова
+                  </Button>
+                </>
+              )}
             </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>
