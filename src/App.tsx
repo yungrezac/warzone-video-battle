@@ -36,14 +36,9 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     tg.expand();
   }
   
-  // Настраиваем тему
-  if (tg.setHeaderColor) {
-    tg.setHeaderColor('#1e40af');
-  }
-  
-  if (tg.setBackgroundColor) {
-    tg.setBackgroundColor('#ffffff');
-  }
+  // Настраиваем тему - используем свойства, а не методы
+  tg.headerColor = '#1e40af';
+  tg.backgroundColor = '#ffffff';
   
   console.log('✅ Telegram WebApp готов:', {
     user: tg.initDataUnsafe?.user?.first_name || 'none',

@@ -35,14 +35,9 @@ export const useTelegramWebApp = () => {
         tg.expand();
       }
 
-      // Настраиваем тему
-      if (tg.setHeaderColor) {
-        tg.setHeaderColor('#1e40af');
-      }
-      
-      if (tg.setBackgroundColor) {
-        tg.setBackgroundColor('#ffffff');
-      }
+      // Настраиваем тему - используем свойства
+      tg.headerColor = '#1e40af';
+      tg.backgroundColor = '#ffffff';
 
       setWebApp(tg);
       
@@ -108,6 +103,7 @@ export const useTelegramWebApp = () => {
     user,
     isReady,
     isTelegramWebApp: !!webApp,
+    colorScheme: webApp?.colorScheme || 'light',
     showMainButton,
     hideMainButton,
     showAlert,
