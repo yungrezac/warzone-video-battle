@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface TelegramUser {
   id: number;
@@ -39,6 +39,24 @@ export const useTelegramWebApp = () => {
       tg.headerColor = '#1e40af';
       tg.backgroundColor = '#ffffff';
 
+      // Настраиваем обработчики событий для новых возможностей
+      const handleShareMessageSent = (data: any) => {
+        console.log('📤 Сообщение успешно отправлено:', data);
+      };
+
+      const handleShareMessageFailed = (error: any) => {
+        console.error('❌ Ошибка отправки сообщения:', error);
+      };
+
+      const handleFileDownloadRequested = (data: any) => {
+        console.log('📥 Запрос на скачивание файла:', data);
+      };
+
+      // Подписываемся на события
+      tg.onEvent('shareMessageSent', handleShareMessageSent);
+      tg.onEvent('shareMessageFailed', handleShareMessageFailed);
+      tg.onEvent('fileDownloadRequested', handleFileDownloadRequested);
+
       setWebApp(tg);
       
       // Устанавливаем пользователя если есть
@@ -49,6 +67,13 @@ export const useTelegramWebApp = () => {
       setIsReady(true);
       
       console.log('🎯 Telegram WebApp успешно инициализирован');
+
+      // Очистка при размонтировании
+      return () => {
+        tg.offEvent('shareMessageSent', handleShareMessageSent);
+        tg.offEvent('shareMessageFailed', handleShareMessageFailed);
+        tg.offEvent('fileDownloadRequested', handleFileDownloadRequested);
+      };
     } else {
       console.log('⚠️ Telegram WebApp не найден, работаем в обычном браузере');
       setIsReady(true);
@@ -98,7 +123,7 @@ export const useTelegramWebApp = () => {
     }
   };
 
-  const shareVideo = (videoUrl: string, thumbnailUrl: string, message: string) => {
+  const shareVideo = useCallback((videoUrl: string, thumbnailUrl: string, message: string) => {
     console.log('📤 Попытка поделиться видео:', { videoUrl, message });
     
     if (webApp?.shareMessage) {
@@ -133,7 +158,51 @@ export const useTelegramWebApp = () => {
         });
       }
     }
-  };
+  }, [webApp, hapticFeedback]);
+
+  const savePreparedInlineMessage = useCallback((videoUrl: string, thumbnailUrl: string, message: string) => {
+    console.log('📤 Сохранение подготовленного сообщения:', { videoUrl, message });
+    
+    if (webApp?.savePreparedInlineMessage) {
+      webApp.savePreparedInlineMessage({
+        text: message,
+        media: {
+          type: 'video',
+          url: videoUrl,
+          thumbnail_url: thumbnailUrl
+        }
+      }, (preparedMessage: any) => {
+        console.log('✅ Подготовленное сообщение сохранено:', preparedMessage);
+      });
+    } else {
+      console.log('⚠️ savePreparedInlineMessage недоступен');
+    }
+  }, [webApp]);
+
+  const downloadFile = useCallback((fileUrl: string, fileName: string) => {
+    console.log('📥 Попытка скачать файл:', { fileUrl, fileName });
+    
+    if (webApp?.downloadFile) {
+      webApp.downloadFile({
+        url: fileUrl,
+        file_name: fileName
+      }, (success: boolean) => {
+        console.log('📥 Результат скачивания файла:', success);
+        if (success) {
+          hapticFeedback('notification');
+        }
+      });
+    } else {
+      console.log('⚠️ downloadFile недоступен, используем fallback');
+      // Fallback для обычного браузера
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [webApp, hapticFeedback]);
 
   return {
     webApp,
@@ -147,5 +216,7 @@ export const useTelegramWebApp = () => {
     hapticFeedback,
     openInvoice,
     shareVideo,
+    savePreparedInlineMessage,
+    downloadFile,
   };
 };
