@@ -1,24 +1,4 @@
 
-interface PreparedInlineMessage {
-  id: string;
-  answerWebAppQuery?: {
-    query_id: string;
-    result: InlineQueryResult;
-  };
-}
-
-interface InlineQueryResult {
-  type: string;
-  id: string;
-  title?: string;
-  description?: string;
-  thumb_url?: string;
-  content?: {
-    message_text?: string;
-    parse_mode?: string;
-  };
-}
-
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
@@ -108,6 +88,7 @@ interface TelegramWebApp {
     getItems(keys: string[], callback: (error: string | null, values: { [key: string]: string }) => void): void;
     removeItem(key: string, callback?: (error: string | null, success: boolean) => void): void;
     removeItems(keys: string[], callback?: (error: string | null, success: boolean) => void): void;
+    getKeys(callback: (error: string | null, keys: string[]) => void): void;
   };
   openLink(url: string, options?: { try_instant_view?: boolean }): void;
   openTelegramLink(url: string): void;
@@ -137,29 +118,8 @@ interface TelegramWebApp {
       name?: string;
     };
   }): void;
-  shareMessage(params: {
-    text?: string;
-    url?: string;
-    media?: {
-      type: 'video' | 'photo';
-      url: string;
-      thumbnail_url?: string;
-    };
-  }, callback?: (success: boolean) => void): void;
-  savePreparedInlineMessage(params: {
-    text?: string;
-    media?: {
-      type: 'video' | 'photo';
-      url: string;
-      thumbnail_url?: string;
-    };
-  }, callback?: (preparedMessage: PreparedInlineMessage) => void): void;
-  downloadFile(params: {
-    url: string;
-    file_name: string;
-  }, callback?: (success: boolean) => void): void;
-  onEvent(eventType: string, eventHandler: (...args: any[]) => void): void;
-  offEvent(eventType: string, eventHandler: (...args: any[]) => void): void;
+  onEvent(eventType: string, eventHandler: () => void): void;
+  offEvent(eventType: string, eventHandler: () => void): void;
   sendData(data: string): void;
   switchInlineQuery(query: string, choose_chat_types?: string[]): void;
 }
