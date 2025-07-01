@@ -10,7 +10,7 @@ import TopUsers from "@/components/TopUsers";
 import Tournaments from "@/components/Tournaments";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Trophy, Zap } from "lucide-react";
+import { Home, Trophy, Sword } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -44,8 +44,8 @@ const Index = () => {
                     value="tournaments" 
                     className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
                   >
-                    <Zap className="w-4 h-4" />
-                    <span className="hidden sm:inline">Турниры</span>
+                    <Sword className="w-4 h-4" />
+                    <span className="hidden sm:inline">Батлы</span>
                   </TabsTrigger>
                 </TabsList>
               </div>

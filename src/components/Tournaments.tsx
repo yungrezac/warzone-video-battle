@@ -1,163 +1,93 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wifi, WifiOff, Plus } from 'lucide-react';
 import { Button } from './ui/button';
+import { Plus } from 'lucide-react';
 import { useAuth } from './AuthWrapper';
-import { useOnlineTournaments, useTournamentVideos } from '@/hooks/useOnlineTournaments';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import OnlineTournamentCard from './OnlineTournamentCard';
-import TournamentVideoCard from './TournamentVideoCard';
-import CreateTournamentModal from './CreateTournamentModal';
-import TournamentUploadModal from './TournamentUploadModal';
+import { useVideoBattles } from '@/hooks/useVideoBattles';
+import VideoBattleCard from './VideoBattleCard';
+import CreateBattleModal from './CreateBattleModal';
 import TournamentBannerCarousel from './TournamentBannerCarousel';
-import TournamentDetailsModal from './TournamentDetailsModal';
 
 const Tournaments: React.FC = () => {
-  const [modalType, setModalType] = useState<'online' | 'offline' | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [uploadTournamentId, setUploadTournamentId] = useState<string | null>(null);
   
   const { user } = useAuth();
-  const { data: tournaments, isLoading: isLoadingTournaments } = useOnlineTournaments();
+  const { data: battles, isLoading: isLoadingBattles } = useVideoBattles();
   
-  // Получаем активный турнир (первый по дате создания)
-  const activeTournament = tournaments?.[0];
-  
-  const { data: tournamentVideos } = useTournamentVideos(activeTournament?.id || '');
-  
-  // Проверяем, является ли пользователь судьей активного турнира
-  const { data: isJudge } = useQuery({
-    queryKey: ['is-judge', activeTournament?.id, user?.id],
-    queryFn: async () => {
-      if (!activeTournament?.id || !user?.id) return false;
-      
-      const { data, error } = await supabase
-        .from('tournament_judges')
-        .select('id')
-        .eq('tournament_id', activeTournament.id)
-        .eq('judge_id', user.id)
-        .maybeSingle();
+  const canCreateBattle = user?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
 
-      if (error) return false;
-      return !!data;
-    },
-    enabled: !!activeTournament?.id && !!user?.id,
-  });
-
-  const canCreateTournament = user?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
-
-  const handleUploadVideo = (tournamentId: string) => {
-    setUploadTournamentId(tournamentId);
-  };
-
-  const renderOnlineContent = () => {
-    if (isLoadingTournaments) {
+  const renderContent = () => {
+    if (isLoadingBattles) {
       return (
         <div className="text-center p-8">
-          <p className="text-gray-500">Загрузка турниров...</p>
+          <p className="text-gray-500">Загрузка видеобатлов...</p>
         </div>
       );
     }
 
-    if (!activeTournament) {
+    if (!battles || battles.length === 0) {
       return (
         <div className="text-center p-8 border-2 border-dashed rounded-xl bg-gray-50">
-          <p className="text-gray-500 mb-4">Нет активных турниров</p>
-          {canCreateTournament && (
+          <p className="text-gray-500 mb-4">Нет активных видеобатлов</p>
+          {canCreateBattle && (
             <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Создать турнир
+              Создать видеобатл
             </Button>
           )}
         </div>
       );
     }
 
-    // Приводим турнир к нужному типу
-    const formattedTournament = {
-      id: activeTournament.id,
-      title: activeTournament.title,
-      description: activeTournament.description,
-      banner_url: activeTournament.banner_url,
-      entry_cost_points: activeTournament.entry_cost_points,
-      min_participants: activeTournament.min_participants,
-      end_date: activeTournament.end_date,
-      status: activeTournament.status as 'registration' | 'active' | 'completed',
-      participants_count: activeTournament.participants_count || 0,
-      winner_id: activeTournament.winner_id || undefined,
-      profiles: activeTournament.winner ? {
-        username: activeTournament.winner.username || undefined,
-        first_name: activeTournament.winner.first_name || undefined,
-        avatar_url: activeTournament.winner.avatar_url || undefined,
+    // Приводим батлы к нужному типу
+    const formattedBattles = battles.map(battle => ({
+      id: battle.id,
+      title: battle.title,
+      description: battle.description,
+      reference_video_url: battle.reference_video_url,
+      reference_video_title: battle.reference_video_title,
+      start_time: battle.start_time,
+      time_limit_minutes: battle.time_limit_minutes,
+      status: battle.status as 'registration' | 'active' | 'completed' | 'cancelled',
+      current_participant_id: battle.current_participant_id || undefined,
+      current_deadline: battle.current_deadline || undefined,
+      winner_id: battle.winner_id || undefined,
+      prize_points: battle.prize_points,
+      winner: battle.winner ? {
+        username: battle.winner.username || undefined,
+        first_name: battle.winner.first_name || undefined,
+        avatar_url: battle.winner.avatar_url || undefined,
       } : undefined,
-    };
+    }));
 
     return (
       <div className="space-y-6">
-        {/* Административная панель для создания турниров */}
-        {canCreateTournament && (
-          <div className="bg-blue-50 p-4 rounded-lg">
+        {/* Административная панель для создания батлов */}
+        {canCreateBattle && (
+          <div className="bg-red-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-blue-900">Управление турнирами</h3>
-                <p className="text-sm text-blue-700">Создайте новый турнир</p>
+                <h3 className="font-semibold text-red-900">Управление видеобатлами</h3>
+                <p className="text-sm text-red-700">Создайте новый видеобатл</p>
               </div>
               <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Создать турнир
+                Создать видеобатл
               </Button>
             </div>
           </div>
         )}
 
-        {/* Карточка турнира */}
-        <OnlineTournamentCard
-          tournament={formattedTournament}
-          onUploadVideo={handleUploadVideo}
-        />
-
-        {/* Лента турнирных видео */}
-        {tournamentVideos && tournamentVideos.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Видео участников</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tournamentVideos.map((video) => {
-                // Приводим видео к нужному типу
-                const formattedVideo = {
-                  id: video.id,
-                  title: video.title,
-                  video_url: video.video_url,
-                  thumbnail_url: video.thumbnail_url,
-                  user_id: video.user_id,
-                  tournament_id: video.tournament_id,
-                  profiles: video.profiles as { username?: string; first_name?: string; avatar_url?: string; } | undefined,
-                };
-
-                return (
-                  <TournamentVideoCard
-                    key={video.id}
-                    video={formattedVideo}
-                    isJudge={isJudge}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Список видеобатлов */}
+        {formattedBattles.map((battle) => (
+          <VideoBattleCard
+            key={battle.id}
+            battle={battle}
+          />
+        ))}
       </div>
     );
   };
-
-  const renderOfflineContent = () => (
-    <div className="text-center p-8 border-2 border-dashed rounded-xl bg-gray-50">
-      <p className="text-gray-500 mb-4">Пока нет офлайн турниров</p>
-      <Button onClick={() => setModalType('offline')}>
-        Подробнее
-      </Button>
-    </div>
-  );
 
   return (
     <>
@@ -165,47 +95,19 @@ const Tournaments: React.FC = () => {
         <TournamentBannerCarousel />
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2 px-[4px]">Турниры</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2 px-[4px]">Видеобатлы</h1>
+          <p className="text-gray-600 text-sm px-[4px]">
+            Соревнуйтесь в повторении трюков и добавлении новых элементов
+          </p>
         </div>
 
-        <Tabs defaultValue="online" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="online" className="flex items-center gap-2">
-              <Wifi className="w-4 h-4" />
-              Онлайн
-            </TabsTrigger>
-            <TabsTrigger value="offline" className="flex items-center gap-2">
-              <WifiOff className="w-4 h-4" />
-              Офлайн
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="online">
-            {renderOnlineContent()}
-          </TabsContent>
-
-          <TabsContent value="offline">
-            {renderOfflineContent()}
-          </TabsContent>
-        </Tabs>
+        {renderContent()}
       </div>
 
-      {/* Модальные окна */}
-      <CreateTournamentModal
+      {/* Модальное окно создания */}
+      <CreateBattleModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-      />
-      
-      <TournamentUploadModal
-        isOpen={!!uploadTournamentId}
-        onClose={() => setUploadTournamentId(null)}
-        tournamentId={uploadTournamentId || ''}
-      />
-      
-      <TournamentDetailsModal
-        isOpen={modalType !== null}
-        onClose={() => setModalType(null)}
-        type={modalType}
       />
     </>
   );
