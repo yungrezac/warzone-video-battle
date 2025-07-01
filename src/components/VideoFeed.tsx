@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useVideos } from '@/hooks/useVideos';
 import { useLikeVideo } from '@/hooks/useVideoLikes';
@@ -153,7 +152,8 @@ const VideoFeed: React.FC = () => {
     setSelectedUserId(null);
   }
 
-  return <div className="min-h-screen bg-gray-50">
+  return (
+    <div className="min-h-screen bg-gray-50">
       {fileToUpload && (
         <FullScreenUploadModal 
           isOpen={!!fileToUpload} 
@@ -184,51 +184,68 @@ const VideoFeed: React.FC = () => {
         </Button>
       </div>
 
-      {isLoading ? <div className="space-y-4 px-2">
-          {[...Array(3)].map((_, index) => <VideoCardSkeleton key={index} />)}
-        </div> : <div className="space-y-4 px-2">
+      {isLoading ? (
+        <div className="space-y-4 px-2">
+          {[...Array(3)].map((_, index) => (
+            <VideoCardSkeleton key={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4 px-2">
           {videos?.reduce((acc, video, index) => {
-        const videoUser = video.profiles;
-        const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
+            const videoUser = video.profiles;
+            const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
 
-        acc.push(<div key={video.id} data-video-id={video.id} onClickCapture={handleCardClick}>
-                <VideoCard video={{
-            id: video.id,
-            title: video.title,
-            author: displayName,
-            authorAvatar: videoUser?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-            thumbnail: video.thumbnail_url || 'https://i.postimg.cc/hGHyN1Z1/1eb82307-57c9-4efe-b3c2-5d1d49767f4c.png',
-            videoUrl: video.video_url,
-            likes: video.likes_count || 0,
-            comments: video.comments_count || 0,
-            views: video.views || 0,
-            isWinner: video.is_winner,
-            timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit'
-            }),
-            userLiked: video.user_liked || false,
-            userId: video.user_id,
-            authorIsPremium: videoUser?.is_premium
-          }} onLike={handleLike} />
-              </div>);
+            acc.push(
+              <div key={video.id} data-video-id={video.id} onClickCapture={handleCardClick}>
+                <VideoCard
+                  video={{
+                    id: video.id,
+                    title: video.title,
+                    author: displayName,
+                    authorAvatar: videoUser?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+                    thumbnail: video.thumbnail_url || 'https://i.postimg.cc/hGHyN1Z1/1eb82307-57c9-4efe-b3c2-5d1d49767f4c.png',
+                    videoUrl: video.video_url,
+                    likes: video.likes_count || 0,
+                    comments: video.comments_count || 0,
+                    views: video.views || 0,
+                    isWinner: video.is_winner,
+                    timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }),
+                    userLiked: video.user_liked || false,
+                    userId: video.user_id,
+                    authorIsPremium: videoUser?.is_premium
+                  }}
+                  onLike={handleLike}
+                />
+              </div>
+            );
 
-        const BANNER_FREQUENCY = 5;
+            const BANNER_FREQUENCY = 5;
 
-        if ((index + 1) % BANNER_FREQUENCY === 0 && banners && banners.length > 0) {
-          const bannerCycleIndex = Math.floor((index + 1) / BANNER_FREQUENCY);
-          const bannerIndex = (bannerCycleIndex - 1) % banners.length;
-          const bannerToShow = banners[bannerIndex];
-          if (bannerToShow) {
-            acc.push(<InlineBannerCard key={`banner-${bannerToShow.id}`} banner={bannerToShow} />);
-          }
-        }
-        return acc;
-      }, [] as React.ReactNode[])}
-        </div>}
-    </div>;
+            if ((index + 1) % BANNER_FREQUENCY === 0 && banners && banners.length > 0) {
+              const bannerCycleIndex = Math.floor((index + 1) / BANNER_FREQUENCY);
+              const bannerIndex = (bannerCycleIndex - 1) % banners.length;
+              const bannerToShow = banners[bannerIndex];
+              if (bannerToShow) {
+                acc.push(
+                  <InlineBannerCard 
+                    key={`banner-${bannerToShow.id}-${index}`} 
+                    banner={bannerToShow} 
+                  />
+                );
+              }
+            }
+            return acc;
+          }, [] as React.ReactNode[])}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default VideoFeed;
