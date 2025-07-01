@@ -14,7 +14,8 @@ const Tournaments: React.FC = () => {
   const { user } = useAuth();
   const { data: battles, isLoading: isLoadingBattles } = useVideoBattles();
   
-  const canCreateBattle = user?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
+  // Check if user is TrickMaster (admin) or has the specific admin ID
+  const canCreateBattle = user?.username === 'TrickMaster' || user?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
 
   const renderContent = () => {
     if (isLoadingBattles) {
@@ -60,13 +61,16 @@ const Tournaments: React.FC = () => {
       <div className="space-y-6">
         {/* Административная панель для создания батлов */}
         {canCreateBattle && (
-          <div className="bg-red-50 p-4 rounded-lg">
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-red-900">Управление видеобатлами</h3>
-                <p className="text-sm text-red-700">Создайте новый видеобатл</p>
+                <h3 className="font-semibold text-purple-900">Управление видеобатлами</h3>
+                <p className="text-sm text-purple-700">Создайте новый видеобатл для пользователей</p>
               </div>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Создать видеобатл
               </Button>
