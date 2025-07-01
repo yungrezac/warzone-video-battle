@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -134,6 +133,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
             <AspectRatio ratio={16 / 9} className="bg-black">
               <VideoPlayer
                 src={battle.reference_video_url}
+                thumbnail="/placeholder.svg"
                 title={battle.reference_video_title}
                 className="w-full h-full"
                 videoId={`battle-ref-${battle.id}`}

@@ -53,11 +53,7 @@ const Tournaments: React.FC = () => {
       current_deadline: battle.current_deadline || undefined,
       winner_id: battle.winner_id || undefined,
       prize_points: battle.prize_points,
-      winner: battle.winner ? {
-        username: battle.winner.username || undefined,
-        first_name: battle.winner.first_name || undefined,
-        avatar_url: battle.winner.avatar_url || undefined,
-      } : undefined,
+      winner: undefined, // Убираем winner пока не исправим связи в БД
     }));
 
     return (
