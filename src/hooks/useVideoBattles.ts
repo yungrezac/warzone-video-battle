@@ -34,10 +34,17 @@ export const useCreateBattle = () => {
       prize_points: number;
       judge_ids: string[];
     }) => {
+      // Получаем текущего пользователя
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Пользователь не авторизован');
+      }
+
       const { data: battle, error: battleError } = await supabase
         .from('video_battles')
         .insert({
-          organizer_id: '649d5b0d-88f6-49fb-85dc-a88d6cba1327',
+          organizer_id: user.id,
           title: battleData.title,
           description: battleData.description,
           reference_video_url: battleData.reference_video_url,
