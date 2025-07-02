@@ -1,12 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateBattle } from '@/hooks/useVideoBattles';
+import { useUsers } from '@/hooks/useUsers';
+import { uploadBattleVideo } from '@/utils/videoUpload';
 import { toast } from 'sonner';
+import { Upload, Video } from 'lucide-react';
 
 interface CreateBattleModalProps {
   isOpen: boolean;
@@ -17,21 +21,24 @@ const CreateBattleModal: React.FC<CreateBattleModalProps> = ({ isOpen, onClose }
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    reference_video_url: '',
-    reference_video_title: '',
     start_time: '',
     time_limit_minutes: 30,
     prize_points: 500,
-    judge_ids: [] as string[],
+    judge_id: '',
   });
+  
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createBattleMutation = useCreateBattle();
+  const { data: users, isLoading: isLoadingUsers } = useUsers();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.reference_video_url || !formData.start_time) {
-      toast.error('Заполните все обязательные поля');
+    if (!formData.title || !formData.description || !selectedVideo || !formData.start_time || !formData.judge_id) {
+      toast.error('Заполните все обязательные поля и выберите видео');
       return;
     }
 
@@ -41,30 +48,66 @@ const CreateBattleModal: React.FC<CreateBattleModalProps> = ({ isOpen, onClose }
       return;
     }
 
-    createBattleMutation.mutate(formData, {
-      onSuccess: () => {
-        onClose();
-        setFormData({
-          title: '',
-          description: '',
-          reference_video_url: '',
-          reference_video_title: '',
-          start_time: '',
-          time_limit_minutes: 30,
-          prize_points: 500,
-          judge_ids: [],
-        });
-      },
-    });
+    setIsUploading(true);
+    try {
+      // Сначала создаем батл для получения ID
+      const tempBattleId = Date.now().toString();
+      const videoUrl = await uploadBattleVideo(selectedVideo, tempBattleId);
+      
+      createBattleMutation.mutate({
+        title: formData.title,
+        description: formData.description,
+        reference_video_url: videoUrl,
+        reference_video_title: formData.title,
+        start_time: formData.start_time,
+        time_limit_minutes: formData.time_limit_minutes,
+        prize_points: formData.prize_points,
+        judge_ids: [formData.judge_id],
+      }, {
+        onSuccess: () => {
+          onClose();
+          setFormData({
+            title: '',
+            description: '',
+            start_time: '',
+            time_limit_minutes: 30,
+            prize_points: 500,
+            judge_id: '',
+          });
+          setSelectedVideo(null);
+          toast.success('Видеобатл успешно создан!');
+        },
+        onError: (error) => {
+          toast.error('Ошибка при создании видеобатла');
+          console.error(error);
+        }
+      });
+    } catch (error) {
+      toast.error('Ошибка при загрузке видео');
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleJudgeIdsChange = (value: string) => {
-    const ids = value.split(',').map(id => id.trim()).filter(id => id);
-    setFormData(prev => ({ ...prev, judge_ids: ids }));
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('video/')) {
+        setSelectedVideo(file);
+        toast.success(`Выбрано видео: ${file.name}`);
+      } else {
+        toast.error('Выберите видео файл');
+      }
+    }
+  };
+
+  const getUserDisplayName = (user: any) => {
+    return user.username || user.first_name || user.telegram_username || `User ${user.id.slice(0, 8)}`;
   };
 
   return (
@@ -99,24 +142,32 @@ const CreateBattleModal: React.FC<CreateBattleModalProps> = ({ isOpen, onClose }
           </div>
 
           <div>
-            <Label htmlFor="reference_video_url">URL эталонного видео *</Label>
-            <Input
-              id="reference_video_url"
-              value={formData.reference_video_url}
-              onChange={(e) => handleInputChange('reference_video_url', e.target.value)}
-              placeholder="https://example.com/video.mp4"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="reference_video_title">Название эталонного видео</Label>
-            <Input
-              id="reference_video_title"
-              value={formData.reference_video_title}
-              onChange={(e) => handleInputChange('reference_video_title', e.target.value)}
-              placeholder="Введите название видео"
-            />
+            <Label htmlFor="reference_video">Эталонное видео *</Label>
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleVideoSelect}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2"
+                disabled={isUploading}
+              >
+                <Upload className="w-4 h-4" />
+                {selectedVideo ? selectedVideo.name : 'Выберите видео файл'}
+              </Button>
+              {selectedVideo && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <Video className="w-4 h-4" />
+                  <span>Видео готово к загрузке</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -154,16 +205,26 @@ const CreateBattleModal: React.FC<CreateBattleModalProps> = ({ isOpen, onClose }
           </div>
 
           <div>
-            <Label htmlFor="judge_ids">ID судей (через запятую)</Label>
-            <Input
-              id="judge_ids"
-              value={formData.judge_ids.join(', ')}
-              onChange={(e) => handleJudgeIdsChange(e.target.value)}
-              placeholder="id1, id2, id3..."
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Введите ID пользователей, которые будут судьями
-            </p>
+            <Label htmlFor="judge_id">Судья *</Label>
+            <Select
+              value={formData.judge_id}
+              onValueChange={(value) => handleInputChange('judge_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите судью" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-48 overflow-y-auto z-50">
+                {isLoadingUsers ? (
+                  <SelectItem value="" disabled>Загрузка пользователей...</SelectItem>
+                ) : (
+                  users?.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {getUserDisplayName(user)}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-2 pt-4">
@@ -177,10 +238,10 @@ const CreateBattleModal: React.FC<CreateBattleModalProps> = ({ isOpen, onClose }
             </Button>
             <Button
               type="submit"
-              disabled={createBattleMutation.isPending}
+              disabled={createBattleMutation.isPending || isUploading}
               className="flex-1"
             >
-              {createBattleMutation.isPending ? 'Создание...' : 'Создать'}
+              {isUploading ? 'Загрузка видео...' : createBattleMutation.isPending ? 'Создание...' : 'Создать'}
             </Button>
           </div>
         </form>
