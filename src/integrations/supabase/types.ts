@@ -2048,6 +2048,10 @@ export type Database = {
         Args: { participant_id_param: string }
         Returns: undefined
       }
+      auto_start_battles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       award_points_for_action: {
         Args: {
           p_user_id: string

@@ -42,8 +42,13 @@ const CreateBattleModal: React.FC<CreateBattleModalProps> = ({ isOpen, onClose }
       return;
     }
 
+    // Конвертируем время из МСК в UTC для базы данных
     const startTime = new Date(formData.start_time);
-    if (startTime <= new Date()) {
+    const moscowOffset = 3 * 60; // МСК = UTC+3
+    const localOffset = startTime.getTimezoneOffset();
+    const utcTime = new Date(startTime.getTime() + (localOffset - moscowOffset) * 60000);
+    
+    if (utcTime <= new Date()) {
       toast.error('Время начала должно быть в будущем');
       return;
     }
@@ -59,7 +64,7 @@ const CreateBattleModal: React.FC<CreateBattleModalProps> = ({ isOpen, onClose }
         description: formData.description,
         reference_video_url: videoUrl,
         reference_video_title: formData.title,
-        start_time: formData.start_time,
+        start_time: utcTime.toISOString(),
         time_limit_minutes: formData.time_limit_minutes,
         prize_points: formData.prize_points,
         judge_ids: [formData.judge_id],

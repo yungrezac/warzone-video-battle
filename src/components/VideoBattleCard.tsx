@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,12 +10,14 @@ import {
   ChevronDown, 
   ChevronUp,
   Timer,
-  Crown
+  Crown,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { useJoinBattle, useBattleParticipants } from '@/hooks/useVideoBattles';
 import VideoPlayer from './VideoPlayer';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VideoBattleCardProps {
   battle: {
@@ -41,12 +43,55 @@ interface VideoBattleCardProps {
 
 const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [countdown, setCountdown] = useState('');
   const { user } = useAuth();
   const joinBattleMutation = useJoinBattle();
   const { data: participants } = useBattleParticipants(battle.id);
 
   const isUserParticipant = participants?.some(p => p.user_id === user?.id);
   const canJoin = battle.status === 'registration' && !isUserParticipant;
+
+  // Обратный отсчет до начала батла
+  useEffect(() => {
+    if (battle.status !== 'registration') return;
+
+    const updateCountdown = () => {
+      const startTime = new Date(battle.start_time);
+      const now = new Date();
+      const diff = startTime.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setCountdown('Батл начался!');
+        // Вызываем функцию автозапуска батлов
+        (async () => {
+          try {
+            await supabase.rpc('auto_start_battles');
+          } catch (error) {
+            console.error(error);
+          }
+        })();
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (days > 0) {
+        setCountdown(`${days}д ${hours}ч ${minutes}м`);
+      } else if (hours > 0) {
+        setCountdown(`${hours}ч ${minutes}м ${seconds}с`);
+      } else {
+        setCountdown(`${minutes}м ${seconds}с`);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [battle.start_time, battle.status]);
 
   const handleJoinBattle = async () => {
     if (!user) {
@@ -75,12 +120,17 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ru-RU', {
+    // Конвертируем UTC время в МСК
+    const utcDate = new Date(dateString);
+    const moscowDate = new Date(utcDate.getTime() + (3 * 60 * 60 * 1000)); // Добавляем 3 часа для МСК
+    
+    return moscowDate.toLocaleString('ru-RU', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Europe/Moscow'
     });
   };
 
@@ -210,8 +260,9 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
           )}
 
           {battle.status === 'registration' && isUserParticipant && (
-            <Button disabled className="flex-1 bg-blue-400">
-              Ожидание старта
+            <Button disabled className="flex-1 bg-blue-400 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              {countdown || 'Ожидание старта'}
             </Button>
           )}
 
