@@ -46,10 +46,33 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   const [countdown, setCountdown] = useState('');
   const { user } = useAuth();
   const joinBattleMutation = useJoinBattle();
-  const { data: participants } = useBattleParticipants(battle.id);
+  const { data: participants, refetch: refetchParticipants } = useBattleParticipants(battle.id);
 
   const isUserParticipant = participants?.some(p => p.user_id === user?.id);
   const canJoin = battle.status === 'registration' && !isUserParticipant;
+
+  // Real-time обновления для участников батла
+  useEffect(() => {
+    const channel = supabase
+      .channel('battle-participants-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'battle_participants',
+          filter: `battle_id=eq.${battle.id}`
+        },
+        () => {
+          refetchParticipants();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [battle.id, refetchParticipants]);
 
   // Обратный отсчет до начала батла
   useEffect(() => {
