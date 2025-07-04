@@ -258,7 +258,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{participants?.length || 0} участников</span>
+            <span>{participants?.filter(p => p.status === 'active').length || 0} участников</span>
           </div>
           <div className="flex items-center gap-1">
             <Timer className="w-4 h-4" />
