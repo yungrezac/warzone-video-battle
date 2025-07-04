@@ -1730,6 +1730,7 @@ export type Database = {
           created_at: string
           current_deadline: string | null
           current_participant_id: string | null
+          current_video_sequence: number | null
           description: string
           id: string
           organizer_id: string
@@ -1747,6 +1748,7 @@ export type Database = {
           created_at?: string
           current_deadline?: string | null
           current_participant_id?: string | null
+          current_video_sequence?: number | null
           description: string
           id?: string
           organizer_id: string
@@ -1764,6 +1766,7 @@ export type Database = {
           created_at?: string
           current_deadline?: string | null
           current_participant_id?: string | null
+          current_video_sequence?: number | null
           description?: string
           id?: string
           organizer_id?: string
@@ -2048,6 +2051,10 @@ export type Database = {
         Args: { participant_id_param: string }
         Returns: undefined
       }
+      add_full_letter_to_participant: {
+        Args: { participant_id_param: string }
+        Returns: string
+      }
       auto_start_battles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2065,6 +2072,10 @@ export type Database = {
       check_active_subscription: {
         Args: { p_user_id: string }
         Returns: boolean
+      }
+      check_battle_winner: {
+        Args: { battle_id_param: string }
+        Returns: undefined
       }
       complete_task: {
         Args: { p_task_id: string }
@@ -2112,6 +2123,10 @@ export type Database = {
       purchase_item: {
         Args: { p_item_id: string; p_quantity?: number }
         Returns: Json
+      }
+      select_next_battle_participant: {
+        Args: { battle_id_param: string }
+        Returns: string
       }
       select_next_participant: {
         Args: { battle_id_param: string }

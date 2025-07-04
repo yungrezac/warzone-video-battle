@@ -244,3 +244,117 @@ export const useApproveVideo = () => {
     },
   });
 };
+
+// Хук для запуска батла
+export const useStartBattle = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (battleId: string) => {
+      // Выбираем первого участника
+      const { data, error } = await supabase.rpc('select_next_battle_participant', {
+        battle_id_param: battleId
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['video-battles'] });
+      toast.success('Батл запущен!');
+    },
+    onError: (error) => {
+      console.error('Error starting battle:', error);
+      toast.error('Ошибка при запуске батла');
+    },
+  });
+};
+
+// Хук для обновления видео батла после одобрения/отклонения
+export const useProcessBattleVideo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      battleId,
+      videoId,
+      isApproved,
+    }: {
+      battleId: string;
+      videoId: string;
+      isApproved: boolean;
+    }) => {
+      if (isApproved) {
+        // Обновляем эталонное видео
+        const { data: video } = await supabase
+          .from('battle_videos')
+          .select('video_url, title')
+          .eq('id', videoId)
+          .single();
+
+        if (video) {
+          // Получаем текущую последовательность
+          const { data: currentBattle } = await supabase
+            .from('video_battles')
+            .select('current_video_sequence')
+            .eq('id', battleId)
+            .single();
+
+          await supabase
+            .from('video_battles')
+            .update({
+              reference_video_url: video.video_url,
+              reference_video_title: video.title,
+              current_video_sequence: (currentBattle?.current_video_sequence || 0) + 1,
+            })
+            .eq('id', battleId);
+        }
+
+        // Выбираем следующего участника
+        await supabase.rpc('select_next_battle_participant', {
+          battle_id_param: battleId
+        });
+      } else {
+        // Добавляем букву FULL участнику
+        const { data: video } = await supabase
+          .from('battle_videos')
+          .select('participant_id')
+          .eq('id', videoId)
+          .single();
+
+        if (video) {
+          await supabase.rpc('add_full_letter_to_participant', {
+            participant_id_param: video.participant_id
+          });
+
+          // Проверяем, есть ли еще активные участники
+          await supabase.rpc('check_battle_winner', {
+            battle_id_param: battleId
+          });
+
+          // Если батл не завершен, выбираем следующего участника
+          const { data: battle } = await supabase
+            .from('video_battles')
+            .select('status')
+            .eq('id', battleId)
+            .single();
+
+          if (battle?.status === 'active') {
+            await supabase.rpc('select_next_battle_participant', {
+              battle_id_param: battleId
+            });
+          }
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['video-battles'] });
+      queryClient.invalidateQueries({ queryKey: ['battle-participants'] });
+      queryClient.invalidateQueries({ queryKey: ['battle-videos'] });
+    },
+    onError: (error) => {
+      console.error('Error processing battle video:', error);
+      toast.error('Ошибка при обработке видео');
+    },
+  });
+};

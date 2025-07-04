@@ -14,10 +14,11 @@ import {
   Clock
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
-import { useJoinBattle, useBattleParticipants } from '@/hooks/useVideoBattles';
+import { useJoinBattle, useBattleParticipants, useStartBattle } from '@/hooks/useVideoBattles';
 import VideoPlayer from './VideoPlayer';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { supabase } from '@/integrations/supabase/client';
+import BattleManagement from './BattleManagement';
 
 interface VideoBattleCardProps {
   battle: {
@@ -31,8 +32,10 @@ interface VideoBattleCardProps {
     status: 'registration' | 'active' | 'completed' | 'cancelled';
     current_participant_id?: string;
     current_deadline?: string;
+    current_video_sequence?: number;
     winner_id?: string;
     prize_points: number;
+    organizer_id: string;
     winner?: {
       username?: string;
       first_name?: string;
@@ -46,10 +49,32 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   const [countdown, setCountdown] = useState('');
   const { user } = useAuth();
   const joinBattleMutation = useJoinBattle();
+  const startBattleMutation = useStartBattle();
   const { data: participants, refetch: refetchParticipants } = useBattleParticipants(battle.id);
 
   const isUserParticipant = participants?.some(p => p.user_id === user?.id);
   const canJoin = battle.status === 'registration' && !isUserParticipant;
+  const isOrganizer = battle.organizer_id === user?.id;
+
+  // Проверяем, является ли пользователь судьей
+  const [isJudge, setIsJudge] = React.useState(false);
+  
+  React.useEffect(() => {
+    const checkJudgeStatus = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('battle_judges')
+        .select('id')
+        .eq('battle_id', battle.id)
+        .eq('judge_id', user.id)
+        .maybeSingle();
+        
+      setIsJudge(!!data);
+    };
+    
+    checkJudgeStatus();
+  }, [battle.id, user?.id]);
 
   // Real-time обновления для участников батла
   useEffect(() => {
@@ -117,14 +142,15 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   }, [battle.start_time, battle.status]);
 
   const handleJoinBattle = async () => {
-    if (!user) {
-      return;
-    }
-
+    if (!user) return;
     joinBattleMutation.mutate({
       battleId: battle.id,
       userId: user.id,
     });
+  };
+
+  const handleStartBattle = async () => {
+    startBattleMutation.mutate(battle.id);
   };
 
   const getStatusBadge = () => {
@@ -187,7 +213,20 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   }
 
   return (
-    <Card className="w-full mb-6">
+    <>
+      {/* Компонент управления активным батлом */}
+      {battle.status === 'active' && (
+        <BattleManagement 
+          battle={{
+            ...battle,
+            current_video_sequence: battle.current_video_sequence || 1
+          }}
+          isJudge={isJudge}
+          isOrganizer={isOrganizer}
+        />
+      )}
+      
+      <Card className="w-full mb-6">{/* остальная часть карточки */}
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -282,6 +321,17 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
             </Button>
           )}
 
+          {/* Кнопка запуска батла для организатора */}
+          {isOrganizer && battle.status === 'registration' && participants && participants.length >= 2 && (
+            <Button
+              onClick={handleStartBattle}
+              disabled={startBattleMutation.isPending}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              {startBattleMutation.isPending ? 'Запуск...' : 'Запустить батл'}
+            </Button>
+          )}
+
           {battle.status === 'registration' && isUserParticipant && (
             <Button disabled className="flex-1 bg-blue-400 flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -297,6 +347,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
         </div>
       </CardContent>
     </Card>
+    </>
   );
 };
 

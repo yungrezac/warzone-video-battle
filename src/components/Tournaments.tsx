@@ -52,8 +52,10 @@ const Tournaments: React.FC = () => {
       status: battle.status as 'registration' | 'active' | 'completed' | 'cancelled',
       current_participant_id: battle.current_participant_id || undefined,
       current_deadline: battle.current_deadline || undefined,
+      current_video_sequence: battle.current_video_sequence || 1,
       winner_id: battle.winner_id || undefined,
       prize_points: battle.prize_points,
+      organizer_id: battle.organizer_id,
       winner: undefined, // Убираем winner пока не исправим связи в БД
     }));
 
