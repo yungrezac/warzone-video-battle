@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -150,13 +151,13 @@ const BattleManagement: React.FC<BattleManagementProps> = ({ battle, isJudge, is
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Текущее эталонное видео */}
+        {/* Текущее эталонное видео с соотношением 9:16 */}
         <div>
           <h4 className="font-semibold mb-2">
             Эталонное видео (Последовательность #{battle.current_video_sequence}):
           </h4>
-          <div className="rounded-lg overflow-hidden">
-            <AspectRatio ratio={16 / 9} className="bg-black">
+          <div className="rounded-lg overflow-hidden max-w-xs mx-auto">
+            <AspectRatio ratio={9 / 16} className="bg-black">
               <VideoPlayer
                 src={battle.reference_video_url}
                 thumbnail="/placeholder.svg"

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +53,9 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   const startBattleMutation = useStartBattle();
   const { data: participants, refetch: refetchParticipants } = useBattleParticipants(battle.id);
 
-  const isUserParticipant = participants?.some(p => p.user_id === user?.id);
+  // Подсчитываем только активных участников
+  const activeParticipants = participants?.filter(p => p.status === 'active') || [];
+  const isUserParticipant = activeParticipants.some(p => p.user_id === user?.id);
   const canJoin = battle.status === 'registration' && !isUserParticipant;
   const isOrganizer = battle.organizer_id === user?.id;
 
@@ -202,7 +205,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
                   Победитель: {battle.winner.first_name || battle.winner.username}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Участников: {participants?.length || 0}
+                  Участников: {activeParticipants.length}
                 </p>
               </div>
             </div>
@@ -226,127 +229,128 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
         />
       )}
       
-      <Card className="w-full mb-6">{/* остальная часть карточки */}
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Sword className="w-5 h-5 text-red-500" />
-            <span>{battle.title}</span>
-          </CardTitle>
-          {getStatusBadge()}
-        </div>
-      </CardHeader>
+      <Card className="w-full mb-6">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Sword className="w-5 h-5 text-red-500" />
+              <span>{battle.title}</span>
+            </CardTitle>
+            {getStatusBadge()}
+          </div>
+        </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Эталонное видео */}
-        <div>
-          <h4 className="font-semibold mb-2">Эталонное видео:</h4>
-          <div className="rounded-lg overflow-hidden">
-            <AspectRatio ratio={16 / 9} className="bg-black">
-              <VideoPlayer
-                src={battle.reference_video_url}
-                thumbnail="/placeholder.svg"
-                title={battle.reference_video_title}
-                className="w-full h-full"
-                videoId={`battle-ref-${battle.id}`}
-              />
-            </AspectRatio>
+        <CardContent className="space-y-4">
+          {/* Эталонное видео с соотношением 9:16 */}
+          <div>
+            <h4 className="font-semibold mb-2">Эталонное видео:</h4>
+            <div className="rounded-lg overflow-hidden max-w-xs mx-auto">
+              <AspectRatio ratio={9 / 16} className="bg-black">
+                <VideoPlayer
+                  src={battle.reference_video_url}
+                  thumbnail="/placeholder.svg"
+                  title={battle.reference_video_title}
+                  className="w-full h-full"
+                  videoId={`battle-ref-${battle.id}`}
+                />
+              </AspectRatio>
+            </div>
+            <p className="text-sm text-gray-600 mt-1 text-center">{battle.reference_video_title}</p>
           </div>
-          <p className="text-sm text-gray-600 mt-1">{battle.reference_video_title}</p>
-        </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            <span>{participants?.filter(p => p.status === 'active').length || 0} участников</span>
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              <span>{activeParticipants.length} участников</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Timer className="w-4 h-4" />
+              <span>{battle.time_limit_minutes} мин</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4" />
+              <span>{battle.prize_points} баллов</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(battle.start_time)}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Timer className="w-4 h-4" />
-            <span>{battle.time_limit_minutes} мин</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Star className="w-4 h-4" />
-            <span>{battle.prize_points} баллов</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
-            <span>{formatDate(battle.start_time)}</span>
-          </div>
-        </div>
 
-        <div className="space-y-2">
-          <p className={`text-gray-700 ${isExpanded ? '' : 'line-clamp-2'}`}>
-            {battle.description}
-          </p>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-0 h-auto text-blue-600 hover:text-blue-800"
-          >
-            {isExpanded ? (
-              <>
-                Свернуть <ChevronUp className="w-4 h-4 ml-1" />
-              </>
-            ) : (
-              <>
-                Подробнее <ChevronDown className="w-4 h-4 ml-1" />
-              </>
-            )}
-          </Button>
-        </div>
-
-        {battle.status === 'active' && battle.current_participant_id && (
-          <div className="bg-yellow-50 p-3 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Сейчас ход участника:</strong> {battle.current_participant_id}
+          <div className="space-y-2">
+            <p className={`text-gray-700 ${isExpanded ? '' : 'line-clamp-2'}`}>
+              {battle.description}
             </p>
-            {battle.current_deadline && (
-              <p className="text-xs text-yellow-700">
-                Дедлайн: {formatDate(battle.current_deadline)}
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-0 h-auto text-blue-600 hover:text-blue-800"
+            >
+              {isExpanded ? (
+                <>
+                  Свернуть <ChevronUp className="w-4 h-4 ml-1" />
+                </>
+              ) : (
+                <>
+                  Подробнее <ChevronDown className="w-4 h-4 ml-1" />
+                </>
+              )}
+            </Button>
+          </div>
+
+          {battle.status === 'active' && battle.current_participant_id && (
+            <div className="bg-yellow-50 p-3 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Сейчас ход участника:</strong> {battle.current_participant_id}
               </p>
+              {battle.current_deadline && (
+                <p className="text-xs text-yellow-700">
+                  Дедлайн: {formatDate(battle.current_deadline)}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            {canJoin && (
+              <Button
+                onClick={handleJoinBattle}
+                disabled={joinBattleMutation.isPending}
+                className="flex-1"
+              >
+                {joinBattleMutation.isPending ? 'Присоединение...' : 'Участвовать'}
+              </Button>
+            )}
+
+            {/* Кнопка запуска батла для организатора */}
+            {isOrganizer && battle.status === 'registration' && activeParticipants.length >= 2 && (
+              <Button
+                onClick={handleStartBattle}
+                disabled={startBattleMutation.isPending}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {startBattleMutation.isPending ? 'Запуск...' : 'Запустить батл'}
+              </Button>
+            )}
+
+            {/* Обратный отсчет для участников */}
+            {battle.status === 'registration' && isUserParticipant && (
+              <Button disabled className="flex-1 bg-blue-400 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                {countdown || 'Ожидание старта'}
+              </Button>
+            )}
+
+            {battle.status === 'active' && isUserParticipant && (
+              <Button disabled className="flex-1 bg-green-400">
+                Участвую в батле
+              </Button>
             )}
           </div>
-        )}
-
-        <div className="flex gap-2">
-          {canJoin && (
-            <Button
-              onClick={handleJoinBattle}
-              disabled={joinBattleMutation.isPending}
-              className="flex-1"
-            >
-              {joinBattleMutation.isPending ? 'Присоединение...' : 'Участвовать'}
-            </Button>
-          )}
-
-          {/* Кнопка запуска батла для организатора */}
-          {isOrganizer && battle.status === 'registration' && participants && participants.length >= 2 && (
-            <Button
-              onClick={handleStartBattle}
-              disabled={startBattleMutation.isPending}
-              className="flex-1 bg-green-600 hover:bg-green-700"
-            >
-              {startBattleMutation.isPending ? 'Запуск...' : 'Запустить батл'}
-            </Button>
-          )}
-
-          {battle.status === 'registration' && isUserParticipant && (
-            <Button disabled className="flex-1 bg-blue-400 flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              {countdown || 'Ожидание старта'}
-            </Button>
-          )}
-
-          {battle.status === 'active' && isUserParticipant && (
-            <Button disabled className="flex-1 bg-green-400">
-              Участвую в батле
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
     </>
   );
 };
