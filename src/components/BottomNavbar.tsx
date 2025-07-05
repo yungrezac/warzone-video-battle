@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, User, ShoppingBag, Trophy } from 'lucide-react';
+import { Home, User, ShoppingBag, Trophy, Swords } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface BottomNavbarProps {
@@ -12,7 +12,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, onTabChange }) =
   const { t } = useTranslation();
   const tabs = [
     { id: 'home', icon: Home, label: 'Главная' },
-    { id: 'tournaments', icon: Trophy, label: 'Батлы' },
+    { id: 'tournaments', icon: Swords, label: 'Батлы' },
     { id: 'top', icon: Trophy, label: 'Топ' },
     { id: 'market', icon: ShoppingBag, label: 'Маркет' },
     { id: 'profile', icon: User, label: 'Профиль' },
