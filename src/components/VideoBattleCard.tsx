@@ -55,6 +55,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
 
   // Подсчитываем только активных участников
   const activeParticipants = participants?.filter(p => p.status === 'active') || [];
+  const participantCount = activeParticipants.length;
   const isUserParticipant = activeParticipants.some(p => p.user_id === user?.id);
   const canJoin = battle.status === 'registration' && !isUserParticipant;
   const isOrganizer = battle.organizer_id === user?.id;
@@ -205,7 +206,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
                   Победитель: {battle.winner.first_name || battle.winner.username}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Участников: {activeParticipants.length}
+                  Участников: {participantCount}
                 </p>
               </div>
             </div>
@@ -261,7 +262,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
           <div className="flex items-center justify-between text-sm text-gray-600">
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
-              <span>{activeParticipants.length} участников</span>
+              <span>{participantCount} участников</span>
             </div>
             <div className="flex items-center gap-1">
               <Timer className="w-4 h-4" />
@@ -325,7 +326,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
             )}
 
             {/* Кнопка запуска батла для организатора */}
-            {isOrganizer && battle.status === 'registration' && activeParticipants.length >= 2 && (
+            {isOrganizer && battle.status === 'registration' && participantCount >= 2 && (
               <Button
                 onClick={handleStartBattle}
                 disabled={startBattleMutation.isPending}
