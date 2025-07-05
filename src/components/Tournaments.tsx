@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Zap } from 'lucide-react';
 import { useAuth } from './AuthWrapper';
 import { useVideoBattles } from '@/hooks/useVideoBattles';
 import VideoBattleCard from './VideoBattleCard';
@@ -14,24 +14,33 @@ const Tournaments: React.FC = () => {
   const { user } = useAuth();
   const { data: battles, isLoading: isLoadingBattles } = useVideoBattles();
   
-  // Check if user is TrickMaster (admin) or has the specific admin ID
   const canCreateBattle = user?.username === 'TrickMaster' || user?.id === '649d5b0d-88f6-49fb-85dc-a88d6cba1327';
 
   const renderContent = () => {
     if (isLoadingBattles) {
       return (
-        <div className="text-center p-8">
-          <p className="text-gray-500">Загрузка видеобатлов...</p>
+        <div className="text-center p-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-4">
+            <Zap className="w-8 h-8 text-blue-600 animate-pulse" />
+          </div>
+          <p className="text-gray-600 font-medium">Загрузка видеобатлов...</p>
         </div>
       );
     }
 
     if (!battles || battles.length === 0) {
       return (
-        <div className="text-center p-8 border-2 border-dashed rounded-xl bg-gray-50">
-          <p className="text-gray-500 mb-4">Нет активных видеобатлов</p>
+        <div className="text-center p-12 bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-200">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6 shadow-sm">
+            <Zap className="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">Нет активных видеобатлов</h3>
+          <p className="text-gray-600 mb-6">Скоро здесь появятся захватывающие соревнования!</p>
           {canCreateBattle && (
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Создать видеобатл
             </Button>
@@ -40,7 +49,6 @@ const Tournaments: React.FC = () => {
       );
     }
 
-    // Приводим батлы к нужному типу
     const formattedBattles = battles.map(battle => ({
       id: battle.id,
       title: battle.title,
@@ -56,57 +64,60 @@ const Tournaments: React.FC = () => {
       winner_id: battle.winner_id || undefined,
       prize_points: battle.prize_points,
       organizer_id: battle.organizer_id,
-      winner: undefined, // Убираем winner пока не исправим связи в БД
+      winner: undefined,
     }));
 
     return (
-      <div className="space-y-6">
-        {/* Административная панель для создания батлов */}
+      <div className="space-y-8">
         {canCreateBattle && (
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-6 rounded-2xl border border-purple-100 shadow-sm">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-purple-900">Управление видеобатлами</h3>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-purple-900">Управление видеобатлами</h3>
                 <p className="text-sm text-purple-700">Создайте новый видеобатл для пользователей</p>
               </div>
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Создать видеобатл
+                Создать
               </Button>
             </div>
           </div>
         )}
 
-        {/* Список видеобатлов */}
-        {formattedBattles.map((battle) => (
-          <VideoBattleCard
-            key={battle.id}
-            battle={battle}
-          />
-        ))}
+        <div className="space-y-6">
+          {formattedBattles.map((battle) => (
+            <VideoBattleCard
+              key={battle.id}
+              battle={battle}
+            />
+          ))}
+        </div>
       </div>
     );
   };
 
   return (
     <>
-      <div className="pb-16 p-4 px-[10px] py-[10px]">
-        <TournamentBannerCarousel />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pb-20">
+        <div className="px-4 py-6">
+          <TournamentBannerCarousel />
 
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2 px-[4px]">Видеобатлы</h1>
-          <p className="text-gray-600 text-sm px-[4px]">
-            Соревнуйтесь в повторении трюков и добавлении новых элементов
-          </p>
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent mb-3">
+              Видеобатлы
+            </h1>
+            <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
+              Соревнуйтесь в повторении трюков и добавлении новых элементов
+            </p>
+          </div>
+
+          {renderContent()}
         </div>
-
-        {renderContent()}
       </div>
 
-      {/* Модальное окно создания */}
       <CreateBattleModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
