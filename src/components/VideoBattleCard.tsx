@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +8,12 @@ import {
   Users, 
   Calendar, 
   Star, 
-  ChevronDown, 
-  ChevronUp,
   Timer,
   Crown,
   Clock,
-  Play
+  Play,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthWrapper';
 import { useJoinBattle, useBattleParticipants, useStartBattle } from '@/hooks/useVideoBattles';
@@ -78,6 +79,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
     checkJudgeStatus();
   }, [battle.id, user?.id]);
 
+  // Realtime updates for participants
   useEffect(() => {
     const channel = supabase
       .channel('battle-participants-changes')
@@ -100,6 +102,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
     };
   }, [battle.id, refetchParticipants]);
 
+  // Countdown timer for registration battles
   useEffect(() => {
     if (battle.status !== 'registration') return;
 
@@ -110,13 +113,6 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
 
       if (diff <= 0) {
         setCountdown('Батл начался!');
-        (async () => {
-          try {
-            await supabase.rpc('auto_start_battles');
-          } catch (error) {
-            console.error(error);
-          }
-        })();
         return;
       }
 
@@ -155,50 +151,50 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
   const getStatusBadge = () => {
     switch (battle.status) {
       case 'registration':
-        return <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">Регистрация</Badge>;
+        return <Badge className="bg-blue-500 text-white text-xs px-2 py-1">Регистрация</Badge>;
       case 'active':
-        return <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">Активный</Badge>;
+        return <Badge className="bg-green-500 text-white text-xs px-2 py-1">Активный</Badge>;
       case 'completed':
-        return <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-0">Завершен</Badge>;
+        return <Badge className="bg-gray-500 text-white text-xs px-2 py-1">Завершен</Badge>;
       case 'cancelled':
-        return <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0">Отменен</Badge>;
+        return <Badge className="bg-red-500 text-white text-xs px-2 py-1">Отменен</Badge>;
       default:
         return null;
     }
   };
 
   const formatDate = (dateString: string) => {
-    const utcDate = new Date(dateString);
-    const moscowDate = new Date(utcDate.getTime() + (3 * 60 * 60 * 1000));
-    
-    return moscowDate.toLocaleString('ru-RU', {
+    const date = new Date(dateString);
+    return date.toLocaleString('ru-RU', {
       day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+      month: 'short',
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Europe/Moscow'
     });
   };
 
   // Компактный вид для завершенных батлов
   if (battle.status === 'completed') {
     return (
-      <Card className="overflow-hidden bg-muted/30 border border-muted shadow-sm">
-        <CardContent className="p-4">
+      <Card className="bg-gray-50 border-gray-200 shadow-sm">
+        <CardContent className="p-3">
           <div className="flex items-center gap-3">
-            <Crown className="w-6 h-6 text-yellow-500 flex-shrink-0" />
+            <Crown className="w-5 h-5 text-yellow-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm text-muted-foreground truncate">
-                Завершен • {battle.title}
+              <h4 className="font-medium text-sm text-gray-700 truncate">
+                {battle.title}
               </h4>
-              {battle.winner && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Победитель: {battle.winner.first_name || battle.winner.username} • {participantCount} участников
-                </p>
-              )}
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs text-gray-500">Завершен</span>
+                {battle.winner && (
+                  <span className="text-xs text-gray-600">
+                    • Победитель: {battle.winner.first_name || battle.winner.username}
+                  </span>
+                )}
+                <span className="text-xs text-gray-500">• {participantCount} участников</span>
+              </div>
             </div>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300">
               {battle.prize_points} баллов
             </Badge>
           </div>
@@ -220,113 +216,179 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
         />
       )}
       
-      <Card className="overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 border">
-        <CardHeader className="pb-3 px-4 pt-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <div className="p-1.5 bg-primary/10 rounded-full">
-                <Sword className="w-4 h-4 text-primary" />
+      <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="p-1.5 bg-blue-100 rounded-lg">
+                <Sword className="w-4 h-4 text-blue-600" />
               </div>
-              <span className="font-semibold truncate">{battle.title}</span>
-            </CardTitle>
-            {getStatusBadge()}
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg font-bold truncate">{battle.title}</CardTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  {getStatusBadge()}
+                  <span className="text-xs text-gray-500">
+                    {formatDate(battle.start_time)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-8 w-8 p-0"
+            >
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
           </div>
         </CardHeader>
 
-        <CardContent className="px-4 pb-4 space-y-4">
+        <CardContent className="pt-0">
           <div className="flex gap-4">
-            {/* Video */}
+            {/* Video Preview */}
             <div className="flex-shrink-0">
-              <div className="relative rounded-lg overflow-hidden shadow-sm bg-black">
-                <AspectRatio ratio={9 / 16} className="w-24">
+              <div className="relative rounded-lg overflow-hidden bg-black w-20">
+                <AspectRatio ratio={9 / 16}>
                   <VideoPlayer
                     src={battle.reference_video_url}
                     thumbnail="/placeholder.svg"
                     title={battle.reference_video_title}
-                    className="w-full h-full"
-                    videoId={`battle-ref-${battle.id}`}
+                    className="w-full h-full object-cover"
+                    videoId={`battle-${battle.id}`}
                   />
                 </AspectRatio>
-                <div className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5">
-                  <Play className="w-2.5 h-2.5 text-white" />
+                <div className="absolute top-1 right-1 bg-black/60 rounded-full p-1">
+                  <Play className="w-2 h-2 text-white" />
                 </div>
               </div>
             </div>
 
-            {/* Info */}
+            {/* Battle Info */}
             <div className="flex-1 space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-1.5 bg-muted/50 rounded-md p-2">
-                  <Users className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-medium">{participantCount}</span>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
+                  <Users className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="text-sm font-medium">{participantCount}</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-muted/50 rounded-md p-2">
-                  <Timer className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-medium">{battle.time_limit_minutes}м</span>
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
+                  <Timer className="w-3.5 h-3.5 text-green-600" />
+                  <span className="text-sm font-medium">{battle.time_limit_minutes}м</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-muted/50 rounded-md p-2">
-                  <Star className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-medium">{battle.prize_points}</span>
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
+                  <Star className="w-3.5 h-3.5 text-yellow-600" />
+                  <span className="text-sm font-medium">{battle.prize_points}</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-muted/50 rounded-md p-2">
-                  <Calendar className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-medium text-[10px] leading-tight">
-                    {formatDate(battle.start_time).split(',')[0].split(' ').slice(0, 2).join(' ')}
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                  <span className="text-xs font-medium leading-tight">
+                    {formatDate(battle.start_time).split(',')[0]}
                   </span>
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {canJoin && (
+                  <Button
+                    onClick={handleJoinBattle}
+                    disabled={joinBattleMutation.isPending}
+                    size="sm"
+                    className="flex-1 h-8 text-sm"
+                  >
+                    {joinBattleMutation.isPending ? 'Вход...' : 'Участвовать'}
+                  </Button>
+                )}
+
+                {isOrganizer && battle.status === 'registration' && participantCount >= 2 && (
+                  <Button
+                    onClick={handleStartBattle}
+                    disabled={startBattleMutation.isPending}
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1 h-8 text-sm"
+                  >
+                    {startBattleMutation.isPending ? 'Запуск...' : 'Запустить'}
+                  </Button>
+                )}
+
+                {battle.status === 'registration' && isUserParticipant && (
+                  <Button disabled size="sm" className="flex-1 h-8 text-sm flex items-center gap-2">
+                    <Clock className="w-3 h-3" />
+                    <span>{countdown || 'Ожидание'}</span>
+                  </Button>
+                )}
+
+                {battle.status === 'active' && isUserParticipant && (
+                  <Button disabled size="sm" variant="secondary" className="flex-1 h-8 text-sm">
+                    Участвую
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Expanded Description */}
+          {isExpanded && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-gray-600 leading-relaxed">
                 {battle.description}
               </p>
-            </div>
-          </div>
+              
+              {battle.status === 'active' && battle.current_participant_id && (
+                <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    Сейчас ход участника: {battle.current_participant_id}
+                  </p>
+                </div>
+              )}
 
-          {battle.status === 'active' && battle.current_participant_id && (
-            <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg">
-              <p className="text-xs text-warning-foreground font-medium">
-                Ход участника: {battle.current_participant_id}
-              </p>
+              {/* Participants List */}
+              {participantCount > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold mb-2">
+                    Участники ({participantCount}):
+                  </h4>
+                  <div className="space-y-1">
+                    {activeParticipants.slice(0, 5).map((participant) => (
+                      <div
+                        key={participant.id}
+                        className={`flex items-center justify-between text-sm p-2 rounded ${
+                          participant.id === battle.current_participant_id 
+                            ? 'bg-yellow-100 border border-yellow-300' 
+                            : 'bg-gray-50'
+                        }`}
+                      >
+                        <span className="font-medium">
+                          {(participant as any).profiles?.first_name || 'Участник'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {participant.full_letters && (
+                            <Badge variant="destructive" className="text-xs">
+                              {participant.full_letters}
+                            </Badge>
+                          )}
+                          {participant.id === battle.current_participant_id && (
+                            <Badge className="text-xs bg-yellow-500">Ход</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {participantCount > 5 && (
+                      <p className="text-xs text-gray-500 text-center">
+                        +{participantCount - 5} участников
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
-
-          <div className="flex gap-2">
-            {canJoin && (
-              <Button
-                onClick={handleJoinBattle}
-                disabled={joinBattleMutation.isPending}
-                size="sm"
-                className="flex-1"
-              >
-                {joinBattleMutation.isPending ? 'Присоединение...' : 'Участвовать'}
-              </Button>
-            )}
-
-            {isOrganizer && battle.status === 'registration' && participantCount >= 2 && (
-              <Button
-                onClick={handleStartBattle}
-                disabled={startBattleMutation.isPending}
-                size="sm"
-                variant="secondary"
-                className="flex-1"
-              >
-                {startBattleMutation.isPending ? 'Запуск...' : 'Запустить'}
-              </Button>
-            )}
-
-            {battle.status === 'registration' && isUserParticipant && (
-              <Button disabled size="sm" className="flex-1 flex items-center gap-2">
-                <Clock className="w-3 h-3" />
-                <span className="text-xs">{countdown || 'Ожидание'}</span>
-              </Button>
-            )}
-
-            {battle.status === 'active' && isUserParticipant && (
-              <Button disabled size="sm" variant="secondary" className="flex-1">
-                Участвую
-              </Button>
-            )}
-          </div>
         </CardContent>
       </Card>
     </>
