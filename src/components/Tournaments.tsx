@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Plus, Zap, Sword } from 'lucide-react';
+import { Plus, Zap, Sword, Info } from 'lucide-react';
 import { useAuth } from './AuthWrapper';
 import { useVideoBattles } from '@/hooks/useVideoBattles';
 import VideoBattleCard from './VideoBattleCard';
 import CreateBattleModal from './CreateBattleModal';
 import TournamentBannerCarousel from './TournamentBannerCarousel';
+import BattleRulesModal from './BattleRulesModal';
 
 const Tournaments: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   
   const { user } = useAuth();
   const { data: battles, isLoading: isLoadingBattles } = useVideoBattles();
@@ -158,21 +160,19 @@ const Tournaments: React.FC = () => {
     <>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pb-20">
         <div className="px-4 py-6 max-w-2xl mx-auto">
-          <TournamentBannerCarousel />
-
-          <div className="mb-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl">
-                <Sword className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent">
-                Видеобатлы
-              </h1>
-            </div>
-            <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
-              Соревнуйтесь в повторении трюков и добавлении новых элементов
-            </p>
+          {/* Header with info icon */}
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsRulesModalOpen(true)}
+              className="p-2 hover:bg-blue-100"
+            >
+              <Info className="w-5 h-5 text-blue-600" />
+            </Button>
           </div>
+
+          <TournamentBannerCarousel />
 
           {renderContent()}
         </div>
@@ -181,6 +181,11 @@ const Tournaments: React.FC = () => {
       <CreateBattleModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      <BattleRulesModal
+        isOpen={isRulesModalOpen}
+        onClose={() => setIsRulesModalOpen(false)}
       />
     </>
   );
