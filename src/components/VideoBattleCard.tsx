@@ -18,7 +18,6 @@ import {
 import { useAuth } from '@/components/AuthWrapper';
 import { useJoinBattle, useBattleParticipants, useStartBattle } from '@/hooks/useVideoBattles';
 import VideoPlayer from './VideoPlayer';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { supabase } from '@/integrations/supabase/client';
 import BattleManagement from './BattleManagement';
 
@@ -104,7 +103,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
 
   // Countdown timer for registration battles
   useEffect(() => {
-    if (battle.status !== 'registration') return;
+    if (battle.status !== 'registration' || !isUserParticipant) return;
 
     const updateCountdown = () => {
       const startTime = new Date(battle.start_time);
@@ -134,7 +133,7 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [battle.start_time, battle.status]);
+  }, [battle.start_time, battle.status, isUserParticipant]);
 
   const handleJoinBattle = async () => {
     if (!user) return;
@@ -249,88 +248,78 @@ const VideoBattleCard: React.FC<VideoBattleCardProps> = ({ battle }) => {
         </CardHeader>
 
         <CardContent className="pt-0">
-          <div className="flex gap-4">
-            {/* Video Preview */}
-            <div className="flex-shrink-0">
-              <div className="relative rounded-lg overflow-hidden bg-black w-20">
-                <AspectRatio ratio={9 / 16}>
-                  <VideoPlayer
-                    src={battle.reference_video_url}
-                    thumbnail="/placeholder.svg"
-                    title={battle.reference_video_title}
-                    className="w-full h-full object-cover"
-                    videoId={`battle-${battle.id}`}
-                  />
-                </AspectRatio>
-                <div className="absolute top-1 right-1 bg-black/60 rounded-full p-1">
-                  <Play className="w-2 h-2 text-white" />
-                </div>
-              </div>
+          {/* Видео на всю ширину */}
+          <div className="mb-4">
+            <div className="relative rounded-lg overflow-hidden bg-black w-full h-48 sm:h-64 md:h-80">
+              <VideoPlayer
+                src={battle.reference_video_url}
+                thumbnail="/placeholder.svg"
+                title={battle.reference_video_title}
+                className="w-full h-full object-cover"
+                videoId={`battle-${battle.id}`}
+              />
             </div>
+          </div>
 
-            {/* Battle Info */}
-            <div className="flex-1 space-y-3">
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
-                  <Users className="w-3.5 h-3.5 text-blue-600" />
-                  <span className="text-sm font-medium">{participantCount}</span>
-                </div>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
-                  <Timer className="w-3.5 h-3.5 text-green-600" />
-                  <span className="text-sm font-medium">{battle.time_limit_minutes}м</span>
-                </div>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
-                  <Star className="w-3.5 h-3.5 text-yellow-600" />
-                  <span className="text-sm font-medium">{battle.prize_points}</span>
-                </div>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-purple-600" />
-                  <span className="text-xs font-medium leading-tight">
-                    {formatDate(battle.start_time).split(',')[0]}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                {canJoin && (
-                  <Button
-                    onClick={handleJoinBattle}
-                    disabled={joinBattleMutation.isPending}
-                    size="sm"
-                    className="flex-1 h-8 text-sm"
-                  >
-                    {joinBattleMutation.isPending ? 'Вход...' : 'Участвовать'}
-                  </Button>
-                )}
-
-                {isOrganizer && battle.status === 'registration' && participantCount >= 2 && (
-                  <Button
-                    onClick={handleStartBattle}
-                    disabled={startBattleMutation.isPending}
-                    size="sm"
-                    variant="secondary"
-                    className="flex-1 h-8 text-sm"
-                  >
-                    {startBattleMutation.isPending ? 'Запуск...' : 'Запустить'}
-                  </Button>
-                )}
-
-                {battle.status === 'registration' && isUserParticipant && (
-                  <Button disabled size="sm" className="flex-1 h-8 text-sm flex items-center gap-2">
-                    <Clock className="w-3 h-3" />
-                    <span>{countdown || 'Ожидание'}</span>
-                  </Button>
-                )}
-
-                {battle.status === 'active' && isUserParticipant && (
-                  <Button disabled size="sm" variant="secondary" className="flex-1 h-8 text-sm">
-                    Участвую
-                  </Button>
-                )}
-              </div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium">{participantCount} участников</span>
             </div>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+              <Timer className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium">{battle.time_limit_minutes}м</span>
+            </div>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+              <Star className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm font-medium">{battle.prize_points} баллов</span>
+            </div>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+              <Calendar className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-medium">
+                {formatDate(battle.start_time).split(',')[0]}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            {canJoin && (
+              <Button
+                onClick={handleJoinBattle}
+                disabled={joinBattleMutation.isPending}
+                size="sm"
+                className="flex-1 h-10"
+              >
+                {joinBattleMutation.isPending ? 'Вход...' : 'Участвовать'}
+              </Button>
+            )}
+
+            {isOrganizer && battle.status === 'registration' && participantCount >= 2 && (
+              <Button
+                onClick={handleStartBattle}
+                disabled={startBattleMutation.isPending}
+                size="sm"
+                variant="secondary"
+                className="flex-1 h-10"
+              >
+                {startBattleMutation.isPending ? 'Запуск...' : 'Запустить'}
+              </Button>
+            )}
+
+            {battle.status === 'registration' && isUserParticipant && countdown && (
+              <Button disabled size="sm" className="flex-1 h-10 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{countdown}</span>
+              </Button>
+            )}
+
+            {battle.status === 'active' && isUserParticipant && (
+              <Button disabled size="sm" variant="secondary" className="flex-1 h-10">
+                Участвую
+              </Button>
+            )}
           </div>
 
           {/* Expanded Description */}
