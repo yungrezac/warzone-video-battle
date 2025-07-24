@@ -6,6 +6,7 @@ import { useAuth } from '@/components/AuthWrapper';
 import { useVideoViews } from '@/hooks/useVideoViews';
 import VideoCard from './VideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
+import BannerRotation from './BannerRotation';
 import AdminWinnerControl from './AdminWinnerControl';
 import FullScreenUploadModal from './FullScreenUploadModal';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,8 @@ const VideoFeed: React.FC = () => {
           const videoId = entry.target.getAttribute('data-video-id');
           if (videoId && !viewedVideos.has(videoId)) {
             console.log('👁️ Видео попало в область видимости:', videoId);
+            // Добавляем в множество просмотренных, но не засчитываем просмотр
+            // Просмотр будет засчитан только при воспроизведении в VideoPlayer
             setViewedVideos(prev => new Set(prev).add(videoId));
           }
         }
@@ -91,9 +94,11 @@ const VideoFeed: React.FC = () => {
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+    // Ищем клик по ссылке на профиль автора
     const authorLink = target.closest('a[href^="/user/"]');
 
     if (authorLink) {
+      // Предотвращаем стандартный переход по ссылке
       e.preventDefault();
       e.stopPropagation();
 
@@ -101,6 +106,8 @@ const VideoFeed: React.FC = () => {
       if (href) {
         const userId = href.split('/').pop();
         if (userId) {
+          // Чтобы поведение было как на странице "ТОП",
+          // всегда открываем профиль в модальном окне.
           setSelectedUserId(userId);
         }
       }
@@ -130,6 +137,7 @@ const VideoFeed: React.FC = () => {
     if (file) {
       setFileToUpload(file);
     }
+    // Reset file input to allow selecting the same file again
     if (event.target) {
         event.target.value = '';
     }
@@ -137,6 +145,7 @@ const VideoFeed: React.FC = () => {
 
   const handleUploadModalClose = () => {
     setFileToUpload(null);
+    // После закрытия модального окна обновляем ленту видео
     refetch();
   };
 
@@ -153,7 +162,7 @@ const VideoFeed: React.FC = () => {
     setSelectedUserId(null);
   }
 
-  return <div className="min-h-screen bg-gray-50">
+  return <div className="min-h-screen bg-gray-50 pb-16">
       {fileToUpload && (
         <FullScreenUploadModal 
           isOpen={!!fileToUpload} 
@@ -168,6 +177,8 @@ const VideoFeed: React.FC = () => {
       />
       <AdminWinnerControl />
       
+      <BannerRotation />
+      
       <input
         ref={fileInputRef}
         type="file"
@@ -176,8 +187,8 @@ const VideoFeed: React.FC = () => {
         className="hidden"
       />
 
-      {/* Кнопка загрузки трюка */}
-      <div className="mb-4 px-[8px] pt-4">
+      {/* Кнопка загрузки трюка под банерами */}
+      <div className="mb-4 px-[8px]">
         <Button onClick={handleUploadClick} className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-xl shadow-lg px-0">
           <Upload className="w-5 h-5 mr-2" />
           Загрузить свой трюк
@@ -191,6 +202,7 @@ const VideoFeed: React.FC = () => {
         const videoUser = video.profiles;
         const displayName = videoUser?.username || videoUser?.telegram_username || 'Роллер';
 
+        // Add video card
         acc.push(<div key={video.id} data-video-id={video.id} onClickCapture={handleCardClick}>
                 <VideoCard video={{
             id: video.id,
@@ -215,9 +227,11 @@ const VideoFeed: React.FC = () => {
           }} onLike={handleLike} />
               </div>);
 
-        const BANNER_FREQUENCY = 5;
+        // Logic to insert banners sequentially every 5 posts
+        const BANNER_FREQUENCY = 5; // Show banner after every 5 videos
 
         if ((index + 1) % BANNER_FREQUENCY === 0 && banners && banners.length > 0) {
+          // Calculate which banner to show, cycling through the available banners
           const bannerCycleIndex = Math.floor((index + 1) / BANNER_FREQUENCY);
           const bannerIndex = (bannerCycleIndex - 1) % banners.length;
           const bannerToShow = banners[bannerIndex];

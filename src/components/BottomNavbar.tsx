@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, User, ShoppingBag } from 'lucide-react';
+import { Home, User, ShoppingBag, Trophy, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface BottomNavbarProps {
@@ -11,9 +11,11 @@ interface BottomNavbarProps {
 const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, onTabChange }) => {
   const { t } = useTranslation();
   const tabs = [
-    { id: 'home', icon: Home, label: 'Главная' },
-    { id: 'market', icon: ShoppingBag, label: 'Маркет' },
-    { id: 'profile', icon: User, label: 'Профиль' },
+    { id: 'home', icon: Home, label: t('navbar_home') },
+    { id: 'top', icon: Trophy, label: t('navbar_top') },
+    { id: 'tournaments', icon: Zap, label: t('navbar_tournaments') },
+    { id: 'market', icon: ShoppingBag, label: t('navbar_market') },
+    { id: 'profile', icon: User, label: t('navbar_profile') },
   ];
 
   return (
@@ -23,13 +25,13 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, onTabChange }) =
           <button
             key={id}
             onClick={() => onTabChange(id)}
-            className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
+            className={`flex flex-col items-center py-1 px-2 rounded-lg transition-colors ${
               activeTab === id
                 ? 'text-blue-600 bg-blue-50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            <Icon className="w-6 h-6 mb-1" />
+            <Icon className="w-5 h-5 mb-0.5" />
             <span className="text-xs font-medium">{label}</span>
           </button>
         ))}
