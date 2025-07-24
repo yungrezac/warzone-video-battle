@@ -45,6 +45,168 @@ export type Database = {
         }
         Relationships: []
       }
+      battle_judges: {
+        Row: {
+          battle_id: string
+          created_at: string
+          id: string
+          judge_id: string
+        }
+        Insert: {
+          battle_id: string
+          created_at?: string
+          id?: string
+          judge_id: string
+        }
+        Update: {
+          battle_id?: string
+          created_at?: string
+          id?: string
+          judge_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_judges_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "video_battles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      battle_participants: {
+        Row: {
+          battle_id: string
+          eliminated_at: string | null
+          full_letters: string
+          id: string
+          joined_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          battle_id: string
+          eliminated_at?: string | null
+          full_letters?: string
+          id?: string
+          joined_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          battle_id?: string
+          eliminated_at?: string | null
+          full_letters?: string
+          id?: string
+          joined_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_participants_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "video_battles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      battle_trophies: {
+        Row: {
+          battle_date: string
+          battle_id: string
+          battle_title: string
+          created_at: string
+          id: string
+          points_awarded: number
+          user_id: string
+        }
+        Insert: {
+          battle_date: string
+          battle_id: string
+          battle_title: string
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          user_id: string
+        }
+        Update: {
+          battle_date?: string
+          battle_id?: string
+          battle_title?: string
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_trophies_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "video_battles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      battle_videos: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          battle_id: string
+          created_at: string
+          id: string
+          is_approved: boolean | null
+          is_reference: boolean
+          participant_id: string
+          sequence_number: number
+          title: string
+          video_url: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          battle_id: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          is_reference?: boolean
+          participant_id: string
+          sequence_number?: number
+          title: string
+          video_url: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          battle_id?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          is_reference?: boolean
+          participant_id?: string
+          sequence_number?: number
+          title?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_videos_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "video_battles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_videos_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "battle_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_banners: {
         Row: {
           created_at: string
@@ -1563,6 +1725,63 @@ export type Database = {
           },
         ]
       }
+      video_battles: {
+        Row: {
+          created_at: string
+          current_deadline: string | null
+          current_participant_id: string | null
+          current_video_sequence: number | null
+          description: string
+          id: string
+          organizer_id: string
+          prize_points: number
+          reference_video_title: string
+          reference_video_url: string
+          start_time: string
+          status: string
+          time_limit_minutes: number
+          title: string
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_deadline?: string | null
+          current_participant_id?: string | null
+          current_video_sequence?: number | null
+          description: string
+          id?: string
+          organizer_id: string
+          prize_points?: number
+          reference_video_title: string
+          reference_video_url: string
+          start_time: string
+          status?: string
+          time_limit_minutes?: number
+          title: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_deadline?: string | null
+          current_participant_id?: string | null
+          current_video_sequence?: number | null
+          description?: string
+          id?: string
+          organizer_id?: string
+          prize_points?: number
+          reference_video_title?: string
+          reference_video_url?: string
+          start_time?: string
+          status?: string
+          time_limit_minutes?: number
+          title?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       video_comment_likes: {
         Row: {
           comment_id: string
@@ -1828,6 +2047,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_full_letter: {
+        Args: { participant_id_param: string }
+        Returns: undefined
+      }
+      add_full_letter_to_participant: {
+        Args: { participant_id_param: string }
+        Returns: string
+      }
+      auto_start_battles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       award_points_for_action: {
         Args: {
           p_user_id: string
@@ -1841,6 +2072,10 @@ export type Database = {
       check_active_subscription: {
         Args: { p_user_id: string }
         Returns: boolean
+      }
+      check_battle_winner: {
+        Args: { battle_id_param: string }
+        Returns: undefined
       }
       complete_task: {
         Args: { p_task_id: string }
@@ -1873,6 +2108,10 @@ export type Database = {
         Args: { video_id: string }
         Returns: undefined
       }
+      determine_battle_winner: {
+        Args: { battle_id_param: string }
+        Returns: undefined
+      }
       increment_likes_count: {
         Args: { video_id: string }
         Returns: undefined
@@ -1884,6 +2123,14 @@ export type Database = {
       purchase_item: {
         Args: { p_item_id: string; p_quantity?: number }
         Returns: Json
+      }
+      select_next_battle_participant: {
+        Args: { battle_id_param: string }
+        Returns: string
+      }
+      select_next_participant: {
+        Args: { battle_id_param: string }
+        Returns: string
       }
       update_achievement_progress: {
         Args: {

@@ -13,7 +13,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 
 const AddUserItemForm: React.FC = () => {
   const { user } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, isLoading: isLoadingSubscription } = useSubscription();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -27,37 +27,60 @@ const AddUserItemForm: React.FC = () => {
 
   const createItemMutation = useCreateUserItem();
 
+  console.log('AddUserItemForm - пользователь:', user);
+  console.log('AddUserItemForm - isPremium:', isPremium);
+  console.log('AddUserItemForm - isLoadingSubscription:', isLoadingSubscription);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !isPremium) return;
+    console.log('Отправка формы, isPremium:', isPremium);
+    
+    if (!user || !isPremium) {
+      console.error('Пользователь не авторизован или не имеет премиум подписки');
+      return;
+    }
 
-    await createItemMutation.mutateAsync({
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      category: formData.category,
-      target_audience: formData.target_audience,
-      image_url: formData.image_url || undefined,
-      product_url: formData.product_url,
-    });
+    try {
+      await createItemMutation.mutateAsync({
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        target_audience: formData.target_audience,
+        image_url: formData.image_url || undefined,
+        product_url: formData.product_url,
+      });
 
-    // Сбрасываем форму
-    setFormData({
-      name: '',
-      description: '',
-      price: '',
-      category: '',
-      target_audience: '',
-      image_url: '',
-      product_url: '',
-    });
-    setIsOpen(false);
+      // Сбрасываем форму
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        category: '',
+        target_audience: '',
+        image_url: '',
+        product_url: '',
+      });
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Ошибка создания товара:', error);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (isLoadingSubscription) {
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-4 text-center">
+          <p className="text-sm text-gray-600">Проверяем подписку...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!isPremium) {
     return (
@@ -67,6 +90,14 @@ const AddUserItemForm: React.FC = () => {
           <p className="text-sm text-yellow-800">
             Добавление товаров доступно только для Premium пользователей
           </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => console.log('Debug: user:', user, 'isPremium:', isPremium)}
+          >
+            Debug Info
+          </Button>
         </CardContent>
       </Card>
     );

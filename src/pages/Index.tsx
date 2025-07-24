@@ -18,17 +18,33 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <VideoFeed />;
-      case 'top':
-        return <TopUsers />;
+        return (
+          <div className="pb-16">
+            <VideoFeed />
+          </div>
+        );
       case 'tournaments':
-        return <Tournaments />;
+        return (
+          <div className="pb-16">
+            <Tournaments />
+          </div>
+        );
+      case 'top':
+        return (
+          <div className="pb-16">
+            <TopUsers />
+          </div>
+        );
       case 'market':
         return <Market />;
       case 'profile':
         return <Profile />;
       default:
-        return <VideoFeed />;
+        return (
+          <div className="pb-16">
+            <VideoFeed />
+          </div>
+        );
     }
   };
 
