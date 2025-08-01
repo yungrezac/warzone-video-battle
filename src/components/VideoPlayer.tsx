@@ -1,9 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVideoViews } from '@/hooks/useVideoViews';
 import { useVideoPlayback } from '@/contexts/VideoPlaybackContext';
+import { useVideoLoader } from '@/hooks/useVideoLoader';
+import VideoLoadingIndicator from './VideoLoadingIndicator';
 
 interface VideoPlayerProps {
   src: string;
@@ -18,9 +19,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [hasViewBeenCounted, setHasViewBeenCounted] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const { markVideoAsViewed } = useVideoViews();
   const { currentPlayingVideo, setCurrentPlayingVideo } = useVideoPlayback();
+
+  // Используем оптимизированный загрузчик видео
+  const { videoRef, isLoading, hasError, canPlay, loadProgress, retryLoad } = useVideoLoader({
+    src,
+    preload: 'metadata',
+    onLoadStart: () => {
+      console.log(`📹 Начинаем загрузку видео ${videoId}`);
+    },
+    onCanPlay: () => {
+      console.log(`✅ Видео ${videoId} готово к воспроизведению`);
+    },
+    onError: (error) => {
+      console.error(`❌ Критическая ошибка загрузки видео ${videoId}:`, error);
+    }
+  });
 
   // Останавливаем видео если играет другое видео
   useEffect(() => {
@@ -42,7 +57,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   }, [currentPlayingVideo, isPlaying, videoId]);
 
   const handleVideoView = async () => {
-    // Засчитываем просмотр только один раз при первом воспроизведении
     if (videoId && !hasViewBeenCounted) {
       console.log('🎬 Первое воспроизведение видео, засчитываем просмотр:', videoId);
       try {
@@ -55,19 +69,32 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
     }
   };
 
-  const togglePlay = () => {
-    if (videoRef.current) {
+  const togglePlay = async () => {
+    if (!videoRef.current || !canPlay) {
+      console.log('❌ Видео еще не готово к воспроизведению');
+      return;
+    }
+
+    try {
       if (isPlaying) {
         videoRef.current.pause();
         setCurrentPlayingVideo(null);
       } else {
-        videoRef.current.play();
-        if (videoId) {
-          setCurrentPlayingVideo(videoId);
+        // Проверяем готовность видео перед воспроизведением
+        if (videoRef.current.readyState >= 3) {
+          await videoRef.current.play();
+          if (videoId) {
+            setCurrentPlayingVideo(videoId);
+          }
+          handleVideoView();
+        } else {
+          console.log('⏳ Видео еще загружается, ожидаем...');
+          return;
         }
-        handleVideoView();
       }
       setIsPlaying(!isPlaying);
+    } catch (error) {
+      console.error('❌ Ошибка воспроизведения видео:', error);
     }
   };
 
@@ -87,7 +114,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
   };
 
   const handleVideoClick = () => {
-    togglePlay();
+    if (canPlay) {
+      togglePlay();
+    }
   };
 
   const handleVideoEnd = () => {
@@ -135,10 +164,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
         onPause={handleVideoPauseEvent}
         playsInline
         preload="metadata"
+        muted={isMuted}
+      />
+      
+      {/* Индикатор загрузки и ошибок */}
+      <VideoLoadingIndicator
+        isLoading={isLoading}
+        hasError={hasError}
+        loadProgress={loadProgress}
+        onRetry={retryLoad}
       />
       
       {/* Центральная кнопка воспроизведения */}
-      {!isPlaying && (
+      {!isPlaying && canPlay && !isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
           <Button
             size="lg"
@@ -151,7 +189,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, title, classN
       )}
 
       {/* Панель управления */}
-      {showControls && (
+      {showControls && canPlay && !isLoading && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center space-x-2">
