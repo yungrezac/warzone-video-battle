@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 
 interface TelegramUser {
@@ -246,6 +245,45 @@ export const useTelegramWebApp = () => {
     }
   }, [webApp]);
 
+  const showScanQrPopup = useCallback((params: {
+    text?: string;
+  }, callback?: (text: string) => void) => {
+    if (webApp?.showScanQrPopup) {
+      webApp.showScanQrPopup(params, callback);
+    }
+  }, [webApp]);
+
+  const closeScanQrPopup = useCallback(() => {
+    if (webApp?.closeScanQrPopup) {
+      webApp.closeScanQrPopup();
+    }
+  }, [webApp]);
+
+  const readTextFromClipboard = useCallback((callback?: (text: string) => void) => {
+    if (webApp?.readTextFromClipboard) {
+      webApp.readTextFromClipboard(callback);
+    }
+  }, [webApp]);
+
+  const switchInlineQuery = useCallback((query: string, chooseChatTypes?: string[]) => {
+    if (webApp?.switchInlineQuery) {
+      webApp.switchInlineQuery(query, chooseChatTypes);
+    }
+  }, [webApp]);
+
+  const setSettingsButton = useCallback((show: boolean, onClick?: () => void) => {
+    if (webApp?.SettingsButton) {
+      if (show) {
+        if (onClick) {
+          webApp.SettingsButton.onClick(onClick);
+        }
+        webApp.SettingsButton.show();
+      } else {
+        webApp.SettingsButton.hide();
+      }
+    }
+  }, [webApp]);
+
   return {
     webApp,
     user,
@@ -275,5 +313,10 @@ export const useTelegramWebApp = () => {
     requestWriteAccess,
     requestContact,
     close,
+    showScanQrPopup,
+    closeScanQrPopup,
+    readTextFromClipboard,
+    switchInlineQuery,
+    setSettingsButton,
   };
 };

@@ -1,4 +1,3 @@
-
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
@@ -108,16 +107,19 @@ body {
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
+  touch-action: manipulation;
 }
 
 .telegram-webapp * {
   -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Scrollable areas in Telegram WebApp */
-[data-scrollable="true"] {
+[data-scrollable="true"], .telegram-scroll-container {
   -webkit-overflow-scrolling: touch;
   overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 /* Native Telegram button styles */
@@ -127,6 +129,8 @@ body {
   border: none !important;
   border-radius: 8px !important;
   transition: opacity 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .telegram-native-button:hover {
@@ -135,6 +139,7 @@ body {
 
 .telegram-native-button:active {
   opacity: 0.6;
+  transform: scale(0.98);
 }
 
 /* Telegram theme text colors */
@@ -175,6 +180,38 @@ body {
 .balance-icon {
   color: #f59e0b;
   font-weight: 700;
+}
+
+/* Native touch optimizations */
+.telegram-webapp input,
+.telegram-webapp textarea,
+.telegram-webapp button,
+.telegram-webapp [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Haptic feedback visual cues */
+.haptic-button {
+  transition: transform 0.1s ease;
+}
+
+.haptic-button:active {
+  transform: scale(0.95);
+}
+
+/* Native scroll behavior */
+.telegram-native-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Disable text selection in native mode */
+.telegram-webapp .no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 @layer base {
@@ -260,4 +297,35 @@ input, select, textarea {
   input, select, textarea {
     font-size: 16px;
   }
+}
+
+/* Enhanced mobile optimizations */
+@media (max-width: 768px) {
+  .telegram-webapp {
+    font-size: 16px; /* Prevent zoom on input focus */
+  }
+  
+  .telegram-webapp input,
+  .telegram-webapp select,
+  .telegram-webapp textarea {
+    font-size: 16px;
+    border-radius: 8px;
+  }
+}
+
+/* Dark theme specific optimizations */
+.dark .telegram-webapp {
+  color-scheme: dark;
+}
+
+/* Safe area handling for iOS */
+.telegram-webapp {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Fix for video elements in Telegram */
+.telegram-webapp video {
+  -webkit-playsinline: true;
+  playsinline: true;
+  object-fit: cover;
 }
