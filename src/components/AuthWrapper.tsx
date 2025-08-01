@@ -1,5 +1,7 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import FullScreenLoader from './FullScreenLoader';
 
 interface User {
@@ -38,17 +40,20 @@ interface AuthWrapperProps {
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user: telegramUser, isTelegramWebApp, isReady } = useTelegramWebApp();
 
   useEffect(() => {
-    console.log('🚀 AuthWrapper мгновенная инициализация через Telegram API...');
+    console.log('🚀 AuthWrapper инициализация...');
     
     const initializeUser = async () => {
+      if (!isReady) return;
+
       try {
-        // Проверяем доступность Telegram WebApp
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
-          const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
-          console.log('⚡ Мгновенная загрузка из Telegram:', telegramUser.first_name);
-          
+        setIsLoading(true);
+
+        if (isTelegramWebApp && telegramUser) {
+          console.log('⚡ Telegram пользователь найден:', telegramUser.first_name);
           await createOrLoginTelegramUser(telegramUser);
         } else {
           // Fallback для веб-версии - создаем админа
@@ -58,6 +63,8 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       } catch (err: any) {
         console.error('❌ Ошибка инициализации:', err);
         createFallbackUser();
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -66,7 +73,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       console.log('👤 Обрабатываем Telegram пользователя:', telegramId);
       
       try {
-        // Быстро проверяем существование пользователя
+        // Проверяем существование пользователя
         const { data: existingProfile } = await supabase
           .from('profiles')
           .select('id, username, first_name, last_name, avatar_url, telegram_id, telegram_username')
@@ -76,7 +83,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         let profileId = existingProfile?.id;
 
         if (!existingProfile) {
-          // Создаем нового пользователя максимально быстро
+          // Создаем нового пользователя
           const newUserId = crypto.randomUUID();
           
           const { error: insertError } = await supabase
@@ -95,7 +102,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           if (!insertError) {
             profileId = newUserId;
             
-            // Создаем user_points асинхронно в фоне
+            // Создаем user_points в фоне
             setTimeout(async () => {
               try {
                 await supabase.from('user_points').insert({
@@ -108,9 +115,22 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               }
             }, 0);
           }
+        } else {
+          // Обновляем данные существующего пользователя
+          await supabase
+            .from('profiles')
+            .update({
+              username: telegramUser.username || existingProfile.username,
+              first_name: telegramUser.first_name,
+              last_name: telegramUser.last_name,
+              avatar_url: telegramUser.photo_url || existingProfile.avatar_url,
+              telegram_username: telegramUser.username,
+              telegram_photo_url: telegramUser.photo_url,
+            })
+            .eq('id', existingProfile.id);
         }
 
-        // Мгновенно устанавливаем пользователя
+        // Устанавливаем пользователя
         const userData = {
           id: profileId!,
           telegram_id: telegramId,
@@ -121,7 +141,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           telegram_username: telegramUser.username,
         };
 
-        console.log('✅ Пользователь готов мгновенно:', userData.username || userData.first_name);
+        console.log('✅ Telegram пользователь готов:', userData.username || userData.first_name);
         setUser(userData);
 
       } catch (error) {
@@ -161,7 +181,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           if (!insertError) {
             adminId = newAdminId;
             
-            // Создаем user_points асинхронно в фоне
             setTimeout(async () => {
               try {
                 await supabase.from('user_points').insert({
@@ -209,9 +228,8 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       setUser(fallbackUser);
     };
 
-    // Запускаем инициализацию мгновенно
     initializeUser();
-  }, []);
+  }, [isReady, isTelegramWebApp, telegramUser]);
 
   const signIn = (userData: any) => {
     console.log('🔐 Вход пользователя:', userData.username || userData.first_name);
@@ -224,6 +242,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   };
 
   const contextValue = { user, signOut, signIn };
+
+  if (isLoading || !isReady) {
+    return <FullScreenLoader />;
+  }
 
   return (
     <AuthContext.Provider value={contextValue}>

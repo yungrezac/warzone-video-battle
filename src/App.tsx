@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { VideoPlaybackProvider } from "@/contexts/VideoPlaybackContext";
 import AuthWrapper from "@/components/AuthWrapper";
 import AchievementTracker from "@/components/AchievementTracker";
+import TelegramNativeWrapper from "@/components/TelegramNativeWrapper";
 import React, { Suspense, lazy } from 'react';
 import PrefetchBanners from "./components/PrefetchBanners";
 
@@ -36,14 +37,29 @@ if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
     tg.expand();
   }
   
-  // Настраиваем тему - используем свойства, а не методы
-  tg.headerColor = '#1e40af';
-  tg.backgroundColor = '#ffffff';
+  // Включаем подтверждение закрытия
+  tg.enableClosingConfirmation();
+  
+  // Настраиваем тему в зависимости от цветовой схемы
+  const isDark = tg.colorScheme === 'dark';
+  if (typeof tg.setHeaderColor === 'function') {
+    tg.setHeaderColor(isDark ? '#1a1a1a' : '#1e40af');
+  } else {
+    tg.headerColor = isDark ? '#1a1a1a' : '#1e40af';
+  }
+  
+  if (typeof tg.setBackgroundColor === 'function') {
+    tg.setBackgroundColor(isDark ? '#1a1a1a' : '#ffffff');  
+  } else {
+    tg.backgroundColor = isDark ? '#1a1a1a' : '#ffffff';
+  }
   
   console.log('✅ Telegram WebApp готов:', {
     user: tg.initDataUnsafe?.user?.first_name || 'none',
     platform: tg.platform || 'unknown',
-    version: tg.version || 'unknown'
+    version: tg.version || 'unknown',
+    colorScheme: tg.colorScheme || 'light',
+    viewportHeight: tg.viewportHeight || 'unknown'
   });
 }
 
@@ -55,22 +71,24 @@ const App = () => {
       <AuthWrapper>
         <PrefetchBanners />
         <VideoPlaybackProvider>
-          <TooltipProvider>
-            <Sonner />
-            <AchievementTracker />
-            <BrowserRouter>
-              <Suspense fallback={
-                <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                  <div className="text-white text-xl font-bold">TRICKS</div>
-                </div>
-              }>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
+          <TelegramNativeWrapper>
+            <TooltipProvider>
+              <Sonner />
+              <AchievementTracker />
+              <BrowserRouter>
+                <Suspense fallback={
+                  <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                    <div className="text-white text-xl font-bold">TRICKS</div>
+                  </div>
+                }>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
+          </TelegramNativeWrapper>
         </VideoPlaybackProvider>
       </AuthWrapper>
     </QueryClientProvider>
