@@ -61,13 +61,41 @@ const OptimizedVideoFeed: React.FC = () => {
           <VideoCardSkeleton key={index} />
         ))
       ) : (
-        videos?.map((video) => (
-          <LazyVideoCard
-            key={video.id}
-            video={video}
-            onLike={handleLike}
-          />
-        ))
+        videos?.map((video) => {
+          const videoUser = video.profiles;
+          const displayName = videoUser?.username || videoUser?.first_name || 'Роллер';
+          
+          // Преобразуем данные в формат, который ожидает VideoCard
+          const videoCardData = {
+            id: video.id,
+            title: video.title,
+            author: displayName,
+            authorAvatar: videoUser?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
+            thumbnail: video.thumbnail_url || 'https://i.postimg.cc/hGHyN1Z1/1eb82307-57c9-4efe-b3c2-5d1d49767f4c.png',
+            videoUrl: video.video_url,
+            likes: video.likes_count || 0,
+            comments: video.comments_count || 0,
+            views: video.views || 0,
+            isWinner: false, // В оптимизированной версии пока не загружаем это поле
+            timestamp: new Date(video.created_at).toLocaleString('ru-RU', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            userLiked: video.user_liked || false,
+            userId: videoUser?.id,
+            authorIsPremium: false // В оптимизированной версии пока не загружаем это поле
+          };
+
+          return (
+            <LazyVideoCard
+              key={video.id}
+              video={videoCardData}
+              onLike={handleLike}
+            />
+          );
+        })
       )}
     </div>
   );
