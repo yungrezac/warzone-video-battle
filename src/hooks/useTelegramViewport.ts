@@ -21,28 +21,39 @@ export const useTelegramViewport = () => {
         });
       };
 
-      window.addEventListener('resize', updateViewport);
+      const debouncedUpdate = debounce(updateViewport, 100);
+      window.addEventListener('resize', debouncedUpdate);
       updateViewport();
 
-      return () => window.removeEventListener('resize', updateViewport);
+      return () => window.removeEventListener('resize', debouncedUpdate);
     }
 
     // Обновляем viewport данные
     const updateViewport = () => {
-      setViewport({
+      const newViewport = {
         height: webApp.viewportHeight || window.innerHeight,
         stableHeight: webApp.viewportStableHeight || window.innerHeight,
         isExpanded: webApp.isExpanded || false,
+      };
+      
+      setViewport(prev => {
+        // Избегаем лишних обновлений
+        if (prev.height === newViewport.height && 
+            prev.stableHeight === newViewport.stableHeight && 
+            prev.isExpanded === newViewport.isExpanded) {
+          return prev;
+        }
+        return newViewport;
       });
     };
 
-    // Слушаем изменения viewport
-    const handleViewportChanged = () => {
+    // Debounced обработчик для избежания спама событий
+    const debouncedViewportHandler = debounce(() => {
       console.log('📱 Viewport изменен в Telegram WebApp');
       updateViewport();
-    };
+    }, 150);
 
-    webApp.onEvent('viewportChanged', handleViewportChanged);
+    webApp.onEvent('viewportChanged', debouncedViewportHandler);
     updateViewport();
 
     // Расширяем приложение при первой загрузке
@@ -51,7 +62,7 @@ export const useTelegramViewport = () => {
     }
 
     return () => {
-      webApp.offEvent('viewportChanged', handleViewportChanged);
+      webApp.offEvent('viewportChanged', debouncedViewportHandler);
     };
   }, [webApp, isTelegramWebApp]);
 
@@ -63,10 +74,8 @@ export const useTelegramViewport = () => {
 
   const setViewportHeight = (height: number) => {
     if (isTelegramWebApp) {
-      // В Telegram WebApp высоту устанавливает сама платформа
       return;
     }
-    // Для веб-версии можно эмулировать изменение высоты
     setViewport(prev => ({ ...prev, height }));
   };
 
@@ -79,3 +88,16 @@ export const useTelegramViewport = () => {
     isDesktop: viewport.height >= 900,
   };
 };
+
+// Utility функция debounce
+function debounce(func: Function, wait: number) {
+  let timeout: NodeJS.Timeout;
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}

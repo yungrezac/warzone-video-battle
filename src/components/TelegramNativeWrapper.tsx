@@ -42,18 +42,18 @@ const TelegramNativeWrapper: React.FC<TelegramNativeWrapperProps> = ({ children 
         root.classList.remove('dark');
       }
 
-      // Расширенные настройки для мобильного
+      // Улучшенные настройки для мобильного
       body.style.overscrollBehavior = 'none';
       body.style.userSelect = 'none';
       (body.style as any).webkitUserSelect = 'none';
       (body.style as any).webkitTapHighlightColor = 'transparent';
-      body.style.touchAction = 'manipulation';
+      body.style.touchAction = 'pan-y';
       
       // Настройки для предотвращения зума
       const viewport = document.querySelector('meta[name="viewport"]');
       if (viewport) {
         viewport.setAttribute('content', 
-          'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content'
+          'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
         );
       }
 
@@ -99,12 +99,13 @@ const TelegramNativeWrapper: React.FC<TelegramNativeWrapperProps> = ({ children 
     }
   }, [isTelegramWebApp, user, webApp, setSettingsButton, hapticFeedback]);
 
-  // Улучшенные обработчики нативных жестов и событий
+  // Оптимизированные обработчики нативных жестов и событий
   useEffect(() => {
     if (isTelegramWebApp && webApp) {
+      let isScrolling = false;
+      
       // Предотвращение нежелательных жестов
       const preventDefaultGestures = (e: TouchEvent) => {
-        // Предотвращаем масштабирование при множественном касании
         if (e.touches.length > 1) {
           e.preventDefault();
         }
@@ -114,32 +115,50 @@ const TelegramNativeWrapper: React.FC<TelegramNativeWrapperProps> = ({ children 
         e.preventDefault();
       };
 
+      const handleTouchStart = (e: TouchEvent) => {
+        isScrolling = false;
+      };
+
       const handleTouchMove = (e: TouchEvent) => {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+          return;
+        }
+        
         const target = e.target as Element;
-        const scrollableParent = target.closest('[data-scrollable="true"]');
+        const scrollableParent = target.closest('[data-scrollable="true"], .telegram-scroll-container');
         
         if (!scrollableParent) {
           e.preventDefault();
           return;
         }
 
+        isScrolling = true;
+        
         // Улучшенная логика для предотвращения bounce эффекта
         const element = scrollableParent as HTMLElement;
         const { scrollTop, scrollHeight, clientHeight } = element;
-        const touchY = e.touches[0].clientY;
-        const startY = e.touches[0].pageY;
         
         const isAtTop = scrollTop <= 0;
         const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
         
-        if ((isAtTop && startY < touchY) || (isAtBottom && startY > touchY)) {
+        const deltaY = e.touches[0].clientY;
+        const startY = (e.target as any).startY || deltaY;
+        
+        if ((isAtTop && deltaY > startY) || (isAtBottom && deltaY < startY)) {
           e.preventDefault();
         }
       };
 
-      // Добавляем обработчики событий
-      document.addEventListener('touchstart', preventDefaultGestures, { passive: false });
+      const handleTouchEnd = () => {
+        isScrolling = false;
+      };
+
+      // Добавляем обработчики событий с passive: false только там где нужно
+      document.addEventListener('touchstart', handleTouchStart, { passive: true });
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd, { passive: true });
+      document.addEventListener('touchstart', preventDefaultGestures, { passive: false });
       document.addEventListener('contextmenu', preventContextMenu, { passive: false });
       
       // Обработчик изменения темы
@@ -151,8 +170,10 @@ const TelegramNativeWrapper: React.FC<TelegramNativeWrapperProps> = ({ children 
       webApp.onEvent('themeChanged', handleThemeChange);
 
       return () => {
-        document.removeEventListener('touchstart', preventDefaultGestures);
+        document.removeEventListener('touchstart', handleTouchStart);
         document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+        document.removeEventListener('touchstart', preventDefaultGestures);
         document.removeEventListener('contextmenu', preventContextMenu);
         webApp.offEvent('themeChanged', handleThemeChange);
       };
@@ -170,6 +191,9 @@ const TelegramNativeWrapper: React.FC<TelegramNativeWrapperProps> = ({ children 
         backgroundColor: themeColors.bg_color,
         color: themeColors.text_color,
         minHeight: isTelegramWebApp ? '100dvh' : '100vh',
+        overflowY: 'auto',
+        overscrollBehavior: 'none',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
       {children}

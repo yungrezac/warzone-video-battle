@@ -24,6 +24,7 @@ const TelegramSafeArea: React.FC<TelegramSafeAreaProps> = ({
       return {
         minHeight: '100vh',
         paddingBottom: includeMainButton ? '80px' : '0',
+        overflowY: 'auto' as const,
       };
     }
 
@@ -31,6 +32,9 @@ const TelegramSafeArea: React.FC<TelegramSafeAreaProps> = ({
       minHeight: viewport.height,
       paddingBottom: includeMainButton ? '60px' : '0',
       paddingTop: includeBackButton ? '0' : 'env(safe-area-inset-top, 0px)',
+      overflowY: 'auto',
+      overscrollBehavior: 'none',
+      WebkitOverflowScrolling: 'touch',
     };
 
     // Учитываем состояние главной кнопки
@@ -45,6 +49,7 @@ const TelegramSafeArea: React.FC<TelegramSafeAreaProps> = ({
     <div 
       className={`telegram-safe-area ${className}`}
       style={getSafeAreaStyle()}
+      data-scrollable="true"
     >
       {children}
     </div>
