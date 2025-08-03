@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Calendar, Trophy, Video, ArrowLeft, Award, UserPlus, BellRing, Heart, Eye, ThumbsUp, Loader2 } from 'lucide-react';
 import { useOtherUserProfile } from '@/hooks/useOtherUserProfile';
@@ -46,6 +46,36 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
   const { data: userVideos } = useUserVideos(userId);
 
+  // Предотвращаем скролинг основного контента когда модальное окно открыто
+  useEffect(() => {
+    if (isOpen) {
+      // Сохраняем текущую позицию скролинга
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Восстанавливаем скролинг
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
+      }
+    }
+
+    // Cleanup при размонтировании
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const handleSubscribeClick = () => {
     if (!user) {
       toast.error('Сначала нужно войти в систему');
@@ -80,11 +110,6 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   };
 
   const handleCloseModal = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
     onClose();
   }
 
@@ -111,9 +136,9 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none" hideCloseButton>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
           {/* Header with back button */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center sticky top-0 z-50">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center sticky top-0 z-50 flex-shrink-0">
             <Button 
               variant="ghost" 
               size="sm" 
@@ -137,10 +162,10 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             )}
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {/* Profile Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex-shrink-0">
               <div className="flex items-center mb-2">
                 <img
                   src={userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'}
@@ -220,9 +245,9 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             </div>
 
             {/* Videos Section */}
-            <div className="p-3">
+            <div className="p-3 pb-6">
               <h3 className="text-lg font-semibold mb-2">Видео</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {userVideos?.map((video) => (
                   <VideoCard 
                     key={video.id} 
@@ -261,6 +286,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
             </div>
           </div>
         </div>
+        
         <AlertDialog open={showSubscribeConfirm} onOpenChange={setShowSubscribeConfirm}>
           <AlertDialogContent>
             <AlertDialogHeader>
