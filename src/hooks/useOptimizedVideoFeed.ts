@@ -71,7 +71,7 @@ export const useOptimizedVideoFeed = (limit: number = 20) => {
       // Process data to add user_liked flag
       const processedData = data?.map(video => ({
         ...video,
-        user_liked: user && video.video_likes && video.video_likes.length > 0
+        user_liked: user && (video as any).video_likes && (video as any).video_likes.length > 0
       })) || [];
 
       console.log(`✅ Загружено ${processedData.length} видео`);
