@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
@@ -44,7 +43,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const { user: telegramUser, isTelegramWebApp, isReady } = useTelegramWebApp();
 
   useEffect(() => {
-    console.log('🚀 AuthWrapper инициализация...');
+    console.log('🚀 Оптимизированная AuthWrapper инициализация...');
     
     const initializeUser = async () => {
       if (!isReady) return;
@@ -53,11 +52,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         setIsLoading(true);
 
         if (isTelegramWebApp && telegramUser) {
-          console.log('⚡ Telegram пользователь найден:', telegramUser.first_name);
+          console.log('⚡ Быстрая инициализация Telegram пользователя:', telegramUser.first_name);
           await createOrLoginTelegramUser(telegramUser);
         } else {
-          // Fallback для веб-версии - создаем админа
-          console.log('🌐 Веб-версия - создаем админа');
+          console.log('🌐 Быстрая инициализация веб-админа');
           await createAdminUser();
         }
       } catch (err: any) {
@@ -70,20 +68,19 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
     const createOrLoginTelegramUser = async (telegramUser: any) => {
       const telegramId = telegramUser.id.toString();
-      console.log('👤 Обрабатываем Telegram пользователя:', telegramId);
+      console.log('👤 Быстрая обработка Telegram пользователя:', telegramId);
       
       try {
-        // Проверяем существование пользователя
+        // Более быстрый запрос - только нужные поля
         const { data: existingProfile } = await supabase
           .from('profiles')
-          .select('id, username, first_name, last_name, avatar_url, telegram_id, telegram_username')
+          .select('id, username, first_name, last_name, avatar_url, telegram_id')
           .eq('telegram_id', telegramId)
           .maybeSingle();
 
         let profileId = existingProfile?.id;
 
         if (!existingProfile) {
-          // Создаем нового пользователя
           const newUserId = crypto.randomUUID();
           
           const { error: insertError } = await supabase
@@ -102,7 +99,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           if (!insertError) {
             profileId = newUserId;
             
-            // Создаем user_points в фоне
+            // Асинхронно создаем points в фоне для ускорения
             setTimeout(async () => {
               try {
                 await supabase.from('user_points').insert({
@@ -111,26 +108,12 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
                   wins_count: 0,
                 });
               } catch (err) {
-                console.error('❌ Error creating points:', err);
+                console.warn('⚠️ Ошибка создания points (не критично):', err);
               }
             }, 0);
           }
-        } else {
-          // Обновляем данные существующего пользователя
-          await supabase
-            .from('profiles')
-            .update({
-              username: telegramUser.username || existingProfile.username,
-              first_name: telegramUser.first_name,
-              last_name: telegramUser.last_name,
-              avatar_url: telegramUser.photo_url || existingProfile.avatar_url,
-              telegram_username: telegramUser.username,
-              telegram_photo_url: telegramUser.photo_url,
-            })
-            .eq('id', existingProfile.id);
         }
 
-        // Устанавливаем пользователя
         const userData = {
           id: profileId!,
           telegram_id: telegramId,
@@ -141,7 +124,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           telegram_username: telegramUser.username,
         };
 
-        console.log('✅ Telegram пользователь готов:', userData.username || userData.first_name);
+        console.log('✅ Telegram пользователь быстро готов:', userData.username || userData.first_name);
         setUser(userData);
 
       } catch (error) {

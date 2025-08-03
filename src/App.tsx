@@ -7,69 +7,64 @@ import { VideoPlaybackProvider } from "@/contexts/VideoPlaybackContext";
 import AuthWrapper from "@/components/AuthWrapper";
 import AchievementTracker from "@/components/AchievementTracker";
 import TelegramNativeWrapper from "@/components/TelegramNativeWrapper";
+import InstantLoader from "@/components/InstantLoader";
 import React, { Suspense, lazy } from 'react';
-import PrefetchBanners from "./components/PrefetchBanners";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Оптимизированный QueryClient для быстрой работы
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      retryDelay: 500,
+      retryDelay: 300,
+      staleTime: 30000, // 30 секунд
+      cacheTime: 5 * 60 * 1000, // 5 минут
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: 'always',
+    },
+    mutations: {
+      retry: 1,
+      retryDelay: 300,
     },
   },
 });
 
-console.log('🚀 TRICKS App загружается...');
+console.log('🚀 TRICKS App загружается с оптимизацией...');
 
-// Мгновенная инициализация Telegram WebApp
+// Мгновенная инициализация Telegram WebApp (без изменений)
 if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
   const tg = window.Telegram.WebApp;
-  console.log('⚡ Инициализация Telegram WebApp');
+  console.log('⚡ Мгновенная инициализация Telegram WebApp');
   
-  // Вызываем ready сразу
   tg.ready();
   
-  // Расширяем приложение
   if (typeof tg.expand === 'function') {
     tg.expand();
   }
   
-  // Включаем подтверждение закрытия
   tg.enableClosingConfirmation();
   
-  // Настраиваем тему в зависимости от цветовой схемы
   const isDark = tg.colorScheme === 'dark';
   if (typeof tg.setHeaderColor === 'function') {
     tg.setHeaderColor(isDark ? '#1a1a1a' : '#1e40af');
-  } else {
-    tg.headerColor = isDark ? '#1a1a1a' : '#1e40af';
   }
   
   if (typeof tg.setBackgroundColor === 'function') {
     tg.setBackgroundColor(isDark ? '#1a1a1a' : '#ffffff');  
-  } else {
-    tg.backgroundColor = isDark ? '#1a1a1a' : '#ffffff';
   }
   
-  console.log('✅ Telegram WebApp готов:', {
-    user: tg.initDataUnsafe?.user?.first_name || 'none',
-    platform: tg.platform || 'unknown',
-    version: tg.version || 'unknown',
-    colorScheme: tg.colorScheme || 'light',
-    viewportHeight: tg.viewportHeight || 'unknown'
-  });
+  console.log('✅ Telegram WebApp мгновенно готов');
 }
 
 const App = () => {
-  console.log('🎯 TRICKS App рендерится...');
+  console.log('🎯 TRICKS App рендерится с оптимизацией...');
   
   return (
     <QueryClientProvider client={queryClient}>
       <AuthWrapper>
-        <PrefetchBanners />
+        <InstantLoader />
         <VideoPlaybackProvider>
           <TelegramNativeWrapper>
             <TooltipProvider>
@@ -78,7 +73,7 @@ const App = () => {
               <BrowserRouter>
                 <Suspense fallback={
                   <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                    <div className="text-white text-xl font-bold">TRICKS</div>
+                    <div className="text-white text-xl font-bold animate-pulse">TRICKS</div>
                   </div>
                 }>
                   <Routes>
