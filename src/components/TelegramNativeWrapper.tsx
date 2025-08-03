@@ -1,4 +1,3 @@
-
 import React, { useEffect, ReactNode } from 'react';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useAuth } from './AuthWrapper';
@@ -44,8 +43,8 @@ const TelegramNativeWrapper: React.FC<TelegramNativeWrapperProps> = ({ children 
       // Отключаем стандартные стили прокрутки для мобильного
       body.style.overscrollBehavior = 'none';
       body.style.userSelect = 'none';
-      body.style.webkitUserSelect = 'none';
-      body.style.webkitTapHighlightColor = 'transparent';
+      (body.style as any).webkitUserSelect = 'none';
+      (body.style as any).webkitTapHighlightColor = 'transparent';
       
       // Настраиваем viewport для Telegram
       const viewport = document.querySelector('meta[name="viewport"]');
