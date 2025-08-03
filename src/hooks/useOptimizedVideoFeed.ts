@@ -8,7 +8,10 @@ export const useOptimizedVideoFeed = (limit: number = 20) => {
     queryFn: async () => {
       console.log('🚀 Загружаем оптимизированную ленту видео...');
       
-      const { data, error } = await supabase
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
         .from('videos')
         .select(`
           id,
@@ -30,16 +33,52 @@ export const useOptimizedVideoFeed = (limit: number = 20) => {
         .order('created_at', { ascending: false })
         .limit(limit);
 
+      // If user is authenticated, also get their like status
+      if (user) {
+        query = supabase
+          .from('videos')
+          .select(`
+            id,
+            title,
+            video_url,
+            thumbnail_url,
+            category,
+            created_at,
+            views,
+            likes_count,
+            comments_count,
+            profiles!videos_user_id_fkey (
+              id,
+              username,
+              first_name,
+              avatar_url
+            ),
+            video_likes!left (
+              user_id
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+      }
+
+      const { data, error } = await query;
+
       if (error) {
         console.error('❌ Ошибка загрузки видео:', error);
         throw error;
       }
 
-      console.log(`✅ Загружено ${data?.length || 0} видео`);
-      return data || [];
+      // Process data to add user_liked flag
+      const processedData = data?.map(video => ({
+        ...video,
+        user_liked: user && video.video_likes && video.video_likes.length > 0
+      })) || [];
+
+      console.log(`✅ Загружено ${processedData.length} видео`);
+      return processedData;
     },
     staleTime: 30000, // 30 секунд
-    gcTime: 5 * 60 * 1000, // 5 минут (заменил cacheTime на gcTime)
+    gcTime: 5 * 60 * 1000, // 5 минут
     refetchOnWindowFocus: false,
   });
 };
