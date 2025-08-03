@@ -1,13 +1,41 @@
 
 import React, { useCallback } from 'react';
 import { useOptimizedVideoFeed } from '@/hooks/useOptimizedVideoFeed';
+import { useLikeVideo } from '@/hooks/useVideoLikes';
+import { useAuth } from '@/components/AuthWrapper';
 import LazyVideoCard from './LazyVideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 const OptimizedVideoFeed: React.FC = () => {
   const { data: videos, isLoading, error, refetch } = useOptimizedVideoFeed(20);
+  const { user } = useAuth();
+  const likeVideoMutation = useLikeVideo();
+
+  const handleLike = async (videoId: string) => {
+    if (!user) {
+      toast.error('Войдите в систему, чтобы ставить лайки');
+      return;
+    }
+
+    const video = videos?.find(v => v.id === videoId);
+    if (video) {
+      console.log('🎯 OptimizedVideoFeed: Обрабатываем лайк для видео:', videoId);
+      try {
+        await likeVideoMutation.mutateAsync({
+          videoId,
+          isLiked: video.user_liked || false
+        });
+        console.log('✅ OptimizedVideoFeed: Лайк успешно обработан');
+        toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
+      } catch (error) {
+        console.error('❌ OptimizedVideoFeed: Ошибка при обработке лайка:', error);
+        toast.error('Ошибка при обработке лайка');
+      }
+    }
+  };
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -37,6 +65,7 @@ const OptimizedVideoFeed: React.FC = () => {
           <LazyVideoCard
             key={video.id}
             video={video}
+            onLike={handleLike}
           />
         ))
       )}
