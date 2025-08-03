@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { useOptimizedVideoFeed } from '@/hooks/useOptimizedVideoFeed';
 import LazyVideoCard from './LazyVideoCard';
 import VideoCardSkeleton from './VideoCardSkeleton';
@@ -7,12 +7,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 
 const OptimizedVideoFeed: React.FC = () => {
-  const [selectedVideo, setSelectedVideo] = useState(null);
   const { data: videos, isLoading, error, refetch } = useOptimizedVideoFeed(20);
-
-  const handleVideoSelect = useCallback((video: any) => {
-    setSelectedVideo(video);
-  }, []);
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -42,7 +37,6 @@ const OptimizedVideoFeed: React.FC = () => {
           <LazyVideoCard
             key={video.id}
             video={video}
-            onVideoSelect={handleVideoSelect}
           />
         ))
       )}

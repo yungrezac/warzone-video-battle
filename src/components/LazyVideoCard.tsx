@@ -6,13 +6,12 @@ const VideoCard = lazy(() => import('./VideoCard'));
 
 interface LazyVideoCardProps {
   video: any;
-  onVideoSelect?: (video: any) => void;
 }
 
-const LazyVideoCard: React.FC<LazyVideoCardProps> = ({ video, onVideoSelect }) => {
+const LazyVideoCard: React.FC<LazyVideoCardProps> = ({ video }) => {
   return (
     <Suspense fallback={<VideoCardSkeleton />}>
-      <VideoCard video={video} onVideoSelect={onVideoSelect} />
+      <VideoCard video={video} />
     </Suspense>
   );
 };

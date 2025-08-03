@@ -39,7 +39,7 @@ export const useOptimizedVideoFeed = (limit: number = 20) => {
       return data || [];
     },
     staleTime: 30000, // 30 секунд
-    cacheTime: 5 * 60 * 1000, // 5 минут
+    gcTime: 5 * 60 * 1000, // 5 минут (заменил cacheTime на gcTime)
     refetchOnWindowFocus: false,
   });
 };
