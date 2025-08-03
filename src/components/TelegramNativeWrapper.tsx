@@ -1,5 +1,7 @@
+
 import React, { useEffect, ReactNode } from 'react';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useTelegramTheme } from '@/hooks/useTelegramTheme';
 import { useAuth } from './AuthWrapper';
 
 interface TelegramNativeWrapperProps {
@@ -11,145 +13,162 @@ const TelegramNativeWrapper: React.FC<TelegramNativeWrapperProps> = ({ children 
     webApp, 
     isTelegramWebApp, 
     colorScheme,
-    showMainButton,
-    hideMainButton,
-    showBackButton,
-    hideBackButton,
     hapticFeedback,
-    setSettingsButton
+    setSettingsButton,
+    platform,
+    version
   } = useTelegramWebApp();
+  const { themeColors, isDark } = useTelegramTheme();
   const { user } = useAuth();
 
   useEffect(() => {
     if (isTelegramWebApp && webApp) {
-      console.log('🎨 Применяем нативную тему Telegram');
+      console.log('🎨 Применяем расширенную нативную тему Telegram');
       
       // Применяем цветовую схему Telegram к body
       const body = document.body;
       const root = document.documentElement;
       
-      if (colorScheme === 'dark') {
+      // Устанавливаем основные цвета
+      body.style.backgroundColor = themeColors.bg_color;
+      body.style.color = themeColors.text_color;
+
+      // Применяем класс темы
+      if (isDark) {
         body.classList.add('dark');
         root.classList.add('dark');
-        body.style.backgroundColor = 'var(--tg-theme-bg-color, #1a1a1a)';
-        body.style.color = 'var(--tg-theme-text-color, #ffffff)';
       } else {
         body.classList.remove('dark');
         root.classList.remove('dark');
-        body.style.backgroundColor = 'var(--tg-theme-bg-color, #ffffff)';
-        body.style.color = 'var(--tg-theme-text-color, #000000)';
       }
 
-      // Отключаем стандартные стили прокрутки для мобильного
+      // Расширенные настройки для мобильного
       body.style.overscrollBehavior = 'none';
       body.style.userSelect = 'none';
       (body.style as any).webkitUserSelect = 'none';
       (body.style as any).webkitTapHighlightColor = 'transparent';
+      body.style.touchAction = 'manipulation';
       
-      // Настраиваем viewport для Telegram
+      // Настройки для предотвращения зума
       const viewport = document.querySelector('meta[name="viewport"]');
       if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+        viewport.setAttribute('content', 
+          'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content'
+        );
       }
 
-      // Применяем CSS переменные для всех компонентов
-      const themeVars = {
-        '--background': colorScheme === 'dark' ? '240 10% 3.9%' : '0 0% 100%',
-        '--foreground': colorScheme === 'dark' ? '0 0% 98%' : '240 10% 3.9%',
-        '--primary': colorScheme === 'dark' ? '0 0% 98%' : '221.2 83.2% 53.3%',
-        '--primary-foreground': colorScheme === 'dark' ? '240 5.9% 10%' : '210 40% 98%',
-        '--card': colorScheme === 'dark' ? '240 10% 3.9%' : '0 0% 100%',
-        '--card-foreground': colorScheme === 'dark' ? '0 0% 98%' : '240 10% 3.9%',
-        '--border': colorScheme === 'dark' ? '240 3.7% 15.9%' : '214.3 31.8% 91.4%',
-      };
+      // Применяем все CSS переменные темы Telegram
+      Object.entries(themeColors).forEach(([key, value]) => {
+        root.style.setProperty(`--tg-theme-${key.replace('_', '-')}`, value);
+      });
 
-      Object.entries(themeVars).forEach(([key, value]) => {
-        root.style.setProperty(key, value);
+      // Устанавливаем цвета заголовка и фона приложения
+      if (webApp.setHeaderColor) {
+        webApp.setHeaderColor(themeColors.header_bg_color);
+      }
+      if (webApp.setBackgroundColor) {
+        webApp.setBackgroundColor(themeColors.bg_color);
+      }
+
+      console.log('✅ Нативная тема Telegram применена:', {
+        platform,
+        version,
+        colorScheme,
+        themeColors: Object.keys(themeColors).length
       });
     }
-  }, [isTelegramWebApp, webApp, colorScheme]);
+  }, [isTelegramWebApp, webApp, themeColors, isDark, platform, version, colorScheme]);
 
   useEffect(() => {
-    if (isTelegramWebApp && user) {
-      console.log('👤 Пользователь авторизован в Telegram WebApp:', user.first_name);
+    if (isTelegramWebApp && user && webApp) {
+      console.log('👤 Настраиваем нативные элементы для пользователя:', user.first_name);
       
-      // Скрываем основную кнопку по умолчанию
-      hideMainButton();
-      
-      // Устанавливаем обработчик для кнопки "Назад"
-      showBackButton(() => {
-        hapticFeedback('impact');
-        // По умолчанию возвращаемся на главную страницу
-        if (window.location.pathname !== '/') {
-          window.history.back();
-        }
-      });
+      // Включаем подтверждение закрытия
+      webApp.enableClosingConfirmation();
 
-      // Показываем кнопку настроек
+      // Показываем кнопку настроек с нативным стилем
       setSettingsButton(true, () => {
-        hapticFeedback('impact');
-        console.log('Настройки открыты');
-        // Здесь можно добавить логику открытия настроек
+        hapticFeedback('selection');
+        console.log('⚙️ Нативные настройки открыты');
       });
-    }
-  }, [isTelegramWebApp, user, hideMainButton, showBackButton, hapticFeedback, setSettingsButton]);
 
-  // Добавляем обработчики для нативных жестов
+      // Расширяем приложение на весь экран
+      if (webApp.expand && !webApp.isExpanded) {
+        webApp.expand();
+      }
+    }
+  }, [isTelegramWebApp, user, webApp, setSettingsButton, hapticFeedback]);
+
+  // Улучшенные обработчики нативных жестов и событий
   useEffect(() => {
-    if (isTelegramWebApp) {
-      const handleTouchStart = (e: TouchEvent) => {
-        // Предотвращаем bounce effect в Safari
+    if (isTelegramWebApp && webApp) {
+      // Предотвращение нежелательных жестов
+      const preventDefaultGestures = (e: TouchEvent) => {
+        // Предотвращаем масштабирование при множественном касании
         if (e.touches.length > 1) {
           e.preventDefault();
         }
       };
 
-      const handleTouchMove = (e: TouchEvent) => {
-        // Предотвращаем скролл если это не основная область контента
-        const target = e.target as Element;
-        if (!target.closest('[data-scrollable="true"]')) {
-          const touchY = e.touches[0].clientY;
-          const element = target.closest('.telegram-scroll-container');
-          
-          if (element) {
-            const { scrollTop, scrollHeight, clientHeight } = element as HTMLElement;
-            const isAtTop = scrollTop === 0;
-            const isAtBottom = scrollTop + clientHeight >= scrollHeight;
-            
-            // Предотвращаем bounce только на краях
-            if ((isAtTop && touchY > 0) || (isAtBottom && touchY < 0)) {
-              e.preventDefault();
-            }
-          } else {
-            e.preventDefault();
-          }
-        }
-      };
-
-      const handleContextMenu = (e: Event) => {
-        // Отключаем контекстное меню на долгое нажатие
+      const preventContextMenu = (e: Event) => {
         e.preventDefault();
       };
 
-      document.addEventListener('touchstart', handleTouchStart, { passive: false });
+      const handleTouchMove = (e: TouchEvent) => {
+        const target = e.target as Element;
+        const scrollableParent = target.closest('[data-scrollable="true"]');
+        
+        if (!scrollableParent) {
+          e.preventDefault();
+          return;
+        }
+
+        // Улучшенная логика для предотвращения bounce эффекта
+        const element = scrollableParent as HTMLElement;
+        const { scrollTop, scrollHeight, clientHeight } = element;
+        const touchY = e.touches[0].clientY;
+        const startY = e.touches[0].pageY;
+        
+        const isAtTop = scrollTop <= 0;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+        
+        if ((isAtTop && startY < touchY) || (isAtBottom && startY > touchY)) {
+          e.preventDefault();
+        }
+      };
+
+      // Добавляем обработчики событий
+      document.addEventListener('touchstart', preventDefaultGestures, { passive: false });
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('contextmenu', handleContextMenu, { passive: false });
+      document.addEventListener('contextmenu', preventContextMenu, { passive: false });
+      
+      // Обработчик изменения темы
+      const handleThemeChange = () => {
+        console.log('🎨 Тема изменена на:', webApp.colorScheme);
+        hapticFeedback('selection');
+      };
+
+      webApp.onEvent('themeChanged', handleThemeChange);
 
       return () => {
-        document.removeEventListener('touchstart', handleTouchStart);
+        document.removeEventListener('touchstart', preventDefaultGestures);
         document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('contextmenu', handleContextMenu);
+        document.removeEventListener('contextmenu', preventContextMenu);
+        webApp.offEvent('themeChanged', handleThemeChange);
       };
     }
-  }, [isTelegramWebApp]);
+  }, [isTelegramWebApp, webApp, hapticFeedback]);
 
   return (
     <div 
-      className={`min-h-screen telegram-scroll-container ${isTelegramWebApp ? 'telegram-webapp' : ''}`}
+      className={`
+        min-h-screen telegram-scroll-container telegram-native-app
+        ${isTelegramWebApp ? 'telegram-webapp' : ''}
+      `}
       data-scrollable="true"
       style={{
-        backgroundColor: isTelegramWebApp ? 'var(--tg-theme-bg-color)' : undefined,
-        color: isTelegramWebApp ? 'var(--tg-theme-text-color)' : undefined,
+        backgroundColor: themeColors.bg_color,
+        color: themeColors.text_color,
         minHeight: isTelegramWebApp ? '100dvh' : '100vh',
       }}
     >
