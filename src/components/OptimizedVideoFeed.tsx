@@ -35,9 +35,6 @@ const OptimizedVideoFeed: React.FC = () => {
         });
         console.log('✅ OptimizedVideoFeed: Лайк успешно обработан');
         
-        // Обновляем локальное состояние для немедленного отклика UI
-        refetch();
-        
         toast.success(video.user_liked ? 'Лайк убран' : 'Лайк поставлен');
       } catch (error) {
         console.error('❌ OptimizedVideoFeed: Ошибка при обработке лайка:', error);

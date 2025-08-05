@@ -46,34 +46,53 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
   const { data: userVideos } = useUserVideos(userId);
 
-  // Предотвращаем скролинг основного контента когда модальное окно открыто
+  // Управляем скроллингом основной страницы
   useEffect(() => {
     if (isOpen) {
       // Сохраняем текущую позицию скролинга
       const scrollY = window.scrollY;
+      
+      // Блокируем скролинг основной страницы
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
       document.body.style.width = '100%';
+      document.body.style.height = '100%';
       document.body.style.overflow = 'hidden';
-    } else {
-      // Восстанавливаем скролинг
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
-      }
+      
+      // Также блокируем скролинг на html элементе для iOS
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.position = 'fixed';
+      document.documentElement.style.width = '100%';
+      document.documentElement.style.height = '100%';
+      
+      return () => {
+        // Восстанавливаем скролинг при закрытии
+        const body = document.body;
+        const html = document.documentElement;
+        
+        // Восстанавливаем стили body
+        body.style.position = '';
+        body.style.top = '';
+        body.style.left = '';
+        body.style.right = '';
+        body.style.width = '';
+        body.style.height = '';
+        body.style.overflow = '';
+        
+        // Восстанавливаем стили html
+        html.style.overflow = '';
+        html.style.position = '';
+        html.style.width = '';
+        html.style.height = '';
+        
+        // Восстанавливаем позицию скролинга
+        if (scrollY) {
+          window.scrollTo(0, scrollY);
+        }
+      };
     }
-
-    // Cleanup при размонтировании
-    return () => {
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-    };
   }, [isOpen]);
 
   const handleSubscribeClick = () => {
@@ -135,8 +154,19 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none" hideCloseButton>
-        <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
+      <DialogContent 
+        className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none bg-gray-50" 
+        hideCloseButton
+        style={{ 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999
+        }}
+      >
+        <div className="h-full flex flex-col overflow-hidden">
           {/* Header with back button */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center sticky top-0 z-50 flex-shrink-0">
             <Button 
@@ -163,7 +193,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="flex-1 overflow-y-auto">
             {/* Profile Header */}
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex-shrink-0">
               <div className="flex items-center mb-2">
@@ -302,7 +332,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               <AlertDialogCancel>Отмена</AlertDialogCancel>
               <AlertDialogAction onClick={confirmSubscription}>Подписаться</AlertDialogAction>
             </AlertDialogFooter>
-          </AlertDialogContent>
+          </AlertDialogFooter>
         </AlertDialog>
       </DialogContent>
     </Dialog>
