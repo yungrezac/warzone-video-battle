@@ -46,55 +46,6 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
   const { data: userVideos } = useUserVideos(userId);
 
-  // Управляем скроллингом основной страницы
-  useEffect(() => {
-    if (isOpen) {
-      // Сохраняем текущую позицию скролинга
-      const scrollY = window.scrollY;
-      
-      // Блокируем скролинг основной страницы
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
-      document.body.style.overflow = 'hidden';
-      
-      // Также блокируем скролинг на html элементе для iOS
-      document.documentElement.style.overflow = 'hidden';
-      document.documentElement.style.position = 'fixed';
-      document.documentElement.style.width = '100%';
-      document.documentElement.style.height = '100%';
-      
-      return () => {
-        // Восстанавливаем скролинг при закрытии
-        const body = document.body;
-        const html = document.documentElement;
-        
-        // Восстанавливаем стили body
-        body.style.position = '';
-        body.style.top = '';
-        body.style.left = '';
-        body.style.right = '';
-        body.style.width = '';
-        body.style.height = '';
-        body.style.overflow = '';
-        
-        // Восстанавливаем стили html
-        html.style.overflow = '';
-        html.style.position = '';
-        html.style.width = '';
-        html.style.height = '';
-        
-        // Восстанавливаем позицию скролинга
-        if (scrollY) {
-          window.scrollTo(0, scrollY);
-        }
-      };
-    }
-  }, [isOpen]);
-
   const handleSubscribeClick = () => {
     if (!user) {
       toast.error('Сначала нужно войти в систему');
@@ -166,7 +117,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
           zIndex: 9999
         }}
       >
-        <div className="h-full flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col">
           {/* Header with back button */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center sticky top-0 z-50 flex-shrink-0">
             <Button 
@@ -332,7 +283,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
               <AlertDialogCancel>Отмена</AlertDialogCancel>
               <AlertDialogAction onClick={confirmSubscription}>Подписаться</AlertDialogAction>
             </AlertDialogFooter>
-          </AlertDialogFooter>
+          </AlertDialogContent>
         </AlertDialog>
       </DialogContent>
     </Dialog>
