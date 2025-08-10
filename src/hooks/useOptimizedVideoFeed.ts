@@ -11,7 +11,7 @@ export const useOptimizedVideoFeed = (limit: number = 20) => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('videos')
         .select(`
           id,
@@ -21,8 +21,7 @@ export const useOptimizedVideoFeed = (limit: number = 20) => {
           category,
           created_at,
           views,
-          likes_count,
-          comments_count,
+          user_id,
           profiles!videos_user_id_fkey (
             id,
             username,
@@ -33,49 +32,49 @@ export const useOptimizedVideoFeed = (limit: number = 20) => {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      // If user is authenticated, also get their like status
-      if (user) {
-        query = supabase
-          .from('videos')
-          .select(`
-            id,
-            title,
-            video_url,
-            thumbnail_url,
-            category,
-            created_at,
-            views,
-            likes_count,
-            comments_count,
-            profiles!videos_user_id_fkey (
-              id,
-              username,
-              first_name,
-              avatar_url
-            ),
-            video_likes!left (
-              user_id
-            )
-          `)
-          .order('created_at', { ascending: false })
-          .limit(limit);
-      }
-
-      const { data, error } = await query;
-
       if (error) {
         console.error('❌ Ошибка загрузки видео:', error);
         throw error;
       }
 
-      // Process data to add user_liked flag
-      const processedData = data?.map(video => ({
-        ...video,
-        user_liked: user && (video as any).video_likes && (video as any).video_likes.length > 0
-      })) || [];
+      // Process data to add likes count and user interaction data
+      const videosWithStats = await Promise.all(
+        (data || []).map(async (video) => {
+          // Подсчитываем лайки для каждого видео
+          const { count: likesCount } = await supabase
+            .from('video_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('video_id', video.id);
 
-      console.log(`✅ Загружено ${processedData.length} видео`);
-      return processedData;
+          // Подсчитываем комментарии для каждого видео
+          const { count: commentsCount } = await supabase
+            .from('video_comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('video_id', video.id);
+
+          // Проверяем, лайкнул ли текущий пользователь это видео
+          let userLiked = false;
+          if (user) {
+            const { data: userLikeData } = await supabase
+              .from('video_likes')
+              .select('*')
+              .eq('video_id', video.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            userLiked = !!userLikeData;
+          }
+
+          return {
+            ...video,
+            likes_count: likesCount || 0,
+            comments_count: commentsCount || 0,
+            user_liked: userLiked
+          };
+        })
+      );
+
+      console.log(`✅ Загружено ${videosWithStats.length} видео с актуальной статистикой`);
+      return videosWithStats;
     },
     staleTime: 30000, // 30 секунд
     gcTime: 5 * 60 * 1000, // 5 минут

@@ -46,34 +46,12 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
   const { data: userVideos } = useUserVideos(userId);
 
-  // Управляем скроллингом основной страницы
+  // Более простое управление скроллингом
   useEffect(() => {
     if (isOpen) {
-      // Сохраняем текущую позицию скролинга
-      const scrollY = window.scrollY;
-      
-      // Блокируем скролинг основной страницы
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
-      
       return () => {
-        // Восстанавливаем скролинг при закрытии
-        const body = document.body;
-        
-        // Восстанавливаем стили body
-        body.style.position = '';
-        body.style.top = '';
-        body.style.left = '';
-        body.style.right = '';
-        body.style.width = '';
-        body.style.overflow = '';
-        
-        // Восстанавливаем позицию скролинга
-        window.scrollTo(0, scrollY);
+        document.body.style.overflow = '';
       };
     }
   }, [isOpen]);
@@ -118,7 +96,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   if (profileLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none flex justify-center items-center">
+        <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none flex justify-center items-center bg-white">
           <Loader2 className="w-8 h-8 animate-spin" />
         </DialogContent>
       </Dialog>
@@ -128,7 +106,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   if (!userProfile) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none flex justify-center items-center">
+        <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none flex justify-center items-center bg-white">
           <p>Профиль не найден.</p>
         </DialogContent>
       </Dialog>
@@ -140,16 +118,8 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
       <DialogContent 
         className="w-full h-full max-w-none max-h-none m-0 p-0 rounded-none bg-gray-50" 
         hideCloseButton
-        style={{ 
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999
-        }}
       >
-        <div className="h-full flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col">
           {/* Header with back button */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center sticky top-0 z-50 flex-shrink-0">
             <Button 
