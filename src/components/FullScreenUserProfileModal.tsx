@@ -46,6 +46,38 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
   const { data: userProfile, isLoading: profileLoading } = useOtherUserProfile(userId);
   const { data: userVideos } = useUserVideos(userId);
 
+  // Управляем скроллингом основной страницы
+  useEffect(() => {
+    if (isOpen) {
+      // Сохраняем текущую позицию скролинга
+      const scrollY = window.scrollY;
+      
+      // Блокируем скролинг основной страницы
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Восстанавливаем скролинг при закрытии
+        const body = document.body;
+        
+        // Восстанавливаем стили body
+        body.style.position = '';
+        body.style.top = '';
+        body.style.left = '';
+        body.style.right = '';
+        body.style.width = '';
+        body.style.overflow = '';
+        
+        // Восстанавливаем позицию скролинга
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
   const handleSubscribeClick = () => {
     if (!user) {
       toast.error('Сначала нужно войти в систему');
@@ -117,7 +149,7 @@ const FullScreenUserProfileModal: React.FC<FullScreenUserProfileModalProps> = ({
           zIndex: 9999
         }}
       >
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col overflow-hidden">
           {/* Header with back button */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex items-center sticky top-0 z-50 flex-shrink-0">
             <Button 
