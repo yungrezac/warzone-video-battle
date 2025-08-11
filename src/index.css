@@ -1,16 +1,17 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
+  --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
+  --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 221.2 83.2% 53.3%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
   --primary-foreground: 210 40% 98%;
   --secondary: 210 40% 96%;
   --secondary-foreground: 222.2 84% 4.9%;
@@ -22,7 +23,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --ring: 222.2 84% 4.9%;
   --chart-1: 12 76% 61%;
   --chart-2: 173 58% 39%;
   --chart-3: 197 37% 24%;
@@ -30,7 +31,7 @@
   --chart-5: 27 87% 67%;
   --radius: 0.5rem;
   
-  /* Telegram CSS variables */
+  /* Telegram Theme Variables */
   --tg-theme-bg-color: #ffffff;
   --tg-theme-text-color: #000000;
   --tg-theme-hint-color: #999999;
@@ -47,32 +48,32 @@
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;
   --chart-3: 30 80% 55%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
   
-  /* Telegram dark theme */
+  /* Dark Telegram Theme Variables */
   --tg-theme-bg-color: #1a1a1a;
   --tg-theme-text-color: #ffffff;
   --tg-theme-hint-color: #707579;
@@ -93,433 +94,154 @@
 }
 
 body {
-  font-family: "Inter", sans-serif;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Telegram WebApp specific styles */
+/* Telegram WebApp Enhanced Styles */
 .telegram-webapp {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
-  position: relative;
-  min-height: 100vh;
   min-height: 100dvh;
-  touch-action: manipulation;
+  background: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
 }
 
-.telegram-webapp * {
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
+.telegram-enhanced {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollable areas in Telegram WebApp */
-[data-scrollable="true"], .telegram-scroll-container {
-  -webkit-overflow-scrolling: touch;
-  overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
-
-/* Native Telegram button styles */
 .telegram-native-button {
   background-color: var(--tg-theme-button-color) !important;
   color: var(--tg-theme-button-text-color) !important;
   border: none !important;
   border-radius: 8px !important;
-  transition: opacity 0.2s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+  font-weight: 500 !important;
 }
 
 .telegram-native-button:hover {
-  opacity: 0.8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .telegram-native-button:active {
-  opacity: 0.6;
-  transform: scale(0.98);
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Telegram theme text colors */
-.tg-text-primary {
-  color: var(--tg-theme-text-color);
+.telegram-native-card {
+  background-color: var(--tg-theme-section-bg-color) !important;
+  border: 1px solid var(--tg-theme-hint-color) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
 }
 
-.tg-text-hint {
-  color: var(--tg-theme-hint-color);
-}
-
-.tg-text-link {
-  color: var(--tg-theme-link-color);
-}
-
-.tg-text-accent {
-  color: var(--tg-theme-accent-text-color);
-}
-
-.tg-text-destructive {
-  color: var(--tg-theme-destructive-text-color);
-}
-
-/* Telegram theme backgrounds */
-.tg-bg-primary {
-  background-color: var(--tg-theme-bg-color);
-}
-
-.tg-bg-secondary {
-  background-color: var(--tg-theme-secondary-bg-color);
-}
-
-.tg-bg-section {
-  background-color: var(--tg-theme-section-bg-color);
-}
-
-/* Balance icon styling */
-.balance-icon {
-  color: #f59e0b;
-  font-weight: 700;
-}
-
-/* Native touch optimizations */
-.telegram-webapp input,
-.telegram-webapp textarea,
-.telegram-webapp button,
-.telegram-webapp [role="button"] {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Haptic feedback visual cues */
-.haptic-button {
-  transition: transform 0.1s ease;
-}
-
-.haptic-button:active {
-  transform: scale(0.95);
-}
-
-/* Native scroll behavior */
-.telegram-native-scroll {
+.telegram-scroll-container {
+  overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
 
-/* Disable text selection in native mode */
-.telegram-webapp .no-select {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+.telegram-haptic-button {
+  transition: transform 0.1s ease;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+.telegram-haptic-button:active {
+  transform: scale(0.98);
 }
 
-@layer utilities {
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-  
-  .animate-bounce-slow {
-    animation: bounce 2s infinite;
-  }
-
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  .animate-spin-slow {
-    animation: spin 3s linear infinite;
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translatey(0px);
-  }
-  50% {
-    transform: translatey(-10px);
-  }
-}
-
-/* Custom scrollbar for webkit browsers */
-::-webkit-scrollbar {
+/* Enhanced scrollbar for web version */
+.web-browser .telegram-scroll-container::-webkit-scrollbar {
   width: 6px;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+.web-browser .telegram-scroll-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.web-browser .telegram-scroll-container::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+.web-browser .telegram-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+/* Improved focus states for accessibility */
+.telegram-webapp button:focus-visible,
+.telegram-webapp input:focus-visible,
+.telegram-webapp textarea:focus-visible {
+  outline: 2px solid var(--tg-theme-accent-text-color);
+  outline-offset: 2px;
 }
 
-/* Video player optimizations */
-video {
-  -webkit-playsinline: true;
-  object-fit: cover;
+/* Animation improvements */
+@keyframes telegram-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
-/* Touch optimizations for mobile */
-button, [role="button"] {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+.telegram-bounce {
+  animation: telegram-bounce 0.6s ease-in-out;
 }
 
-/* Prevent zoom on input focus */
-input, select, textarea {
-  font-size: 16px;
+/* Enhanced gradient backgrounds */
+.telegram-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--tg-theme-bg-color) 0%,
+    var(--tg-theme-secondary-bg-color) 100%
+  );
 }
 
-@media (max-width: 768px) {
-  input, select, textarea {
-    font-size: 16px;
-  }
-}
+/* Telegram-specific utility classes */
+.tg-bg-primary { background-color: var(--tg-theme-bg-color); }
+.tg-bg-secondary { background-color: var(--tg-theme-secondary-bg-color); }
+.tg-bg-section { background-color: var(--tg-theme-section-bg-color); }
 
-/* Enhanced mobile optimizations */
+.tg-text-primary { color: var(--tg-theme-text-color); }
+.tg-text-hint { color: var(--tg-theme-hint-color); }
+.tg-text-link { color: var(--tg-theme-link-color); }
+.tg-text-accent { color: var(--tg-theme-accent-text-color); }
+.tg-text-subtitle { color: var(--tg-theme-subtitle-text-color); }
+
+/* Enhanced mobile styles */
 @media (max-width: 768px) {
   .telegram-webapp {
     font-size: 16px; /* Prevent zoom on input focus */
   }
   
-  .telegram-webapp input,
-  .telegram-webapp select,
-  .telegram-webapp textarea {
-    font-size: 16px;
-    border-radius: 8px;
+  .telegram-native-button {
+    min-height: 44px; /* Apple's recommended touch target size */
+    padding: 12px 16px;
+  }
+  
+  .telegram-native-card {
+    margin: 8px;
+    border-radius: 16px;
   }
 }
 
-/* Dark theme specific optimizations */
-.dark .telegram-webapp {
-  color-scheme: dark;
-}
-
-/* Safe area handling for iOS */
+/* Safe area handling for notched devices */
 .telegram-webapp {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Fix for video elements in Telegram */
-.telegram-webapp video {
-  -webkit-playsinline: true;
-  playsinline: true;
-  object-fit: cover;
-}
-
-/* Enhanced Telegram WebApp specific styles */
-.telegram-webapp {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
-  position: relative;
-  min-height: 100vh;
-  min-height: 100dvh;
-  touch-action: manipulation;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-}
-
-.telegram-native-app {
-  background: var(--tg-theme-bg-color);
-  color: var(--tg-theme-text-color);
-}
-
-.telegram-webapp * {
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Improved scrollable areas in Telegram WebApp */
-[data-scrollable="true"], .telegram-scroll-container {
-  -webkit-overflow-scrolling: touch;
-  overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  scroll-behavior: smooth;
-}
-
-/* Enhanced native Telegram button styles */
-.telegram-native-button {
-  background: linear-gradient(135deg, var(--tg-theme-button-color), var(--tg-theme-button-color)) !important;
-  color: var(--tg-theme-button-text-color) !important;
-  border: none !important;
-  border-radius: 12px !important;
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-}
-
-.telegram-native-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.telegram-native-button:active {
-  opacity: 0.7;
-  transform: scale(0.98) translateY(0px);
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Enhanced haptic feedback visual cues */
-.haptic-button {
-  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-
-.haptic-button:active {
-  transform: scale(0.96);
-}
-
-/* Telegram safe area handling */
-.telegram-safe-area {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: env(safe-area-inset-top);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Native Telegram card styles */
-.telegram-card {
-  background-color: var(--tg-theme-section-bg-color);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+/* Performance optimizations */
+.telegram-enhanced * {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
-.dark .telegram-card {
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 1px 3px rgba(255, 255, 255, 0.05);
-}
-
-/* Enhanced theme text colors with better contrast */
-.tg-text-primary {
-  color: var(--tg-theme-text-color);
-}
-
-.tg-text-hint {
-  color: var(--tg-theme-hint-color);
-}
-
-.tg-text-link {
-  color: var(--tg-theme-link-color);
-  text-decoration: none;
-}
-
-.tg-text-link:hover {
-  text-decoration: underline;
-}
-
-.tg-text-accent {
-  color: var(--tg-theme-accent-text-color);
-  font-weight: 500;
-}
-
-.tg-text-destructive {
-  color: var(--tg-theme-destructive-text-color);
-}
-
-.tg-text-subtitle {
-  color: var(--tg-theme-subtitle-text-color);
-  font-size: 0.9em;
-}
-
-/* Enhanced theme backgrounds */
-.tg-bg-primary {
-  background-color: var(--tg-theme-bg-color);
-}
-
-.tg-bg-secondary {
-  background-color: var(--tg-theme-secondary-bg-color);
-}
-
-.tg-bg-section {
-  background-color: var(--tg-theme-section-bg-color);
-}
-
-/* Native iOS/Android style inputs */
-.telegram-webapp input,
-.telegram-webapp textarea,
-.telegram-webapp select {
-  background-color: var(--tg-theme-section-bg-color);
-  color: var(--tg-theme-text-color);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 16px;
-  transition: all 0.2s ease;
-}
-
-.telegram-webapp input:focus,
-.telegram-webapp textarea:focus {
-  outline: none;
-  border-color: var(--tg-theme-accent-text-color);
-  box-shadow: 0 0 0 3px rgba(var(--tg-theme-accent-text-color), 0.1);
-}
-
-.dark .telegram-webapp input,
-.dark .telegram-webapp textarea,
-.dark .telegram-webapp select {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Native loading states */
-.telegram-loading {
-  animation: telegramPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes telegramPulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-/* Enhanced mobile optimizations for different platforms */
-.telegram-webapp[data-platform="ios"] {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Icons', sans-serif;
-}
-
-.telegram-webapp[data-platform="android"] {
-  font-family: 'Roboto', sans-serif;
-}
-
-/* Improved backdrop and modal styles for Telegram */
-.telegram-backdrop {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.telegram-modal {
-  background: var(--tg-theme-bg-color);
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+.balance-icon {
+  color: #3b82f6;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
