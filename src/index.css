@@ -1,247 +1,108 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
-  --radius: 0.5rem;
-  
-  /* Telegram Theme Variables */
-  --tg-theme-bg-color: #ffffff;
-  --tg-theme-text-color: #000000;
-  --tg-theme-hint-color: #999999;
-  --tg-theme-link-color: #1e40af;
-  --tg-theme-button-color: #1e40af;
-  --tg-theme-button-text-color: #ffffff;
-  --tg-theme-secondary-bg-color: #f1f3f4;
-  --tg-theme-header-bg-color: #ffffff;
-  --tg-theme-accent-text-color: #1e40af;
-  --tg-theme-section-bg-color: #ffffff;
-  --tg-theme-section-header-text-color: #6d7175;
-  --tg-theme-subtitle-text-color: #999999;
-  --tg-theme-destructive-text-color: #ec3942;
-}
-
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-  
-  /* Dark Telegram Theme Variables */
-  --tg-theme-bg-color: #1a1a1a;
-  --tg-theme-text-color: #ffffff;
-  --tg-theme-hint-color: #707579;
-  --tg-theme-link-color: #6ab7ff;
-  --tg-theme-button-color: #5288c1;
-  --tg-theme-button-text-color: #ffffff;
-  --tg-theme-secondary-bg-color: #131415;
-  --tg-theme-header-bg-color: #1a1a1a;
-  --tg-theme-accent-text-color: #6ab7ff;
-  --tg-theme-section-bg-color: #1a1a1a;
-  --tg-theme-section-header-text-color: #6d7175;
-  --tg-theme-subtitle-text-color: #707579;
-  --tg-theme-destructive-text-color: #ff595a;
-}
-
-* {
-  border-color: hsl(var(--border));
-}
-
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Telegram WebApp Enhanced Styles */
-.telegram-webapp {
-  min-height: 100dvh;
-  background: var(--tg-theme-bg-color);
-  color: var(--tg-theme-text-color);
-}
-
-.telegram-enhanced {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.telegram-native-button {
-  background-color: var(--tg-theme-button-color) !important;
-  color: var(--tg-theme-button-text-color) !important;
-  border: none !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.2s ease !important;
-  font-weight: 500 !important;
-}
-
-.telegram-native-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-.telegram-native-button:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
-}
-
-.telegram-native-card {
-  background-color: var(--tg-theme-section-bg-color) !important;
-  border: 1px solid var(--tg-theme-hint-color) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-}
-
-.telegram-scroll-container {
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-.telegram-haptic-button {
-  transition: transform 0.1s ease;
-}
-
-.telegram-haptic-button:active {
-  transform: scale(0.98);
-}
-
-/* Enhanced scrollbar for web version */
-.web-browser .telegram-scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.web-browser .telegram-scroll-container::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-}
-
-.web-browser .telegram-scroll-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 3px;
-}
-
-.web-browser .telegram-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-/* Improved focus states for accessibility */
-.telegram-webapp button:focus-visible,
-.telegram-webapp input:focus-visible,
-.telegram-webapp textarea:focus-visible {
-  outline: 2px solid var(--tg-theme-accent-text-color);
-  outline-offset: 2px;
-}
-
-/* Animation improvements */
-@keyframes telegram-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-.telegram-bounce {
-  animation: telegram-bounce 0.6s ease-in-out;
-}
-
-/* Enhanced gradient backgrounds */
-.telegram-gradient-bg {
-  background: linear-gradient(
-    135deg,
-    var(--tg-theme-bg-color) 0%,
-    var(--tg-theme-secondary-bg-color) 100%
-  );
-}
-
-/* Telegram-specific utility classes */
-.tg-bg-primary { background-color: var(--tg-theme-bg-color); }
-.tg-bg-secondary { background-color: var(--tg-theme-secondary-bg-color); }
-.tg-bg-section { background-color: var(--tg-theme-section-bg-color); }
-
-.tg-text-primary { color: var(--tg-theme-text-color); }
-.tg-text-hint { color: var(--tg-theme-hint-color); }
-.tg-text-link { color: var(--tg-theme-link-color); }
-.tg-text-accent { color: var(--tg-theme-accent-text-color); }
-.tg-text-subtitle { color: var(--tg-theme-subtitle-text-color); }
-
-/* Enhanced mobile styles */
-@media (max-width: 768px) {
-  .telegram-webapp {
-    font-size: 16px; /* Prevent zoom on input focus */
-  }
-  
-  .telegram-native-button {
-    min-height: 44px; /* Apple's recommended touch target size */
-    padding: 12px 16px;
-  }
-  
-  .telegram-native-card {
-    margin: 8px;
-    border-radius: 16px;
+@layer components {
+  .points-display::after {
+    content: " Б";
+    @apply font-bold italic;
   }
 }
 
-/* Safe area handling for notched devices */
-.telegram-webapp {
-  padding-top: env(safe-area-inset-top);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  padding-bottom: env(safe-area-inset-bottom);
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
-/* Performance optimizations */
-.telegram-enhanced * {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-}
+@layer base {
+  * {
+    @apply border-border;
+  }
 
-.balance-icon {
-  color: #3b82f6;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  body {
+    @apply bg-background text-foreground;
+  }
 }

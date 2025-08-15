@@ -12,10 +12,7 @@ export const useSubscription = () => {
     queryFn: async () => {
       if (!user) return null;
 
-      console.log('Проверяем подписку для пользователя:', user.id);
-
-      // Сначала проверяем активную подписку
-      const { data: activeSubscription, error: subError } = await supabase
+      const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
@@ -25,33 +22,8 @@ export const useSubscription = () => {
         .limit(1)
         .maybeSingle();
 
-      if (subError) {
-        console.error('Ошибка получения подписки:', subError);
-        throw subError;
-      }
-
-      // Также проверяем профиль на премиум статус
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_premium, premium_expires_at')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Ошибка получения профиля:', profileError);
-      }
-
-      console.log('Активная подписка:', activeSubscription);
-      console.log('Профиль премиум:', profile);
-
-      // Возвращаем активную подписку или данные из профиля
-      return activeSubscription || (profile?.is_premium && profile?.premium_expires_at && new Date(profile.premium_expires_at) > new Date() ? {
-        id: 'profile-premium',
-        user_id: user.id,
-        status: 'active',
-        expires_at: profile.premium_expires_at,
-        subscription_type: 'premium'
-      } : null);
+      if (error) throw error;
+      return data;
     },
     enabled: !!user,
   });
@@ -104,14 +76,10 @@ export const useSubscription = () => {
     },
   });
 
-  const isPremium = !!subscription;
-  
-  console.log('Статус премиум:', isPremium, 'Подписка:', subscription);
-
   return {
     subscription,
     isLoading,
-    isPremium,
+    isPremium: !!subscription,
     createInvoice: createInvoiceMutation.mutateAsync,
     isCreatingInvoice: createInvoiceMutation.isPending,
     processPayment: checkPaymentMutation.mutateAsync,

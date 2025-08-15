@@ -1,5 +1,5 @@
 
-// Утилиты для работы с видео (оптимизированные для лучшей загрузки)
+// Утилиты для работы с видео (без агрессивного сжатия)
 export const compressVideo = async (file: File, quality: number = 0.8): Promise<File> => {
   // Возвращаем оригинальный файл без сжатия
   console.log('🎥 Загружаем видео в оригинальном качестве');
@@ -18,39 +18,7 @@ export const getOptimalChunkSize = (fileSize: number): number => {
   return 4 * 1024 * 1024; // 4MB для очень больших файлов
 };
 
-// Функция для предзагрузки видео
-export const preloadVideo = (src: string): Promise<HTMLVideoElement> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    video.preload = 'metadata';
-    video.muted = true;
-    
-    const onCanPlay = () => {
-      video.removeEventListener('canplay', onCanPlay);
-      video.removeEventListener('error', onError);
-      resolve(video);
-    };
-    
-    const onError = () => {
-      video.removeEventListener('canplay', onCanPlay);
-      video.removeEventListener('error', onError);
-      reject(new Error('Не удалось предзагрузить видео'));
-    };
-    
-    video.addEventListener('canplay', onCanPlay);
-    video.addEventListener('error', onError);
-    video.src = src;
-    
-    // Таймаут для предзагрузки
-    setTimeout(() => {
-      video.removeEventListener('canplay', onCanPlay);
-      video.removeEventListener('error', onError);
-      reject(new Error('Таймаут предзагрузки видео'));
-    }, 10000);
-  });
-};
-
-// Функция для создания превью с улучшенной обработкой ошибок
+// Функция для создания превью остается без изменений
 export const generateQuickThumbnail = (videoFile: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -65,29 +33,18 @@ export const generateQuickThumbnail = (videoFile: File): Promise<Blob> => {
     video.preload = 'metadata';
     video.muted = true;
     
-    let hasResolved = false;
-    
     video.onloadedmetadata = () => {
       // Получаем кадр из начала видео
-      video.currentTime = Math.min(0.5, video.duration * 0.1);
+      video.currentTime = 0.1;
     };
     
     video.onseeked = () => {
-      if (hasResolved) return;
-      
       try {
         // Сохраняем оригинальные пропорции
         const maxWidth = 480;
         const maxHeight = 360;
         
         let { videoWidth, videoHeight } = video;
-        
-        // Проверяем валидность размеров
-        if (!videoWidth || !videoHeight) {
-          videoWidth = maxWidth;
-          videoHeight = maxHeight;
-        }
-        
         const ratio = Math.min(maxWidth / videoWidth, maxHeight / videoHeight);
         
         canvas.width = Math.floor(videoWidth * ratio);
@@ -96,27 +53,19 @@ export const generateQuickThumbnail = (videoFile: File): Promise<Blob> => {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
         canvas.toBlob((blob) => {
-          if (blob && !hasResolved) {
-            hasResolved = true;
+          if (blob) {
             resolve(blob);
-          } else if (!hasResolved) {
-            hasResolved = true;
+          } else {
             reject(new Error('Не удалось создать превью'));
           }
         }, 'image/jpeg', 0.8);
       } catch (error) {
-        if (!hasResolved) {
-          hasResolved = true;
-          reject(error);
-        }
+        reject(error);
       }
     };
     
-    video.onerror = (error) => {
-      if (!hasResolved) {
-        hasResolved = true;
-        reject(new Error('Ошибка загрузки видео для создания превью'));
-      }
+    video.onerror = () => {
+      reject(new Error('Ошибка загрузки видео для создания превью'));
     };
     
     const videoUrl = URL.createObjectURL(videoFile);
@@ -128,10 +77,7 @@ export const generateQuickThumbnail = (videoFile: File): Promise<Blob> => {
     
     // Таймаут для создания превью
     setTimeout(() => {
-      if (!hasResolved) {
-        hasResolved = true;
-        reject(new Error('Таймаут создания превью'));
-      }
-    }, 15000);
+      reject(new Error('Таймаут создания превью'));
+    }, 10000);
   });
 };

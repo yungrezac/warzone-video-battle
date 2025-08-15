@@ -6,84 +6,71 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { VideoPlaybackProvider } from "@/contexts/VideoPlaybackContext";
 import AuthWrapper from "@/components/AuthWrapper";
 import AchievementTracker from "@/components/AchievementTracker";
-import TelegramNativeWrapper from "@/components/TelegramNativeWrapper";
-import InstantLoader from "@/components/InstantLoader";
 import React, { Suspense, lazy } from 'react';
+import PrefetchBanners from "./components/PrefetchBanners";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Оптимизированный QueryClient для быстрой работы
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      retryDelay: 300,
-      staleTime: 30000, // 30 секунд
-      gcTime: 5 * 60 * 1000, // 5 минут (заменил cacheTime на gcTime)
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: 'always',
-    },
-    mutations: {
-      retry: 1,
-      retryDelay: 300,
+      retryDelay: 500,
     },
   },
 });
 
-console.log('🚀 TRICKS App загружается с оптимизацией...');
+console.log('🚀 TRICKS App загружается...');
 
-// Мгновенная инициализация Telegram WebApp (без изменений)
+// Мгновенная инициализация Telegram WebApp
 if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
   const tg = window.Telegram.WebApp;
-  console.log('⚡ Мгновенная инициализация Telegram WebApp');
+  console.log('⚡ Инициализация Telegram WebApp');
   
+  // Вызываем ready сразу
   tg.ready();
   
+  // Расширяем приложение
   if (typeof tg.expand === 'function') {
     tg.expand();
   }
   
-  tg.enableClosingConfirmation();
+  // Настраиваем тему - используем свойства, а не методы
+  tg.headerColor = '#1e40af';
+  tg.backgroundColor = '#ffffff';
   
-  const isDark = tg.colorScheme === 'dark';
-  if (typeof tg.setHeaderColor === 'function') {
-    tg.setHeaderColor(isDark ? '#1a1a1a' : '#1e40af');
-  }
-  
-  if (typeof tg.setBackgroundColor === 'function') {
-    tg.setBackgroundColor(isDark ? '#1a1a1a' : '#ffffff');  
-  }
-  
-  console.log('✅ Telegram WebApp мгновенно готов');
+  console.log('✅ Telegram WebApp готов:', {
+    user: tg.initDataUnsafe?.user?.first_name || 'none',
+    platform: tg.platform || 'unknown',
+    version: tg.version || 'unknown'
+  });
 }
 
 const App = () => {
-  console.log('🎯 TRICKS App рендерится с оптимизацией...');
+  console.log('🎯 TRICKS App рендерится...');
   
   return (
     <QueryClientProvider client={queryClient}>
       <AuthWrapper>
-        <InstantLoader />
+        <PrefetchBanners />
         <VideoPlaybackProvider>
-          <TelegramNativeWrapper>
-            <TooltipProvider>
-              <Sonner />
-              <AchievementTracker />
-              <BrowserRouter>
-                <Suspense fallback={
-                  <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                    <div className="text-white text-xl font-bold animate-pulse">TRICKS</div>
-                  </div>
-                }>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-              </BrowserRouter>
-            </TooltipProvider>
-          </TelegramNativeWrapper>
+          <TooltipProvider>
+            <Sonner />
+            <AchievementTracker />
+            <BrowserRouter>
+              <Suspense fallback={
+                <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <div className="text-white text-xl font-bold">TRICKS</div>
+                </div>
+              }>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
         </VideoPlaybackProvider>
       </AuthWrapper>
     </QueryClientProvider>
